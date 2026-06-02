@@ -1,0 +1,31 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import React from 'react'
+
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Сабантуй Малмыж',
+  description: 'Сайт фестиваля «Сабантуй Малмыж»: расписание, галерея, регистрация.',
+}
+
+export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ru">
+      <body>
+        <header className="site-header">
+          <div className="container" style={{ padding: 0 }}>
+            <Link href="/">Сабантуй&nbsp;Малмыж</Link>
+          </div>
+        </header>
+        {children}
+        <footer className="site-footer">
+          © Сабантуй Малмыж ·{' '}
+          <Link href="/admin" prefetch={false}>
+            админка
+          </Link>
+        </footer>
+      </body>
+    </html>
+  )
+}
