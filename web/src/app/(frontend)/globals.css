@@ -1,0 +1,106 @@
+:root {
+  --brand-green: #1f7a4d;
+  --brand-green-dark: #155c39;
+  --brand-amber: #e0a83d;
+  --brand-sand: #f7f3e8;
+  --ink: #1d1d1b;
+  --muted: #5c5c54;
+  --border: #e4ddca;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  background: var(--brand-sand);
+  line-height: 1.55;
+}
+
+a {
+  color: var(--brand-green-dark);
+}
+
+.site-header {
+  background: var(--brand-green);
+  color: #fff;
+  padding: 1rem 1.25rem;
+}
+
+.site-header a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.hero {
+  padding: 2.5rem 0 1.5rem;
+}
+
+.hero h1 {
+  font-size: 2.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.hero p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.schedule-item {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  margin: 0.75rem 0;
+}
+
+.schedule-item time {
+  display: block;
+  color: var(--brand-green-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.schedule-item h3 {
+  margin: 0.25rem 0 0.35rem;
+}
+
+.schedule-item .meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.placeholder {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  color: var(--muted);
+  background: #fff;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
