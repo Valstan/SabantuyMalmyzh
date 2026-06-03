@@ -7,19 +7,21 @@
 
 **Статус:** IDLE
 **Дата обновления:** 2026-06-03
-**Веха:** M1 ✅ (проверен вживую) · **M2 ✅ (регистрация) — в ветке `feat/m2-registration` / PR**
+**Веха:** M1 ✅ (проверен вживую) · **M2 ✅ смержён в `main` (PR #3)** · следующее — M3 деплой
 
 ## Сделано
 
 - **M1** (PR #1): каркас Next 15 + Payload 3.75.0 + Postgres, коллекции, доступ #015. Проверен **вживую**: admin создан, расписание видно на главной.
-- **M2** (текущий PR `feat/m2-registration`): публичная регистрация.
+- **M2** (PR #3, **смержён в main**): публичная регистрация.
   - Страница события `/events/[slug]` (детали + форма заявки, когда `registrationEnabled`).
   - Клиентская форма → `POST /api/registrations`, галка согласия 152-ФЗ со ссылкой на политику.
   - Маршрут статических страниц `/[slug]` (рендер `Pages.content` через `RichText`).
   - Страница «Политика обработки ПДн» (slug `privacy`) — засеяна в `Pages`, ссылка в подвале.
   - **Hardening #015**: поля `status`/`source` заявки закрыты field-level access от подмены анонимом (`adminOrEditorField`).
+  - **Серверный gate регистрации** — `beforeValidate`-хук `enforceRegistrationOpen`: анонимный `POST /api/registrations` отклоняется (400), если событие не `published` или `registrationEnabled !== true`; персонал не ограничен (телефонные заявки). Закрыл замечание ревью (прямой POST обходил UI-гейт). E2e через node: open→201, closed→400, bogus id→400.
   - **Email-уведомление** организатору — `afterChange`-хук `notifyOrganizer` (адрес из `ORGANIZER_EMAIL`; в dev пишется в консоль, на проде заработает с SMTP-адаптером).
-  - Проверено зелёным: typecheck, lint, `next build`, и end-to-end через node (заявка / защита #015 / отказ без согласия / public-read 403 / страницы рендерятся / email-хук логирует).
+  - Проверено зелёным: typecheck, lint, `next build`, и end-to-end через node (заявка / защита #015 / gate / отказ без согласия / public-read 403 / страницы рендерятся / email-хук логирует).
+- **#016 read-аудит полей** (рекомендация brain) — ✅ прогнан, **чисто**. Публичный read только у `Media` (`anyone`: alt/caption — не PII) и published-доков `Events/Gallery/Pages` (черновики скрыты `authenticatedOrPublished`). `Registrations` read закрыт (#015), `Users` — `adminOrSelf` + `roles.update` заперт на admin. Чувствительных полей под публичным read нет; `admin.hidden`-as-security не обнаружено.
 
 ## Локальное окружение (эта машина — УЖЕ поднято)
 
@@ -30,10 +32,9 @@
 
 ## Следующий шаг (по приоритету)
 
-1. **Смержить M2** (PR `feat/m2-registration`) после ревью владельцем.
-2. **M3 — деплой** (когда владелец поднимет VPS): SSH `sabantuy` (порт 49338), `/etc/sabantuy/sabantuy.env` (#008), systemd + nginx + certbot (IDN), GitHub Actions `deploy-prod.yml`, изолированный deploy-ключ (#001), content-smoke-check (#011). На проде добавить **SMTP email-адаптер** в `payload.config` + реальный `ORGANIZER_EMAIL` → email-уведомления заработают.
-3. **#016 field-audit** (рекомендация brain): прогнать `grep -rn "read:\s*anyone" collections/`, проверить отсутствие чувствительных полей под публичным read у остальных коллекций (у `Registrations` read уже закрыт).
-4. Опц. полировка фронта: hero-изображение события, фильтр расписания по дням/категориям.
+1. **M3 — деплой** (когда владелец поднимет VPS): SSH `sabantuy` (порт 49338, G8: внешний ≠ внутренний — при таймауте проверяй порт первым), `/etc/sabantuy/sabantuy.env` (#008), systemd + nginx + certbot (IDN), GitHub Actions `deploy-prod.yml`, изолированный deploy-ключ (#001), content-smoke-check (#011). На проде добавить **SMTP email-адаптер** в `payload.config` + реальный `ORGANIZER_EMAIL` → email-уведомления заработают.
+   - **#017 push-inspect-миграции** (brain: ты 2-й потребитель Payload): на этапе прод-миграций — array-таблицы по конвенции, аддитивно без `DROP`, migration-guard `workflow_dispatch`. См. G7 (`_v`-таблицы версионируемых `Pages/Events/Gallery` при добавлении полей). Дать brain feedback с реальными граблями при первом применении.
+2. Опц. полировка фронта: hero-изображение события, фильтр расписания по дням/категориям.
 
 ## Открытые вопросы / решения для владельца
 
