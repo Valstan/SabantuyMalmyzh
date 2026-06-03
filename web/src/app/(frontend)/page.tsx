@@ -2,17 +2,12 @@ import config from '@payload-config'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
+import { ScheduleList, type ScheduleItem } from './ScheduleList'
+
 // ISR: страница кэшируется и фоново ревалидируется (живучесть в пик нагрузки).
 // On-demand обновление при изменении события — хук revalidateEvent. При сборке
 // без БД getPublishedEvents отдаёт пустое состояние (try/catch) — build не падает.
 export const revalidate = 60
-
-const dateFmt = new Intl.DateTimeFormat('ru-RU', {
-  day: 'numeric',
-  month: 'long',
-  hour: '2-digit',
-  minute: '2-digit',
-})
 
 async function getPublishedEvents() {
   try {
@@ -33,6 +28,16 @@ async function getPublishedEvents() {
 
 export default async function HomePage() {
   const events = await getPublishedEvents()
+  const items: ScheduleItem[] = (events ?? []).map((e) => ({
+    id: e.id,
+    slug: e.slug ?? null,
+    title: e.title,
+    summary: e.summary ?? null,
+    location: e.location ?? null,
+    startDate: e.startDate ?? null,
+    category: e.category ?? null,
+    registrationEnabled: Boolean(e.registrationEnabled),
+  }))
 
   return (
     <main className="container">
@@ -43,23 +48,8 @@ export default async function HomePage() {
 
       <section>
         <h2>Расписание</h2>
-        {events && events.length > 0 ? (
-          events.map((event) => {
-            const href = event.slug ? `/events/${encodeURIComponent(event.slug)}` : undefined
-            return (
-              <article className="schedule-item" key={event.id}>
-                {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-                <h3>{href ? <Link href={href}>{event.title}</Link> : event.title}</h3>
-                {event.summary && <p>{event.summary}</p>}
-                {event.location && <p className="meta">📍 {event.location}</p>}
-                {event.registrationEnabled && href && (
-                  <Link className="reg-badge" href={`${href}#register`}>
-                    Запись открыта →
-                  </Link>
-                )}
-              </article>
-            )
-          })
+        {items.length > 0 ? (
+          <ScheduleList items={items} />
         ) : (
           <div className="placeholder">
             Расписание пока не опубликовано. Организаторы добавляют события в{' '}

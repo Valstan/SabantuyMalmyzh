@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { CATEGORY_LABELS } from '../../../../lib/categories'
 import { RegistrationForm } from './RegistrationForm'
 
 // ISR: детали события кэшируются, фоновая ревалидация + on-demand (revalidateEvent).
@@ -19,16 +20,6 @@ const dateFmt = new Intl.DateTimeFormat('ru-RU', {
   hour: '2-digit',
   minute: '2-digit',
 })
-
-const CATEGORY_LABELS: Record<string, string> = {
-  concert: 'Концерт',
-  sport: 'Спорт',
-  food: 'Национальная кухня',
-  kids: 'Детям',
-  crafts: 'Ремёсла',
-  ceremony: 'Церемония',
-  other: 'Другое',
-}
 
 type Args = { params: Promise<{ slug: string }> }
 
@@ -65,9 +56,13 @@ export default async function EventPage({ params }: Args) {
       </p>
 
       <article className="event-detail">
-        {hero?.url && (
+        {hero?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="event-hero" src={hero.url} alt={hero.alt || event.title} />
+        ) : (
+          <div className="event-hero event-hero-fallback" aria-hidden="true">
+            <span>Сабантуй&nbsp;Малмыж</span>
+          </div>
         )}
 
         <h1>{event.title}</h1>
