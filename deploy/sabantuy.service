@@ -1,0 +1,27 @@
+# Сабантуй Малмыж — systemd-юнит прод-сервера (Next standalone).
+# Артефакт собирается в CI и распаковывается в releases/<sha>; current → симлинк.
+# Установка на сервере:
+#   sudo cp deploy/sabantuy.service /etc/systemd/system/sabantuy.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now sabantuy
+[Unit]
+Description=Sabantuy Malmyzh (Next.js standalone)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=valstan
+WorkingDirectory=/home/valstan/sabantuy/current
+# Секреты (DATABASE_URL, PAYLOAD_SECRET, PORT, HOSTNAME, …) — вне репо (pool #008).
+EnvironmentFile=/etc/sabantuy/sabantuy.env
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+# Память: на боксе 1.5 GiB — ограничиваем рантайм, чтобы не уронить postgres.
+MemoryMax=1024M
+# Лёгкая защита
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
