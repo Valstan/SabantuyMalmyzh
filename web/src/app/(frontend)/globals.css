@@ -104,3 +104,184 @@ a {
   padding: 1.5rem 1.25rem;
   text-align: center;
 }
+
+/* ── Бейдж «запись открыта» в расписании ───────────────────────────────── */
+.reg-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-green-dark);
+  text-decoration: none;
+}
+
+.reg-badge:hover {
+  text-decoration: underline;
+}
+
+/* ── Статическая страница / richText-контент ───────────────────────────── */
+.page h1 {
+  margin: 0 0 1rem;
+}
+
+.page :where(h2, h3) {
+  margin-top: 1.6rem;
+}
+
+/* ── Страница события ──────────────────────────────────────────────────── */
+.event-detail {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+.event-hero {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.event-facts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.5rem;
+}
+
+.event-facts time {
+  color: var(--brand-green-dark);
+  font-weight: 600;
+}
+
+.badge {
+  background: var(--brand-sand);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.event-summary {
+  font-size: 1.05rem;
+}
+
+.event-content {
+  margin-top: 1rem;
+}
+
+/* ── Форма регистрации ─────────────────────────────────────────────────── */
+.register-section {
+  margin-top: 2rem;
+}
+
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 560px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field > span {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.field abbr {
+  color: #c0392b;
+  text-decoration: none;
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 1px;
+}
+
+.field-checkbox {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.field-checkbox input {
+  margin-top: 0.2rem;
+}
+
+.field-checkbox span {
+  font-weight: 400;
+  font-size: 0.92rem;
+}
+
+.btn-primary {
+  font: inherit;
+  font-weight: 600;
+  align-self: flex-start;
+  background: var(--brand-green);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1.4rem;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--brand-green-dark);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn-link {
+  font: inherit;
+  background: none;
+  border: none;
+  color: var(--brand-green-dark);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border: 1px solid #f5c6c0;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0;
+}
+
+.form-success {
+  background: #fff;
+  border: 1px solid var(--brand-green);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  max-width: 560px;
+}
+
+.form-success p {
+  color: var(--muted);
+}

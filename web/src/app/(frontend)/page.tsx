@@ -42,14 +42,22 @@ export default async function HomePage() {
       <section>
         <h2>Расписание</h2>
         {events && events.length > 0 ? (
-          events.map((event) => (
-            <article className="schedule-item" key={event.id}>
-              {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-              <h3>{event.title}</h3>
-              {event.summary && <p>{event.summary}</p>}
-              {event.location && <p className="meta">📍 {event.location}</p>}
-            </article>
-          ))
+          events.map((event) => {
+            const href = event.slug ? `/events/${encodeURIComponent(event.slug)}` : undefined
+            return (
+              <article className="schedule-item" key={event.id}>
+                {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
+                <h3>{href ? <Link href={href}>{event.title}</Link> : event.title}</h3>
+                {event.summary && <p>{event.summary}</p>}
+                {event.location && <p className="meta">📍 {event.location}</p>}
+                {event.registrationEnabled && href && (
+                  <Link className="reg-badge" href={`${href}#register`}>
+                    Запись открыта →
+                  </Link>
+                )}
+              </article>
+            )
+          })
         ) : (
           <div className="placeholder">
             Расписание пока не опубликовано. Организаторы добавляют события в{' '}

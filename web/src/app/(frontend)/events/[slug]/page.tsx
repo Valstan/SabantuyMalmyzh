@@ -1,0 +1,103 @@
+import type { Metadata } from 'next'
+
+import config from '@payload-config'
+import { RichText } from '@payloadcms/richtext-lexical/react'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getPayload } from 'payload'
+
+import { RegistrationForm } from './RegistrationForm'
+
+export const dynamic = 'force-dynamic'
+
+const dateFmt = new Intl.DateTimeFormat('ru-RU', {
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+const CATEGORY_LABELS: Record<string, string> = {
+  concert: 'Концерт',
+  sport: 'Спорт',
+  food: 'Национальная кухня',
+  kids: 'Детям',
+  crafts: 'Ремёсла',
+  ceremony: 'Церемония',
+  other: 'Другое',
+}
+
+type Args = { params: Promise<{ slug: string }> }
+
+async function queryEventBySlug(slug: string) {
+  try {
+    const payload = await getPayload({ config })
+    const res = await payload.find({
+      collection: 'events',
+      where: {
+        and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }],
+      },
+      limit: 1,
+      pagination: false,
+      depth: 1,
+    })
+    return res.docs[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+export default async function EventPage({ params }: Args) {
+  const { slug } = await params
+  const event = await queryEventBySlug(decodeURIComponent(slug))
+
+  if (!event) notFound()
+
+  const hero = typeof event.heroImage === 'object' && event.heroImage !== null ? event.heroImage : null
+
+  return (
+    <main className="container">
+      <p className="meta">
+        <Link href="/">← Расписание</Link>
+      </p>
+
+      <article className="event-detail">
+        {hero?.url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="event-hero" src={hero.url} alt={hero.alt || event.title} />
+        )}
+
+        <h1>{event.title}</h1>
+
+        <p className="event-facts">
+          {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
+          {event.category && <span className="badge">{CATEGORY_LABELS[event.category] ?? event.category}</span>}
+        </p>
+
+        {event.location && <p className="meta">📍 {event.location}</p>}
+        {event.summary && <p className="event-summary">{event.summary}</p>}
+
+        {event.content && (
+          <div className="event-content">
+            <RichText data={event.content} />
+          </div>
+        )}
+      </article>
+
+      <section id="register" className="register-section">
+        <h2>Регистрация участников</h2>
+        {event.registrationEnabled ? (
+          <RegistrationForm eventId={event.id} eventTitle={event.title} />
+        ) : (
+          <div className="placeholder">Регистрация на это мероприятие пока не открыта.</div>
+        )}
+      </section>
+    </main>
+  )
+}
+
+export async function generateMetadata({ params }: Args): Promise<Metadata> {
+  const { slug } = await params
+  const event = await queryEventBySlug(decodeURIComponent(slug))
+  return { title: event?.title ?? 'Событие не найдено' }
+}

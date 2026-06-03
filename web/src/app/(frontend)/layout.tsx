@@ -21,6 +21,10 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         {children}
         <footer className="site-footer">
           © Сабантуй Малмыж ·{' '}
+          <Link href="/privacy" prefetch={false}>
+            Политика обработки ПДн
+          </Link>{' '}
+          ·{' '}
           <Link href="/admin" prefetch={false}>
             админка
           </Link>
