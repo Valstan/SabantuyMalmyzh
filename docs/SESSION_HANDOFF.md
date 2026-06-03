@@ -7,43 +7,43 @@
 
 **Статус:** IDLE
 **Дата обновления:** 2026-06-03
-**Веха:** M1 (каркас + контент) — ✅ каркас смержён в `main`
+**Веха:** M1 ✅ (проверен вживую) · **M2 ✅ (регистрация) — в ветке `feat/m2-registration` / PR**
 
-## Сделано (PR #1, смержён в main)
+## Сделано
 
-M1-каркас: Next 15 + Payload 3.75.0 + Postgres в `web/`, коллекции `Pages / Events (Расписание) / Gallery / Media / Registrations / Users`, доступ по pool #015, проектный `CLAUDE.md` + `/start`, mailbox-канал (письмо-отчёт brain'у отправлено), ADR-0001 (медиа) / ADR-0002 (каркас). Проверено зелёным: install, generate:importmap/types, typecheck, `next build`.
+- **M1** (PR #1): каркас Next 15 + Payload 3.75.0 + Postgres, коллекции, доступ #015. Проверен **вживую**: admin создан, расписание видно на главной.
+- **M2** (текущий PR `feat/m2-registration`): публичная регистрация.
+  - Страница события `/events/[slug]` (детали + форма заявки, когда `registrationEnabled`).
+  - Клиентская форма → `POST /api/registrations`, галка согласия 152-ФЗ со ссылкой на политику.
+  - Маршрут статических страниц `/[slug]` (рендер `Pages.content` через `RichText`).
+  - Страница «Политика обработки ПДн» (slug `privacy`) — засеяна в `Pages`, ссылка в подвале.
+  - **Hardening #015**: поля `status`/`source` заявки закрыты field-level access от подмены анонимом (`adminOrEditorField`).
+  - **Email-уведомление** организатору — `afterChange`-хук `notifyOrganizer` (адрес из `ORGANIZER_EMAIL`; в dev пишется в консоль, на проде заработает с SMTP-адаптером).
+  - Проверено зелёным: typecheck, lint, `next build`, и end-to-end через node (заявка / защита #015 / отказ без согласия / public-read 403 / страницы рендерятся / email-хук логирует).
 
-## ⚠️ Начало завтрашней сессии (другой компьютер!)
+## Локальное окружение (эта машина — УЖЕ поднято)
 
-Машина свежая — node_modules и локальной БД на ней нет. По порядку:
-
-```bash
-# 0) /start: mailbox-check brain + этот файл
-# 1) подтянуть main
-git pull --ff-only
-# 2) pnpm 10 и зависимости
-corepack prepare pnpm@10.15.0 --activate
-corepack pnpm -C web install
-# 3) локальный Postgres: создать БД `sabantuy`, затем:
-cp web/.env.example web/.env        # вписать DATABASE_URL + PAYLOAD_SECRET
-corepack pnpm -C web generate:importmap
-corepack pnpm -C web generate:types
-corepack pnpm -C web dev            # http://localhost:3000 · /admin
-```
+- Postgres 17 — общий локальный инстанс, **порт 5433** (НЕ 5432!). Роль/БД `sabantuy` (полные права владельца), креды в `web/.env`. Пароль суперпользователя `postgres` — в `../GONBA/web/.env`.
+- Dev-админ Payload: `admin@sabantuy.local` / `SabantuyDev!2026` (роль admin).
+- Запуск: `corepack pnpm -C web dev` → http://localhost:3000 · `/admin`.
+- Демо-контент засеян: 4 события (2 с открытой регистрацией), страница `privacy`, 1 пример заявки.
 
 ## Следующий шаг (по приоритету)
 
-1. **Live-проверка M1:** поднять `dev`, на `/admin` создать первого admin-пользователя (роль admin), завести 1-2 тестовых события → убедиться, что home показывает расписание. Это закрывает M1 «расписание видно».
-2. **M2 — регистрация:** публичная форма заявки → `POST /api/registrations` (create=public уже открыт), галка согласия 152-ФЗ на фронте, страница «Политика обработки ПДн» в `Pages`. Опц. email-уведомление организатору.
-3. **Деплой** (после поднятия VPS владельцем): SSH `sabantuy` (порт 49338), `/etc/sabantuy/sabantuy.env` (#008), systemd + nginx + certbot (IDN), GitHub Actions `deploy-prod.yml`, изолированный deploy-ключ (#001), content-smoke-check (#011).
+1. **Смержить M2** (PR `feat/m2-registration`) после ревью владельцем.
+2. **M3 — деплой** (когда владелец поднимет VPS): SSH `sabantuy` (порт 49338), `/etc/sabantuy/sabantuy.env` (#008), systemd + nginx + certbot (IDN), GitHub Actions `deploy-prod.yml`, изолированный deploy-ключ (#001), content-smoke-check (#011). На проде добавить **SMTP email-адаптер** в `payload.config` + реальный `ORGANIZER_EMAIL` → email-уведомления заработают.
+3. **#016 field-audit** (рекомендация brain): прогнать `grep -rn "read:\s*anyone" collections/`, проверить отсутствие чувствительных полей под публичным read у остальных коллекций (у `Registrations` read уже закрыт).
+4. Опц. полировка фронта: hero-изображение события, фильтр расписания по дням/категориям.
 
 ## Открытые вопросы / решения для владельца
 
-- Кто будет редактором-организатором (роль `editor` в Payload).
-- Внешнее хранилище медиа: подтвердить приём Я.Диск от GONBA или иной провайдер (`docs/adr/0001-media-external-storage.md`).
-- Точный punycode домена `сабантуймалмыж.рф` — уточнить при настройке DNS/nginx.
+- Кто будет редактором-организатором (роль `editor`).
+- Внешнее хранилище медиа (ADR-0001): подтвердить Я.Диск или иной провайдер.
+- Punycode домена `сабантуймалмыж.рф` — при настройке DNS/nginx.
+- Текст «Политики обработки ПДн» сейчас **шаблонный** (плейсхолдеры реквизитов оператора) — владелец должен заполнить реальными данными организатора.
 
 ## Не делать / тупиковые подходы
 
-- `create-payload-app` в среде Claude Code **не работает** (требует TTY/clack, `uv_tty_init EBADF`). Каркас собран вручную по образцу GONBA, пиннинг Payload 3.75.0. Регенерация админ-обвязки — `generate:importmap`, не скаффолдер. (См. ADR-0002.)
-- pnpm 11 — несовместим. Только pnpm 10 через corepack.
+- `create-payload-app` в Claude Code не работает (TTY/clack, G10). Каркас — вручную по образцу GONBA.
+- pnpm 11 несовместим — только pnpm 10 через corepack.
+- **`curl` в git-bash на этой машине искажает кириллицу в теле запроса** (cp1251 вместо UTF-8) → авто-slug приходит пустым, заголовки — мусором. Для API-тестов с не-ASCII использовать **node fetch** (UTF-8), НЕ curl. Само приложение/`slugField` корректны (проверено).

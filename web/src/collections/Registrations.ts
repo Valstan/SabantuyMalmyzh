@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 
 import { adminOrEditor } from '../access/adminOrEditor'
+import { adminOrEditorField } from '../access/adminOrEditorField'
 import { anyone } from '../access/anyone'
+import { notifyOrganizer } from '../hooks/notifyOrganizer'
 
 // Заявки на участие в мероприятиях.
 //
@@ -89,6 +91,12 @@ export const Registrations: CollectionConfig<'registrations'> = {
       type: 'select',
       label: 'Статус',
       defaultValue: 'new',
+      // pool #015: служебное поле — аноним при публичном create его не задаёт
+      // (значение отбрасывается, применяется defaultValue 'new'). Менять — только персонал.
+      access: {
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
       options: [
         { label: 'Новая', value: 'new' },
         { label: 'Подтверждена', value: 'confirmed' },
@@ -103,6 +111,12 @@ export const Registrations: CollectionConfig<'registrations'> = {
       type: 'select',
       label: 'Источник',
       defaultValue: 'website',
+      // pool #015: служебное поле — аноним при публичном create его не задаёт
+      // (значение отбрасывается, применяется defaultValue 'website').
+      access: {
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
       options: [
         { label: 'Сайт', value: 'website' },
         { label: 'Телефон', value: 'phone' },
@@ -113,5 +127,8 @@ export const Registrations: CollectionConfig<'registrations'> = {
       },
     },
   ],
+  hooks: {
+    afterChange: [notifyOrganizer],
+  },
   timestamps: true,
 }
