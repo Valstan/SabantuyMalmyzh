@@ -1,0 +1,144 @@
+name: Deploy to production
+
+# Сборка едет в CI (ubuntu), т.к. прод-VPS (1.5 GiB RAM, без swap) не тянет next build.
+# На сервер по SSH кладём готовый standalone-артефакт и рестартим systemd-сервис.
+#
+# Требуется:
+#   secrets.SSH_PRIVATE_KEY        — приватная часть изолированного ключа id_ed25519_sabantuy (#001)
+#   vars.DEPLOY_SSH_HOST           — <hex>.vps.myjino.ru (myjino ротирует — потому в vars, не в коде)
+#   vars.DEPLOY_SSH_PORT           — внешний порт (G8: внешний ≠ внутренний 22)
+#   vars.NEXT_PUBLIC_SERVER_URL    — публичный URL (пока http://127.0.0.1:3000; на TLS-этапе → домен)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sabantuy_build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable corepack + pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      - name: Install deps
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate importmap + types
+        working-directory: web
+        run: |
+          pnpm generate:importmap
+          pnpm generate:types
+
+      - name: Build (standalone)
+        working-directory: web
+        env:
+          # Эфемерная БД CI: push:true создаёт схему здесь, prerender отдаёт пустые
+          # страницы (контента в CI нет) — рантайм наполнит через ISR/ревалидацию.
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sabantuy_build
+          PAYLOAD_SECRET: ci-build-only-secret-not-used-at-runtime
+          NEXT_PUBLIC_SERVER_URL: ${{ vars.NEXT_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000' }}
+        run: pnpm build
+
+      - name: Assemble standalone bundle
+        working-directory: web
+        run: |
+          set -e
+          if [ ! -f .next/standalone/server.js ]; then
+            echo "::error::server.js не в корне .next/standalone — проверь outputFileTracingRoot"
+            find .next/standalone -maxdepth 3 -name server.js || true
+            exit 1
+          fi
+          cp -r .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -r public .next/standalone/public; fi
+          tar czf ../sabantuy-app.tgz -C .next/standalone .
+          echo "bundle: $(du -h ../sabantuy-app.tgz | cut -f1)"
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Ship artifact + restart
+        run: |
+          set -e
+          scp -q sabantuy-app.tgz sabantuy:/tmp/sabantuy-app.tgz
+          ssh sabantuy 'bash -s' "${{ github.sha }}" <<'REMOTE'
+          set -e
+          SHA="$1"
+          BASE=/home/valstan/sabantuy
+          REL="$BASE/releases/$SHA"
+          rm -rf "$REL"; mkdir -p "$REL"
+          tar xzf /tmp/sabantuy-app.tgz -C "$REL"
+          rm -f /tmp/sabantuy-app.tgz
+          ln -sfn "$REL" "$BASE/current"
+          sudo systemctl restart sabantuy
+          # держим последние 5 релизов
+          ls -1dt "$BASE"/releases/*/ 2>/dev/null | tail -n +6 | xargs -r rm -rf
+          echo "deployed $SHA"
+          REMOTE
+
+      - name: Smoke check — local /
+        run: |
+          set -e
+          STATUS=$(ssh sabantuy "sleep 6 && curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000/")
+          echo "local / → $STATUS"
+          [ "$STATUS" = "200" ] || { echo "::error::local / = $STATUS, ожидался 200"; exit 1; }
+
+      - name: On failure — журналы прода
+        if: failure()
+        run: |
+          ssh sabantuy "sudo systemctl status sabantuy --no-pager -l" 2>&1 || true
+          ssh sabantuy "sudo journalctl -u sabantuy -n 80 --no-pager" 2>&1 || true
