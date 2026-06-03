@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { adminOrEditor } from '../access/adminOrEditor'
 import { adminOrEditorField } from '../access/adminOrEditorField'
 import { anyone } from '../access/anyone'
+import { enforceRegistrationOpen } from '../hooks/enforceRegistrationOpen'
 import { notifyOrganizer } from '../hooks/notifyOrganizer'
 
 // Заявки на участие в мероприятиях.
@@ -128,6 +129,7 @@ export const Registrations: CollectionConfig<'registrations'> = {
     },
   ],
   hooks: {
+    beforeValidate: [enforceRegistrationOpen],
     afterChange: [notifyOrganizer],
   },
   timestamps: true,
