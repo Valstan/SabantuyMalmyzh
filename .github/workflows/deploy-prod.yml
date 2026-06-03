@@ -12,6 +12,13 @@ name: Deploy to production
 on:
   push:
     branches: [main]
+    # docs/почта/markdown не трогают прод — не гоняем пересборку+рестарт зря.
+    # Мешанина (код + docs) всё равно триггерит: ignore срабатывает, только если
+    # ВСЕ изменённые файлы под паттернами.
+    paths-ignore:
+      - 'docs/**'
+      - 'mailbox/**'
+      - '**.md'
   workflow_dispatch:
 
 concurrency:
