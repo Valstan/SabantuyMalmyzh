@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { adminOrEditor } from '../access/adminOrEditor'
 import { authenticatedOrPublished } from '../access/authenticatedOrPublished'
 import { populatePublishedAt } from '../hooks/populatePublishedAt'
+import { revalidatePageDoc, revalidatePageDelete } from '../hooks/revalidatePageDoc'
 import { slugField } from '../fields/slug'
 
 // Статические разделы: о фестивале, как добраться, история, политика обработки ПДн.
@@ -46,6 +47,8 @@ export const Pages: CollectionConfig<'pages'> = {
   ],
   hooks: {
     beforeChange: [populatePublishedAt],
+    afterChange: [revalidatePageDoc],
+    afterDelete: [revalidatePageDelete],
   },
   versions: {
     drafts: true,

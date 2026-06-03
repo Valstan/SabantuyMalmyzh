@@ -8,7 +8,10 @@ import { getPayload } from 'payload'
 
 import { RegistrationForm } from './RegistrationForm'
 
-export const dynamic = 'force-dynamic'
+// ISR: детали события кэшируются, фоновая ревалидация + on-demand (revalidateEvent).
+// Безопасно: серверный gate (enforceRegistrationOpen) отклонит заявку, даже если
+// кэш ещё показывает форму после закрытия регистрации.
+export const revalidate = 60
 
 const dateFmt = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',

@@ -5,6 +5,7 @@ import { adminOrEditorField } from '../access/adminOrEditorField'
 import { anyone } from '../access/anyone'
 import { enforceRegistrationOpen } from '../hooks/enforceRegistrationOpen'
 import { notifyOrganizer } from '../hooks/notifyOrganizer'
+import { rateLimitRegistration } from '../hooks/rateLimitRegistration'
 
 // Заявки на участие в мероприятиях.
 //
@@ -129,7 +130,8 @@ export const Registrations: CollectionConfig<'registrations'> = {
     },
   ],
   hooks: {
-    beforeValidate: [enforceRegistrationOpen],
+    // rateLimit бежит первым — отсекает спам до обращения к БД в enforceRegistrationOpen.
+    beforeValidate: [rateLimitRegistration, enforceRegistrationOpen],
     afterChange: [notifyOrganizer],
   },
   timestamps: true,
