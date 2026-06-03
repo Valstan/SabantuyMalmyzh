@@ -8,7 +8,8 @@ import { getPayload } from 'payload'
 // Статические страницы (политика обработки ПДн, о фестивале и т.п.) рендерим по slug.
 // Сосуществует с /admin (Payload) и /events/[slug]: статические сегменты имеют приоритет
 // над этим динамическим — проверено на референсе GONBA.
-export const dynamic = 'force-dynamic'
+// ISR: статические страницы кэшируются + on-demand ревалидация (revalidatePageDoc).
+export const revalidate = 60
 
 type Args = { params: Promise<{ slug: string }> }
 

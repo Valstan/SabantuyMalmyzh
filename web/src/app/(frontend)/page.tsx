@@ -2,8 +2,10 @@ import config from '@payload-config'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
-// Расписание рендерим на каждый запрос: не требует БД на этапе сборки.
-export const dynamic = 'force-dynamic'
+// ISR: страница кэшируется и фоново ревалидируется (живучесть в пик нагрузки).
+// On-demand обновление при изменении события — хук revalidateEvent. При сборке
+// без БД getPublishedEvents отдаёт пустое состояние (try/catch) — build не падает.
+export const revalidate = 60
 
 const dateFmt = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',

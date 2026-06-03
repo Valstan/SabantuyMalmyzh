@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { adminOrEditor } from '../access/adminOrEditor'
 import { authenticatedOrPublished } from '../access/authenticatedOrPublished'
 import { populatePublishedAt } from '../hooks/populatePublishedAt'
+import { revalidateEvent, revalidateEventDelete } from '../hooks/revalidateEvent'
 import { slugField } from '../fields/slug'
 
 // Расписание — главная фича сезона: время, место, описание, категория.
@@ -109,6 +110,8 @@ export const Events: CollectionConfig<'events'> = {
   ],
   hooks: {
     beforeChange: [populatePublishedAt],
+    afterChange: [revalidateEvent],
+    afterDelete: [revalidateEventDelete],
   },
   versions: {
     drafts: true,
