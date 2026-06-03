@@ -31,12 +31,21 @@
 - **Полировка фронта** (PR #7, смержён): клиентский `ScheduleList` с чипами-фильтрами по категориям + категория-бейдж; hero-fallback (градиент) на детали события без изображения; `CATEGORY_LABELS` вынесен в `lib/categories.ts` (DRY). Render-smoke зелёный.
 - **Письмо brain** (PR #6): `mailbox/to-brain/2026-06-03-nextjs-robots-route-group-gotcha.md` — грабля Next 15 (robots.ts в route-group не генерится), `kind=idea`/`suggest`, кандидат в GOTCHAS.
 
-## Локальное окружение (эта машина — УЖЕ поднято)
+## Локальное окружение (per-machine — `web/.env` в `.gitignore`)
 
-- Postgres 17 — общий локальный инстанс, **порт 5433** (НЕ 5432!). Роль/БД `sabantuy` (полные права владельца), креды в `web/.env`. Пароль суперпользователя `postgres` — в `../GONBA/web/.env`.
-- Dev-админ Payload: `admin@sabantuy.local` / `SabantuyDev!2026` (роль admin).
-- Запуск: `corepack pnpm -C web dev` → http://localhost:3000 · `/admin`.
-- Демо-контент засеян: 4 события (2 с открытой регистрацией), страница `privacy`, 1 пример заявки.
+⚠️ Локальный Postgres **зависит от машины** — порт и роль НЕ универсальны. Не считай 5432/5433 константой проекта: сверяйся со своим `web/.env` (он gitignored, на каждой машине свой) и со своими службами Postgres. Известные сетапы:
+
+| Машина | Postgres | Доступ в `web/.env` | Демо-контент |
+|---|---|---|---|
+| где разрабатывался M2 | порт **5433** (общий инстанс) | выделенная роль/БД `sabantuy` (полные права владельца); пароль суперюзера `postgres` — в `../GONBA/web/.env` | 4 события (2 с регистрацией), `privacy`, 1 заявка |
+| сессия 2026-06-03 (рядом БД `matricarmz_dev`) | порт **5432** (служба `postgresql-x64-17`) | БД `sabantuy` под суперюзером `postgres/postgres` | 3 события (1 с регистрацией), `privacy`, 1 тест-заявка |
+
+> На машине 2026-06-03 в `DATABASE_URL` обязателен **`127.0.0.1`**, не `localhost`: `::1:5432` даёт `Permission denied (10013)` (IPv6-loopback), IPv4 работает.
+
+Общее на всех машинах:
+- **Dev-админ Payload:** `admin@sabantuy.local` / `SabantuyDev!2026` (роль admin). Если на твоей машине пароль иной — выровняй на этот через `payload run` (`payload.update` user, `overrideAccess`).
+- **Запуск:** `corepack pnpm -C web dev` → http://localhost:3000 · `/admin`.
+- **M2 e2e зелёный** (проверено на обеих машинах): заявка `open+valid`→201 · закрытое событие→400 · без согласия→400 · неизв. `event`→400 · anon `GET /api/registrations`→403 (PII, #015) · `/privacy`→200 · email-хук в консоль.
 
 ## Следующий шаг (по приоритету)
 
@@ -57,4 +66,4 @@
 - `create-payload-app` в Claude Code не работает (TTY/clack, G10). Каркас — вручную по образцу GONBA.
 - pnpm 11 несовместим — только pnpm 10 через corepack.
 - **Next 15 metadata-файлы (`robots.ts`, `sitemap.ts`) держать в корне `app/`, НЕ в route-group `(frontend)`** — иначе `robots.txt` молча не генерится (sitemap «повезло», robots — нет). Грабля отправлена brain (PR #6).
-- **`curl` в git-bash на этой машине искажает кириллицу в теле запроса** (cp1251 вместо UTF-8) → авто-slug приходит пустым, заголовки — мусором. Для API-тестов с не-ASCII использовать **node fetch** (UTF-8), НЕ curl. Само приложение/`slugField` корректны (проверено).
+- **`curl` в git-bash на Windows искажает кириллицу в теле запроса** (cp1251 вместо UTF-8) → авто-slug приходит пустым, заголовки — мусором. Для API-тестов с не-ASCII использовать **node fetch** (UTF-8), НЕ curl. Само приложение/`slugField` корректны (проверено).
