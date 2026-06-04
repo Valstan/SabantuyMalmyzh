@@ -95,8 +95,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'festival-map': FestivalMap;
+  };
+  globalsSelect: {
+    'festival-map': FestivalMapSelect<false> | FestivalMapSelect<true>;
+  };
   locale: null;
   user: User;
   jobs: {
@@ -617,6 +621,49 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * План территории + объекты (еда, парковка, туалеты, сцены). Объекты удобно подписать прямо на картинке плана.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "festival-map".
+ */
+export interface FestivalMap {
+  id: number;
+  /**
+   * Схема территории. Подпишите объекты прямо на изображении — список ниже дублирует их для удобства.
+   */
+  planImage?: (number | null) | Media;
+  intro?: string | null;
+  points?:
+    | {
+        label: string;
+        type?: ('stage' | 'food' | 'entrance' | 'parking' | 'wc' | 'medical' | 'other') | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "festival-map_select".
+ */
+export interface FestivalMapSelect<T extends boolean = true> {
+  planImage?: T;
+  intro?: T;
+  points?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

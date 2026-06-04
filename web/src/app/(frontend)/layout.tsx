@@ -14,8 +14,14 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
     <html lang="ru">
       <body>
         <header className="site-header">
-          <div className="container" style={{ padding: 0 }}>
-            <Link href="/">Сабантуй&nbsp;Малмыж</Link>
+          <div className="container site-nav" style={{ padding: 0 }}>
+            <Link className="site-brand" href="/">
+              Сабантуй&nbsp;Малмыж
+            </Link>
+            <nav className="site-nav-links" aria-label="Основная навигация">
+              <Link href="/">Расписание</Link>
+              <Link href="/map">Карта</Link>
+            </nav>
           </div>
         </header>
         {children}

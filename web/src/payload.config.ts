@@ -11,6 +11,7 @@ import { Gallery } from './collections/Gallery'
 import { Media } from './collections/Media'
 import { Registrations } from './collections/Registrations'
 import { Users } from './collections/Users'
+import { FestivalMap } from './globals/FestivalMap'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -35,6 +36,7 @@ export default buildConfig({
     push: true,
   }),
   collections: [Pages, Events, Gallery, Media, Registrations, Users],
+  globals: [FestivalMap],
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,
