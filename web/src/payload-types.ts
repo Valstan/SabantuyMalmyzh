@@ -164,6 +164,10 @@ export interface Event {
   startDate: string;
   endDate?: string | null;
   location?: string | null;
+  /**
+   * Например: Главная сцена, Спортивная площадка, Детская поляна. Группирует программу по площадкам.
+   */
+  venue?: string | null;
   category?: ('concert' | 'sport' | 'food' | 'kids' | 'crafts' | 'ceremony' | 'other') | null;
   heroImage?: (number | null) | Media;
   content?: {
@@ -438,6 +442,7 @@ export interface EventsSelect<T extends boolean = true> {
   startDate?: T;
   endDate?: T;
   location?: T;
+  venue?: T;
   category?: T;
   heroImage?: T;
   content?: T;

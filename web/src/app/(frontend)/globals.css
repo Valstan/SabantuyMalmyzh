@@ -73,11 +73,74 @@ a {
   margin: 0.75rem 0;
 }
 
+/* «Идёт сейчас» — акцентная зелёная рамка; «Далее» — янтарная. */
+.schedule-item.is-live {
+  border-color: var(--brand-green);
+  border-left-width: 4px;
+  box-shadow: 0 1px 6px rgba(31, 122, 77, 0.15);
+}
+
+.schedule-item.is-next {
+  border-left: 4px solid var(--brand-amber);
+}
+
+.schedule-item-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .schedule-item time {
   display: block;
   color: var(--brand-green-dark);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.status-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.12rem 0.6rem;
+  letter-spacing: 0.01em;
+}
+
+.status-badge.live {
+  background: var(--brand-green);
+  color: #fff;
+}
+
+.status-badge.next {
+  background: var(--brand-amber);
+  color: #4a3306;
+}
+
+/* Баннер «Сейчас на фестивале / Далее» — заметная мобильная подсказка. */
+.now-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-green);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.now-banner-label {
+  font-weight: 700;
+  color: var(--brand-green-dark);
+}
+
+.now-banner-label.next {
+  color: #8a6212;
+}
+
+.now-banner-body {
+  color: var(--ink);
 }
 
 .schedule-item h3 {

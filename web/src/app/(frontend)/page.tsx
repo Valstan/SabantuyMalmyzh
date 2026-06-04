@@ -34,7 +34,9 @@ export default async function HomePage() {
     title: e.title,
     summary: e.summary ?? null,
     location: e.location ?? null,
+    venue: e.venue ?? null,
     startDate: e.startDate ?? null,
+    endDate: e.endDate ?? null,
     category: e.category ?? null,
     registrationEnabled: Boolean(e.registrationEnabled),
   }))

@@ -58,6 +58,14 @@ export const Events: CollectionConfig<'events'> = {
       label: 'Место проведения',
     },
     {
+      name: 'venue',
+      type: 'text',
+      label: 'Площадка / сцена',
+      admin: {
+        description: 'Например: Главная сцена, Спортивная площадка, Детская поляна. Группирует программу по площадкам.',
+      },
+    },
+    {
       name: 'category',
       type: 'select',
       label: 'Категория',
