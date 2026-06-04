@@ -29,11 +29,13 @@ export const Gallery: CollectionConfig<'gallery'> = {
       type: 'text',
       label: 'Название альбома',
       required: true,
+      localized: true,
     },
     {
       name: 'description',
       type: 'textarea',
       label: 'Описание',
+      localized: true,
     },
     {
       name: 'date',

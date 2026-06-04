@@ -40,6 +40,18 @@ export default buildConfig({
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,
+  // Двуязычие: Сабантуй — татарский праздник, ru/tt культурно уместно.
+  // Включаем на greenfield (дёшево), пока БД пустая — ретрофит на наполненную
+  // БД болезнен (миграция всех localized-полей). См. письмо brain 2026-06-04.
+  // default+fallback = ru: пока tt-переводов нет, публичный фронт показывает ru.
+  localization: {
+    locales: [
+      { label: 'Русский', code: 'ru' },
+      { label: 'Татарча', code: 'tt' },
+    ],
+    defaultLocale: 'ru',
+    fallback: true,
+  },
   i18n: {
     fallbackLanguage: 'ru',
   },

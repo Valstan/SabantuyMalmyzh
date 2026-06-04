@@ -29,11 +29,13 @@ export const Media: CollectionConfig = {
       name: 'alt',
       type: 'text',
       label: 'Описание (alt)',
+      localized: true,
     },
     {
       name: 'caption',
       type: 'text',
       label: 'Подпись',
+      localized: true,
     },
   ],
   upload: {
