@@ -45,6 +45,33 @@ a {
   text-decoration: none;
 }
 
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.site-brand {
+  font-weight: 700;
+}
+
+.site-nav-links {
+  display: flex;
+  gap: 1.1rem;
+}
+
+.site-nav-links a {
+  font-size: 0.95rem;
+  opacity: 0.92;
+}
+
+.site-nav-links a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;
@@ -412,6 +439,54 @@ a {
 }
 
 .form-success p {
+  color: var(--muted);
+}
+
+/* ── Карта фестиваля ───────────────────────────────────────────────────── */
+.map-plan {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.map-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.map-legend-group {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-green);
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+}
+
+.map-legend-group h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--brand-green-dark);
+}
+
+.map-legend-group ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.map-legend-group li {
+  margin: 0.2rem 0;
+}
+
+.map-point-label {
+  font-weight: 600;
+}
+
+.map-point-note {
   color: var(--muted);
 }
 
