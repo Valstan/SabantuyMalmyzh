@@ -7,7 +7,7 @@
 
 **Статус:** IDLE
 **Дата обновления:** 2026-06-04
-**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · **M3 деплой ✅ (PR #10) — сайт публично по HTTPS** · **season-MVP «Программа фестиваля» ✅** (площадки + «сейчас идёт» + фильтр по дням). Дальше: домен/DNS/TLS, первый admin + контент, #017 миграции, season-MVP «Карта» (ждёт asset).
+**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · M3 деплой ✅ · **season-MVP «Программа фестиваля» ✅ выкачена на прод (PR #13)** — площадки + «сейчас идёт» + фильтр по дням; миграция `events.venue` применена на проде, деплой зелёный (`/`→200). Дальше: домен/DNS/TLS, первый admin + контент, season-MVP «Карта» (ждёт asset).
 
 ## Сделано
 
@@ -41,7 +41,8 @@
 **Работает публично:** `http://1942c6fc87be.vps.myjino.ru` и **`https://…`** (jino отдаёт 443 своим `*.vps.myjino.ru` сертификатом). `/` и `/admin` → 200. БД пустая → расписание показывает пустое состояние (контент/admin завести — см. «Следующий шаг»).
 
 **Сервер** (myjino VPS, Ubuntu 24.04, **1 vCPU / 1.5 GiB / без swap**):
-- Доступ: **`ssh sabantuy`** (в `~/.ssh/config`): host `1942c6fc87be.vps.myjino.ru`, порт **49338** (внешний → внутр. sshd:22; запасной форвард 49348→22), user `valstan`, ключ `~/.ssh/id_ed25519_sabantuy` (изолированный #001), **sudo без пароля**. ⚠️ myjino ротирует host/port — при таймауте сверь в панели (G8).
+- Доступ: **`ssh sabantuy`** (в `~/.ssh/config`): host `1942c6fc87be.vps.myjino.ru`, user `valstan`, ключ `~/.ssh/id_ed25519_sabantuy` (изолированный #001), **sudo без пароля**. **Порты (сверено по панели 2026-06-04):** sshd VM = форвард **49348 → внутр. 22** (это и есть `valstan@`); **49338 = myjino-шлюз root** (не наш sshd). ⚠️ myjino ротирует host/port (G8).
+- ⚠️ **SSH с локальной dev-машины к myjino может НЕ работать**, хотя VPS включён: edge myjino принимает TCP, но не отдаёт SSH-баннер на обоих портах (фильтр клиентского IP). При этом **раннер GitHub Actions достукивается** (другой IP). → DB-миграции и деплой гонять **через CI** (`apply-migration.yml` / `deploy-prod.yml`), не через локальный SSH. Это расширение G8.
 - Стек: Node 22 (NodeSource) + pnpm 10 (corepack), PostgreSQL 17, nginx 1.30 (reverse-proxy `:80 → 127.0.0.1:3000`, ставит `X-Forwarded-For`/`X-Real-IP` для #005); certbot/ufw установлены, не настроены.
 - БД: роль+БД `sabantuy` (`127.0.0.1:5432`), схема создана (21 таблица). Секреты — `/etc/sabantuy/sabantuy.env` (`root:valstan 0640`, systemd `EnvironmentFile=`): `DATABASE_URL`, `PAYLOAD_SECRET`, `NEXT_PUBLIC_SERVER_URL`, `ORGANIZER_EMAIL`, `NODE_ENV=production`, `PORT=3000`, `HOSTNAME=127.0.0.1`.
 - Сервис: `sabantuy.service` (systemd, `node server.js` из standalone, `MemoryMax=1024M`), релизы `~/sabantuy/releases/<sha>`, симлинк `~/sabantuy/current`.
@@ -73,7 +74,8 @@
 3. **⚠️ #017 миграции — ДО любого изменения схемы:** прод-рантайм **не** делает push (`push:true` гейтится `NODE_ENV=production` — см. «Не делать»). Первичная схема создана разовым dev-mode push. Любое изменение коллекций требует payload-миграций (`web/src/migrations/`) + применения на проде ДО деплоя (как у GONBA, ADR-0002/0003). Дать brain feedback (#017).
    - **Фреймворк миграций заведён** (этот PR, по образцу GONBA): `web/src/migrations/` (`.ts` + зеркальный `.sql` + `index.ts`), скрипты `migrate`/`migrate:create`/`migrate:status`, **CI migration-guard** в `deploy-prod.yml` (падает, если в коммите новые миграции; обход — `workflow_dispatch` после ручного применения, G6).
    - **Первая миграция `20260604_120000`** — добавляет `events.venue` (+ `_events_v.version_venue`, G7). Имена/типы взяты push-inspect'ом из dev-БД; идемпотентна (`ADD COLUMN IF NOT EXISTS`).
-   - **Применение на проде (ДО merge кода):** `psql "$DATABASE_URL" -f web/src/migrations/20260604_120000.sql` + запись в `payload_migrations` (см. шапку .sql). Затем merge → авто-деплой упадёт на guard → перезапуск через **workflow_dispatch**.
+   - **`20260604_120000` УЖЕ применена на проде** (2026-06-04) через workflow `apply-migration.yml` (см. ниже про SSH). Проверено: `events.venue`=1, `_events_v.version_venue`=1, записано в `payload_migrations`. Деплой кода прошёл (dispatch, guard пропущен).
+   - **Рабочий поток для будущих миграций:** merge PR → авто-деплой падает на migration-guard (прод цел) → `gh workflow run apply-migration.yml -f migration=<ts>` (накат по SSH из CI) → `gh workflow run deploy-prod.yml` (деплой кода, guard пропускается на dispatch).
 4. **SMTP email-адаптер** в `payload.config` + реальный `ORGANIZER_EMAIL` → уведомления о заявках на проде заработают (сейчас `No email adapter` → лог).
 5. **Season-MVP #2 «Карта фестиваля»** (brain `recommend`) — статичная схема территории + кликабельные точки (еда/парковка/туалеты/сцены). **Блокер: нужен asset плана территории от оргов** (запрошен у владельца). Интерактивную ГИС не тянуть — для MVP статика.
 6. **Localization TT/RU** — ДО первого ввода сезонного контента оргами на проде (прод-БД пока пустая → окно ещё открыто): включить `localization` (ru+tt, default/fallback ru) в `payload.config` + пометить user-facing текстовые поля `localized:true` + миграция (#017). Открытый вопрос владельцу — нужна ли тат.-версия и кто переводит (см. письмо brain).
