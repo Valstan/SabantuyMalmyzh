@@ -47,6 +47,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      # Предохранитель миграций (#017): `payload migrate` в CI зависает (drizzle
+      # push:true prompt) и стандартный standalone-бандл не несёт payload CLI →
+      # Payload-миграции применяет разработчик ВРУЧНУЮ на проде (psql -f .sql +
+      # запись в payload_migrations) ДО деплоя. CI лишь проверяет, что в коммите
+      # нет неприменённых миграций. Ручной workflow_dispatch = «уже применил» →
+      # guard пропускается (G6: escape-hatch должен реально обходить предохранитель).
+      - name: Migration guard
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          set -e
+          NEW=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'web/src/migrations/*.ts' | grep -v '/index\.ts$' || true)
+          if [ -n "$NEW" ]; then
+            echo "::error::Коммит вносит новые Payload-миграции. Примени их на проде вручную (psql -f web/src/migrations/<ts>.sql + INSERT в payload_migrations), затем запусти деплой через workflow_dispatch."
+            echo "$NEW"
+            exit 1
+          fi
+          echo "Новых Payload-миграций в коммите нет — деплой продолжается."
 
       - uses: actions/setup-node@v4
         with:

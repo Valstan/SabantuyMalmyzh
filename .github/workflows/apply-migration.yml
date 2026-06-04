@@ -1,0 +1,91 @@
+name: Apply DB migration (manual)
+
+# Применяет ОДНУ Payload-миграцию (зеркальный .sql) на прод по SSH из Actions.
+# Нужен, т.к. (а) `payload migrate` в CI/standalone недоступен/висит, (б) локальный
+# SSH разработчика к myjino бывает недоступен (edge режет клиентский IP, G8), а
+# раннер Actions достукивается. Запуск — вручную (workflow_dispatch) ДО деплоя кода,
+# затем штатный деплой через workflow_dispatch (migration-guard пропускает dispatch).
+#
+# Идемпотентность — на стороне .sql (ADD COLUMN IF NOT EXISTS). Запись в
+# payload_migrations — best-effort (если таблицы ещё нет — пропускаем, колонка всё
+# равно добавлена; Payload досоздаст реестр при первом `payload migrate`).
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: 'Имя миграции без расширения (web/src/migrations/<name>.sql)'
+        required: true
+        default: '20260604_120000'
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Preflight (read-only)
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set -e
+          DB=$(grep '^DATABASE_URL=' /etc/sabantuy/sabantuy.env | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          echo "host: $(hostname)"
+          echo "events.venue present (1=есть, 0=нет): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='events' AND column_name='venue';")"
+          echo "payload_migrations table: $(psql "$DB" -tAc "SELECT to_regclass('public.payload_migrations');")"
+          REMOTE
+
+      - name: Apply migration
+        run: |
+          set -e
+          SQL="web/src/migrations/${{ inputs.migration }}.sql"
+          test -f "$SQL" || { echo "::error::Нет файла $SQL"; exit 1; }
+          scp -q "$SQL" sabantuy:/tmp/mig.sql
+          ssh sabantuy 'bash -s' "${{ inputs.migration }}" <<'REMOTE'
+          set -e
+          NAME="$1"
+          DB=$(grep '^DATABASE_URL=' /etc/sabantuy/sabantuy.env | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          echo "Применяю $NAME ..."
+          psql "$DB" -v ON_ERROR_STOP=1 -f /tmp/mig.sql
+          # запись в реестр — best-effort (таблицы может ещё не быть)
+          psql "$DB" -c "INSERT INTO payload_migrations (name, batch) SELECT '$NAME', COALESCE(MAX(batch),0)+1 FROM payload_migrations WHERE NOT EXISTS (SELECT 1 FROM payload_migrations WHERE name='$NAME');" \
+            && echo "записано в payload_migrations" || echo "payload_migrations нет — запись пропущена (колонка применена)"
+          rm -f /tmp/mig.sql
+          echo "verify events.venue (1=ok): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='events' AND column_name='venue';")"
+          echo "verify _events_v.version_venue (1=ok): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='_events_v' AND column_name='version_venue';")"
+          REMOTE
