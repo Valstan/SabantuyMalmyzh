@@ -143,7 +143,8 @@ a {
   color: var(--ink);
 }
 
-.schedule-item h3 {
+.schedule-item-title {
+  font-size: 1.05rem;
   margin: 0.25rem 0 0.35rem;
 }
 
@@ -182,10 +183,23 @@ a {
   text-decoration: underline;
 }
 
-.schedule-item h3 .badge {
+.schedule-item-title .badge {
   margin-left: 0.5rem;
   vertical-align: middle;
   font-weight: 400;
+}
+
+/* ── Группировка расписания по площадкам ───────────────────────────────── */
+.venue-group {
+  margin: 1.25rem 0;
+}
+
+.venue-group-title {
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--brand-amber);
+  color: var(--brand-green-dark);
+  font-size: 1.1rem;
 }
 
 /* ── Фильтр расписания по категориям ───────────────────────────────────── */

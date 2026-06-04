@@ -30,6 +30,12 @@ const timeFmt = new Intl.DateTimeFormat('ru-RU', {
   minute: '2-digit',
 })
 
+const dayLabelFmt = new Intl.DateTimeFormat('ru-RU', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'long',
+})
+
 type Status = 'live' | 'next' | 'upcoming' | 'past'
 
 function parse(d: string | null): number | null {
@@ -38,9 +44,17 @@ function parse(d: string | null): number | null {
   return Number.isNaN(t) ? null : t
 }
 
+// Ключ локального дня (YYYY-MM-DD) — группировка/фильтр по дате без сдвига в UTC.
+function dayKey(d: string): string {
+  const dt = new Date(d)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(
+    dt.getDate(),
+  ).padStart(2, '0')}`
+}
+
 export function ScheduleList({ items }: { items: ScheduleItem[] }) {
   const [activeCat, setActiveCat] = useState<string | null>(null)
-  const [activeVenue, setActiveVenue] = useState<string | null>(null)
+  const [activeDay, setActiveDay] = useState<string | null>(null)
   // Часы на клиенте: «сейчас идёт / далее» считаем после монтирования, чтобы не
   // ловить hydration-mismatch (на сервере «сейчас» — это момент ISR-ревалидации).
   // Тик раз в минуту — статусы остаются живыми, не завися от staleness ISR.
@@ -51,19 +65,21 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
     return () => clearInterval(id)
   }, [])
 
-  // Категории и площадки, реально присутствующие в расписании.
+  // Категории, реально присутствующие в расписании, в порядке CATEGORY_LABELS.
   const categories = useMemo(() => {
     const present = new Set(items.map((i) => i.category).filter(Boolean) as string[])
     return Object.keys(CATEGORY_LABELS).filter((c) => present.has(c))
   }, [items])
 
-  const venues = useMemo(() => {
-    const seen: string[] = []
+  // Дни фестиваля — уникальные локальные даты в хронологическом порядке.
+  const days = useMemo(() => {
+    const map = new Map<string, string>() // key → подпись
     for (const i of items) {
-      const v = i.venue?.trim()
-      if (v && !seen.includes(v)) seen.push(v)
+      if (!i.startDate || parse(i.startDate) === null) continue
+      const key = dayKey(i.startDate)
+      if (!map.has(key)) map.set(key, dayLabelFmt.format(new Date(i.startDate)))
     }
-    return seen
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, label]) => ({ key, label }))
   }, [items])
 
   // Статус по времени считаем по ВСЕМУ расписанию (фестиваль-wide «сейчас»),
@@ -102,11 +118,37 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
     [items, statusById],
   )
 
-  const shown = items.filter(
-    (i) =>
-      (!activeCat || i.category === activeCat) &&
-      (!activeVenue || i.venue?.trim() === activeVenue),
+  const shown = useMemo(
+    () =>
+      items.filter(
+        (i) =>
+          (!activeCat || i.category === activeCat) &&
+          (!activeDay || (i.startDate && dayKey(i.startDate) === activeDay)),
+      ),
+    [items, activeCat, activeDay],
   )
+
+  // Группировка по площадкам: секции в порядке первого появления (т.к. items уже
+  // отсортированы по времени → площадка с самым ранним событием идёт первой).
+  // События без площадки — отдельной секцией в конце (без заголовка, если площадок нет вовсе).
+  const groups = useMemo(() => {
+    const order: (string | null)[] = []
+    const map = new Map<string | null, ScheduleItem[]>()
+    for (const i of shown) {
+      const v = i.venue?.trim() || null
+      if (!map.has(v)) {
+        map.set(v, [])
+        order.push(v)
+      }
+      map.get(v)!.push(i)
+    }
+    const venued = order.filter((v): v is string => v !== null)
+    const result = venued.map((v) => ({ key: v, label: v, items: map.get(v)! }))
+    if (map.has(null)) {
+      result.push({ key: '', label: venued.length ? 'Без площадки' : '', items: map.get(null)! })
+    }
+    return result
+  }, [shown])
 
   return (
     <>
@@ -115,9 +157,7 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
           {liveItems.length > 0 ? (
             <>
               <span className="now-banner-label">● Сейчас на фестивале</span>
-              <span className="now-banner-body">
-                {liveItems.map((i) => i.title).join(' · ')}
-              </span>
+              <span className="now-banner-body">{liveItems.map((i) => i.title).join(' · ')}</span>
             </>
           ) : (
             nextItem && (
@@ -131,6 +171,30 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
               </>
             )
           )}
+        </div>
+      )}
+
+      {days.length > 1 && (
+        <div className="filters" role="group" aria-label="Фильтр по дням">
+          <button
+            type="button"
+            className={`chip${activeDay === null ? ' active' : ''}`}
+            aria-pressed={activeDay === null}
+            onClick={() => setActiveDay(null)}
+          >
+            Все дни
+          </button>
+          {days.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              className={`chip${activeDay === d.key ? ' active' : ''}`}
+              aria-pressed={activeDay === d.key}
+              onClick={() => setActiveDay(d.key)}
+            >
+              {d.label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -158,61 +222,43 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
         </div>
       )}
 
-      {venues.length > 0 && (
-        <div className="filters" role="group" aria-label="Фильтр по площадкам">
-          <button
-            type="button"
-            className={`chip${activeVenue === null ? ' active' : ''}`}
-            aria-pressed={activeVenue === null}
-            onClick={() => setActiveVenue(null)}
-          >
-            Все площадки
-          </button>
-          {venues.map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={`chip${activeVenue === v ? ' active' : ''}`}
-              aria-pressed={activeVenue === v}
-              onClick={() => setActiveVenue(v)}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {shown.length > 0 ? (
-        shown.map((event) => {
-          const href = event.slug ? `/events/${encodeURIComponent(event.slug)}` : undefined
-          const status = statusById.get(event.id)
-          return (
-            <article
-              className={`schedule-item${status === 'live' ? ' is-live' : ''}${
-                status === 'next' ? ' is-next' : ''
-              }`}
-              key={event.id}
-            >
-              <div className="schedule-item-head">
-                {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-                {status === 'live' && <span className="status-badge live">● Идёт сейчас</span>}
-                {status === 'next' && <span className="status-badge next">Далее</span>}
-              </div>
-              <h3>
-                {href ? <Link href={href}>{event.title}</Link> : event.title}
-                {event.category && <span className="badge">{CATEGORY_LABELS[event.category]}</span>}
-              </h3>
-              {event.summary && <p>{event.summary}</p>}
-              {event.venue && <p className="meta">🎪 {event.venue}</p>}
-              {event.location && <p className="meta">📍 {event.location}</p>}
-              {event.registrationEnabled && href && (
-                <Link className="reg-badge" href={`${href}#register`}>
-                  Запись открыта →
-                </Link>
-              )}
-            </article>
-          )
-        })
+      {groups.length > 0 ? (
+        groups.map((group) => (
+          <section className="venue-group" key={group.key}>
+            {group.label && <h3 className="venue-group-title">🎪 {group.label}</h3>}
+            {group.items.map((event) => {
+              const href = event.slug ? `/events/${encodeURIComponent(event.slug)}` : undefined
+              const status = statusById.get(event.id)
+              return (
+                <article
+                  className={`schedule-item${status === 'live' ? ' is-live' : ''}${
+                    status === 'next' ? ' is-next' : ''
+                  }`}
+                  key={event.id}
+                >
+                  <div className="schedule-item-head">
+                    {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
+                    {status === 'live' && <span className="status-badge live">● Идёт сейчас</span>}
+                    {status === 'next' && <span className="status-badge next">Далее</span>}
+                  </div>
+                  <h4 className="schedule-item-title">
+                    {href ? <Link href={href}>{event.title}</Link> : event.title}
+                    {event.category && (
+                      <span className="badge">{CATEGORY_LABELS[event.category]}</span>
+                    )}
+                  </h4>
+                  {event.summary && <p>{event.summary}</p>}
+                  {event.location && <p className="meta">📍 {event.location}</p>}
+                  {event.registrationEnabled && href && (
+                    <Link className="reg-badge" href={`${href}#register`}>
+                      Запись открыта →
+                    </Link>
+                  )}
+                </article>
+              )
+            })}
+          </section>
+        ))
       ) : (
         <div className="placeholder">По выбранному фильтру событий нет.</div>
       )}
