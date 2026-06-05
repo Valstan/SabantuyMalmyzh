@@ -96,9 +96,12 @@ jobs:
           SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
           if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
 
-          # 5. Seed (NODE_ENV=production → push выключен, dev-админ не создаётся)
+          # 5. Seed (NODE_ENV=production → push выключен, dev-админ не создаётся).
+          #    MEDIA_DIR → тот же персистентный каталог, что читает рантайм (Media.ts),
+          #    иначе портер пишет в build-путь и live-app файлы не находит.
           echo "Запускаю seedFromWp на проде ..."
-          NODE_ENV=production DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+          NODE_ENV=production MEDIA_DIR="$BASE/shared/media" \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
             corepack pnpm -C web payload run src/seed/seedFromWp.ts
 
           # 6. Сводка (read-only)

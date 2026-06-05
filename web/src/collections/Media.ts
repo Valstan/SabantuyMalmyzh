@@ -42,7 +42,14 @@ export const Media: CollectionConfig = {
     // MVP: временное локальное хранилище. Цель — внешнее хранилище (Я.Диск /
     // встраивание плеером для видео), чтобы не отдавать тяжёлое с маленького VPS.
     // См. docs/adr/0001-media-storage.md.
-    staticDir: path.resolve(dirname, '../../public/media'),
+    //
+    // ⚠️ В standalone-сборке Next относительный staticDir (через import.meta.url)
+    // «запекается» в АБСОЛЮТНЫЙ путь СБОРОЧНОЙ машины (/home/runner/.../public/media)
+    // и на проде файлы не находятся (ERROR «missing on the disk»). Поэтому на проде
+    // задаём MEDIA_DIR (персистентный каталог вне релиз-директории, переживающий
+    // деплои) в /etc/sabantuy/sabantuy.env — читается в рантайме. Локально env нет →
+    // относительный путь как прежде.
+    staticDir: process.env.MEDIA_DIR || path.resolve(dirname, '../../public/media'),
     focalPoint: true,
     mimeTypes: ['image/*'],
     imageSizes: [
