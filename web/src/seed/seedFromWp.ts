@@ -115,8 +115,10 @@ async function downloadToTmp(url: string): Promise<string> {
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
 
-// 0. Локальный dev-админ (чтобы /admin был доступен; на проде админа заводит владелец)
-{
+// 0. Локальный dev-админ (чтобы /admin был доступен).
+//    На проде (NODE_ENV=production) НЕ создаём: dev-пароль публично известен (в репо),
+//    а владелец заводит собственного админа через экран create-first-user в /admin.
+if (process.env.NODE_ENV !== 'production') {
   const existing = await payload.find({ collection: 'users', limit: 1, overrideAccess: true })
   if (existing.totalDocs === 0) {
     await payload.create({
@@ -126,6 +128,8 @@ const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
     })
     log('✓ создан dev-админ admin@sabantuy.local')
   }
+} else {
+  log('NODE_ENV=production → dev-админ не создаётся (владелец заводит через /admin)')
 }
 
 // media dedup: по имени файла (нормализованному)
