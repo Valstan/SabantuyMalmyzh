@@ -13,15 +13,21 @@ export function CtaBand({
   text,
   primary,
   secondary,
+  imageUrl,
 }: {
   eyebrow?: string
   title: string
   text: string
   primary: { href: string; label: string }
   secondary?: { href: string; label: string }
+  imageUrl?: string | null
 }) {
+  const onPhoto = Boolean(imageUrl)
   return (
-    <section className="section section--crimson">
+    <section
+      className={`section ${onPhoto ? 'section--photo' : 'section--crimson'}`}
+      style={onPhoto ? ({ ['--section-photo']: `url("${imageUrl}")` } as React.CSSProperties) : undefined}
+    >
       <div className="section-inner">
         <div className="cta-band">
           <SectionDivider variant="vine" />

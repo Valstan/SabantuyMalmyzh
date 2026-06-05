@@ -66,6 +66,48 @@ h3,
   color: rgba(255, 247, 230, 0.9);
 }
 
+/* ── Секция на реальном фото (V1): фото-фон + цветная вуаль, светлый текст ───── */
+/* URL кадра передаётся инлайн-переменной --section-photo на самой секции.
+   Нет фото → секция остаётся на цветном фолбэке (класс не ставится). */
+.section--photo {
+  background-color: var(--brand-green-dark);
+  background-image: var(--section-photo, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+.section--photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--pat-islimi), var(--section-veil, var(--hero-overlay));
+  background-size: 120px 28px, cover;
+  pointer-events: none;
+}
+.section--photo > .section-inner {
+  position: relative;
+  z-index: 1;
+}
+.section--photo .section-lead {
+  color: rgba(255, 247, 230, 0.92);
+}
+.section--photo .eyebrow {
+  color: var(--c-gold);
+}
+.section--photo .heading-brush,
+.section--photo .eyebrow {
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+.section--photo a:not(.btn) {
+  color: #fff;
+}
+/* Светлые карточки сильнее отрываются от фото */
+.section--photo .feature-card {
+  box-shadow: var(--shadow-md);
+}
+
 /* ── Резной разделитель (компонент SectionDivider) ─────────────────────────── */
 .ornament-divider {
   display: block;
@@ -157,6 +199,18 @@ h3,
   height: 100%;
   object-fit: cover;
   z-index: -2;
+  /* V3 «живой» герой: едва заметный медленный зум. .hero-festive обрезает overflow,
+     поэтому кадр не вылезает. prefers-reduced-motion гасится глобальным блоком ниже. */
+  transform-origin: center;
+  animation: hero-kenburns 26s ease-in-out infinite alternate;
+}
+@keyframes hero-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
 }
 .hero-fallback {
   position: absolute;
