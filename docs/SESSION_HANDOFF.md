@@ -5,9 +5,9 @@
 
 ---
 
-**Статус:** localization + **контент со старого WP выкачены на ПРОД** (PR #17/#19/#20 смержены, прод наполнен и проверен вживую)
+**Статус:** **праздничный фолк-редизайн выкачен на ПРОД** (PR #21); ранее localization + контент со старого WP (#17/#19/#20). Всё на проде, проверено вживую.
 **Дата обновления:** 2026-06-05
-**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · M3 деплой ✅ · season-MVP «Программа» ✅ (PR #13) + «Карта» ✅ (PR #15) · **двуязычие RU/TT ✅ (PR #17) + перенос контента со старого WP ✅ на ПРОДЕ (PR #19/#20)**. Дальше: **владелец заводит первого admin на проде** (`/admin` create-first-user — портер админа на проде не создаёт); домен/DNS/TLS; публичный язык-тумблер (когда появятся реальные TT-переводы).
+**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · M3 деплой ✅ · season-MVP «Программа»/«Карта» ✅ · двуязычие RU/TT ✅ (#17) · контент со старого WP ✅ на ПРОДЕ (#19/#20) · **праздничный редизайн ✅ на ПРОДЕ (#21)**. Дальше: **владелец заводит первого admin на проде** (`/admin` create-first-user — портер админа на проде не создаёт); домен/DNS/TLS; публичный язык-тумблер (когда появятся реальные TT-переводы).
 
 > ✅ **brain sync прошёл в эту сессию** (`Already up to date`) — блок прошлой сессии (brain стоял на рабочей ветке) разрешён, репо вернулся на main. 3 входящих — все `feedback`/`suggest` (MAY), informational, обработаны.
 
@@ -49,6 +49,13 @@
   - **Фикс staticDir #20**: в standalone-сборке относительный `staticDir` (через `import.meta.url`) запекался в build-путь раннера (`/home/runner/.../public/media`) → на проде медиа 500 «missing on the disk». Решение: `Media.ts staticDir = process.env.MEDIA_DIR || <fallback>`; `MEDIA_DIR=/home/valstan/sabantuy/shared/media` добавлен в `/etc/sabantuy/sabantuy.env` (рантайм, переживает деплои). После редеплоя изображения (оригинал + thumbnail/card/wide) отдаются 200. (Кандидат в GOTCHAS — письмо brain.)
   - **Node-бамп**: `actions/setup-node@v4 → @v5` в `deploy-prod.yml` (Node 20 в actions депрекейтится 16.06.2026).
   - Прод-смоук вживую: `/`, `/gallery`, `/gallery/*`, `/o-sabantuy`, `/kontakty`, `/privacy` → 200; `/api/media/file/*` (orig + ресайзы) → 200 image/png.
+- **Праздничный фолк-редизайн** (сессия 2026-06-05, PR #21, **на проде**): направление выбрано владельцем — «Фолк-праздник (максимал)».
+  - **CSS-слой:** `web/src/app/(frontend)/tokens.css` (палитра изумруд/малина/золото/бордо/крем, fluid-типографика, ритм) + `patterns.css` (SVG-узоры тюльпан/ислими/4-лепестка/мазок как data-URI, `.eyebrow`/`.heading-brush`/`.frame-ornament`) + `festive.css` (секц-система `.section--tint/--alt/--green/--crimson`, герой, фича-карточки, кнопки `.btn-gold/-outline/-ghost`, адаптив 640/900/1200, `prefers-reduced-motion`, переоформление существующих классов). Все три `@import`'ятся из `globals.css` (порядок: tokens→patterns→festive).
+  - **Шрифты:** `next/font/google` — Playfair Display (дисплей) + Manrope (текст), `subsets:['cyrillic','latin']`, переменные `--font-display/--font-body` на `<html>` в `layout.tsx`. Фолбэк через `var(--font-*, …)` (не дублировать в :root — конфликт специфичности с next/font).
+  - **Компоненты** `(frontend)/components/`: Hero, SectionHeading, SectionDivider, FeatureCard/Row, GalleryPreview, CtaBand, MotifIcon (все серверные, inline-SVG). Конфиг фич — `lib/sabantuyFeatures.tsx`; excerpt из Lexical — `lib/lexicalExcerpt.ts`.
+  - **Главная** (`page.tsx`): многосекционная витрина (герой с реальным фото → фича-ряд → тизер «О фестивале» → программа `ScheduleList` → превью галереи → тизер карты → CTA-полоса). 4 ISR-safe запроса через `Promise.all`, каждая секция за guard. Герой/лента берут «фото-альбом» = с **наибольшим числом снимков** (`sabantuy-2023`, 9 фото — живой репортаж, не афиша-постер), не newest-by-date.
+  - **Логика не тронута:** `ScheduleList`/`RegistrationForm`/фильтры/live-next — только CSS-переоформление. `.is-live` остаётся зелёным.
+  - Зелёным: tsc, eslint, `next build` (compile+типы+**prerender 10/10**; standalone EPERM — Windows-only G-known, CI/Linux ок). Прод-смоук: маршруты 200, фолк-разметка present, woff2 200. ⚠️ Локальный **preview-screenshot не снимает** эту страницу (тяжёлая + Next-overlay portal) — проверял через snapshot/inspect/network/eval; не баг страницы.
 
 ## Прод-деплой (M3 ✅ — PR #10, сессия 2026-06-04)
 
