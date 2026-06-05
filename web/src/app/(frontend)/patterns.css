@@ -1,0 +1,124 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   patterns.css — татарские орнаменты как inline-SVG (data-URI). Ноль картинок,
+   ноль доп. запросов — всё кэшируется с CSS. Узоры намеренно бледные (текстура,
+   не шум). Подключается из globals.css после tokens.css.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Бледная 4-лепестковая плитка (фон секций) */
+  --pat-petals: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='48'%20height='48'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='%23155c39'%20fill-opacity='0.05'%3E%3Cellipse%20cx='24'%20cy='24'%20rx='4.5'%20ry='10'/%3E%3Cellipse%20cx='24'%20cy='24'%20rx='10'%20ry='4.5'/%3E%3Ccircle%20cx='24'%20cy='24'%20r='2.6'%20fill='%23c8902a'%20fill-opacity='0.16'/%3E%3Cellipse%20cx='0'%20cy='0'%20rx='4.5'%20ry='10'/%3E%3Cellipse%20cx='0'%20cy='0'%20rx='10'%20ry='4.5'/%3E%3Cellipse%20cx='48'%20cy='0'%20rx='4.5'%20ry='10'/%3E%3Cellipse%20cx='48'%20cy='0'%20rx='10'%20ry='4.5'/%3E%3Cellipse%20cx='0'%20cy='48'%20rx='4.5'%20ry='10'/%3E%3Cellipse%20cx='0'%20cy='48'%20rx='10'%20ry='4.5'/%3E%3Cellipse%20cx='48'%20cy='48'%20rx='4.5'%20ry='10'/%3E%3Cellipse%20cx='48'%20cy='48'%20rx='10'%20ry='4.5'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Ислими-вьюнок (золотой, для тёмных баннеров) */
+  --pat-islimi: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='120'%20height='28'%20viewBox='0%200%20120%2028'%20fill='none'%20stroke='%23e8b53a'%20stroke-opacity='0.18'%3E%3Cpath%20d='M0%2014%20Q%2030%200%2060%2014%20T%20120%2014'%20stroke-width='1.4'/%3E%3Cpath%20d='M0%2014%20Q%2030%2028%2060%2014%20T%20120%2014'%20stroke-width='1.4'/%3E%3Ccircle%20cx='30'%20cy='6'%20r='2'/%3E%3Ccircle%20cx='90'%20cy='22'%20r='2'/%3E%3C/svg%3E");
+
+  /* Тюльпан-буллет (для заголовков) */
+  --motif-tulip: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='20'%20viewBox='0%200%2020%2020'%3E%3Cpath%20d='M10%2018%20C%204%2016%202%209%203%204%20C%205%207%207%207%209%205%20L%2010%203%20L%2011%205%20C%2013%207%2015%207%2017%204%20C%2018%209%2016%2016%2010%2018%20Z'%20fill='%23c8203f'/%3E%3Cpath%20d='M9%205%20C%209%209%209%2014%2010%2018%20C%2011%2014%2011%209%2011%205%20Z'%20fill='%237a1228'/%3E%3C/svg%3E");
+
+  /* Мазок-подчёркивание заголовка (золото, тянется по ширине) */
+  --brush-gold: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='12'%20viewBox='0%200%20200%2012'%20preserveAspectRatio='none'%3E%3Cpath%20d='M2%207%20C%2040%202%2080%209%20110%205%20C%20140%202%20175%208%20198%204%20L%20198%208%20C%20175%2011%20140%206%20110%209%20C%2080%2012%2040%206%202%2010%20Z'%20fill='%23e8b53a'/%3E%3C/svg%3E");
+}
+
+/* ── Фоновые узоры ─────────────────────────────────────────────────────────── */
+.pattern-petals {
+  background-image: var(--pat-petals);
+  background-size: 48px 48px;
+}
+.pattern-islimi {
+  background-image: var(--pat-islimi);
+  background-size: 120px 28px;
+}
+
+/* ── Орнаментальный надзаголовок ───────────────────────────────────────────── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.04em;
+  color: var(--c-burgundy);
+  margin: 0 0 0.5rem;
+}
+.eyebrow::before,
+.eyebrow::after {
+  content: '';
+  width: 26px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-gold), transparent);
+}
+.section--green .eyebrow,
+.section--crimson .eyebrow {
+  color: var(--c-gold);
+}
+
+/* ── Заголовок с мазком и тюльпаном ────────────────────────────────────────── */
+.heading-brush {
+  position: relative;
+  font-family: var(--font-display);
+  line-height: 1.12;
+  margin: 0 0 1rem;
+}
+.heading-brush::after {
+  content: '';
+  display: block;
+  width: clamp(64px, 30%, 160px);
+  height: 11px;
+  margin-top: 0.45rem;
+  background: var(--brush-gold) no-repeat center / 100% 100%;
+}
+.heading-brush.center {
+  text-align: center;
+}
+.heading-brush.center::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Тюльпан-буллет перед надзаголовком-секции (опц., через .has-tulip) */
+.eyebrow.has-tulip::before {
+  width: 18px;
+  height: 18px;
+  background: var(--motif-tulip) no-repeat center / contain;
+}
+
+/* ── Орнаментальная рамка фото (золотая двойная + уголки) ───────────────────── */
+.frame-ornament {
+  position: relative;
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 6px;
+  box-shadow:
+    0 0 0 1px var(--c-gold),
+    var(--shadow-md);
+}
+.frame-ornament > img,
+.frame-ornament img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 6px);
+}
+.frame-ornament::before,
+.frame-ornament::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--c-gold);
+  opacity: 0.85;
+}
+.frame-ornament::before {
+  top: -5px;
+  left: -5px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 6px;
+}
+.frame-ornament::after {
+  bottom: -5px;
+  right: -5px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 6px;
+}
