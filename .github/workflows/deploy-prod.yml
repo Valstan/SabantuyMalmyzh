@@ -68,7 +68,7 @@ jobs:
           fi
           echo "Новых Payload-миграций в коммите нет — деплой продолжается."
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -150,6 +150,14 @@ jobs:
           rm -rf "$REL"; mkdir -p "$REL"
           tar xzf /tmp/sabantuy-app.tgz -C "$REL"
           rm -f /tmp/sabantuy-app.tgz
+          # Персистентное медиа: staticDir = <release>/public/media лежит внутри
+          # релиз-директории, которую деплой пересоздаёт → загрузки/seed иначе
+          # отвалились бы при следующем деплое. Подменяем на симлинк в общий
+          # каталог $BASE/shared/media, переживающий релизы (MVP-замена внешнему
+          # хранилищу из ADR-0001).
+          mkdir -p "$BASE/shared/media"
+          rm -rf "$REL/public/media"
+          ln -sfn "$BASE/shared/media" "$REL/public/media"
           ln -sfn "$REL" "$BASE/current"
           sudo systemctl restart sabantuy
           # держим последние 5 релизов
