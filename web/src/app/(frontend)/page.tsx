@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import Link from 'next/link'
 import { getPayload } from 'payload'
+import type { CSSProperties } from 'react'
 
 import { excerpt } from '../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../lib/mapTypes'
@@ -29,6 +30,10 @@ const mediaUrl = (m: unknown, size: 'card' | 'wide' | 'thumbnail' = 'card'): str
 }
 const fmtMonth = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }) : ''
+// Инлайн-стиль фото-фона секции (V1): отдаёт URL кадра в CSS-переменную
+// --section-photo. Нет кадра → undefined, секция остаётся на цветном фолбэке.
+const photoBg = (url: string | null): CSSProperties | undefined =>
+  url ? ({ ['--section-photo']: `url("${url}")` } as CSSProperties) : undefined
 
 async function getPublishedEvents() {
   try {
@@ -115,6 +120,13 @@ export default async function HomePage() {
   const featuredPhotos = Array.isArray(featured?.photos) ? featured!.photos : []
   const heroUrl = mediaUrl(featured?.coverImage, 'wide') || mediaUrl(featured?.coverImage, 'card')
 
+  // Кадры под фото-фоны секций (V1) — берём из «фоторепортажного» альбома, разные
+  // индексы, чтобы не повторять обложку героя; фолбэк — на цветной фон секции.
+  const featurePhoto =
+    mediaUrl(featuredPhotos[2]?.image, 'wide') || mediaUrl(featuredPhotos[3]?.image, 'wide') || heroUrl
+  const ctaPhoto =
+    mediaUrl(featuredPhotos[4]?.image, 'wide') || mediaUrl(featuredPhotos[0]?.image, 'wide')
+
   // Тизер «О фестивале».
   const aboutText = about ? excerpt(about.content, 300) : ''
   const aboutPhoto =
@@ -172,8 +184,11 @@ export default async function HomePage() {
         </Link>
       </Hero>
 
-      {/* Что вас ждёт */}
-      <section className="section section--tint">
+      {/* Что вас ждёт — фича-карточки поверх реального кадра праздника (V1) */}
+      <section
+        className={`section ${featurePhoto ? 'section--photo' : 'section--tint'}`}
+        style={photoBg(featurePhoto)}
+      >
         <div className="section-inner">
           <SectionHeading eyebrow="Что вас ждёт" title="Праздник для всей семьи" align="center" tulip />
           <FeatureRow />
@@ -273,6 +288,7 @@ export default async function HomePage() {
         eyebrow="Добро пожаловать"
         title="Приходите на Сабантуй!"
         text="Берите семью и друзей — на майдане найдётся место каждому. До встречи в Малмыже!"
+        imageUrl={ctaPhoto}
         primary={{ href: '/kontakty', label: 'Контакты' }}
         secondary={{ href: '/o-sabantuy', label: 'О фестивале' }}
       />
