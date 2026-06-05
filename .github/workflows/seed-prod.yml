@@ -1,0 +1,116 @@
+name: Seed prod content (manual)
+
+# Наполняет ПРОД-БД контентом со старого WP (сабантуймалмыж.рф) портером
+# web/src/seed/seedFromWp.ts. Идемпотентен (повтор пропускает существующее по slug/
+# имени файла), безопасно гонять повторно.
+#
+# Почему на боксе, а не на раннере:
+#   • БД прода слушает только 127.0.0.1:5432 (на боксе) — локально, без туннеля.
+#   • Портер качает медиа в staticDir; файлы должны лечь на ОБСЛУЖИВАЮЩИЙ бокс
+#     (в персистентный $BASE/shared/media), а не на эфемерный раннер.
+# Раннер лишь SSH-ит на бокс и запускает там clone+install+seed.
+#
+# Предусловия:
+#   • deploy-prod уже выкатил релиз с симлинком public/media → $BASE/shared/media.
+#   • Код с гардом dev-админа (NODE_ENV=production → не создаётся) в main.
+#   • Владелец заводит собственного админа через /admin (create-first-user) — портер
+#     на проде админа НЕ создаёт.
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git-ref репозитория для seed-кода на боксе'
+        required: true
+        default: 'main'
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Seed on box
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"
+          BASE=/home/valstan/sabantuy
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          # 1. Репо на боксе (read-only deploy key)
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+
+          # 2. Персистентное медиа: портер пишет в public/media → симлинк в shared
+          mkdir -p "$BASE/shared/media"
+          rm -rf web/public/media
+          ln -sfn "$BASE/shared/media" web/public/media
+
+          # 3. Зависимости (seed-рантайм; не next build → без OOM на 1.5 GiB)
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          # 4. Секреты прода → env (НЕ печатаем значения)
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+
+          # 5. Seed (NODE_ENV=production → push выключен, dev-админ не создаётся)
+          echo "Запускаю seedFromWp на проде ..."
+          NODE_ENV=production DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+            corepack pnpm -C web payload run src/seed/seedFromWp.ts
+
+          # 6. Сводка (read-only)
+          echo "media файлов в shared: $(find "$BASE/shared/media" -type f | wc -l)"
+          echo "pages: $(psql "$DB" -tAc "SELECT count(*) FROM pages;")  gallery: $(psql "$DB" -tAc "SELECT count(*) FROM gallery;")  media: $(psql "$DB" -tAc "SELECT count(*) FROM media;")"
+          REMOTE
+
+      - name: Smoke — публичные эндпоинты
+        run: |
+          set -e
+          B="${{ vars.NEXT_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000' }}"
+          for p in / /gallery /o-sabantuy /kontakty; do
+            S=$(ssh sabantuy "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000$p")
+            echo "$p → $S"
+          done
