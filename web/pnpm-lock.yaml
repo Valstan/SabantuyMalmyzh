@@ -11,6 +11,9 @@ importers:
       '@payloadcms/db-postgres':
         specifier: 3.75.0
         version: 3.75.0(payload@3.75.0(graphql@16.14.1)(typescript@5.7.3))
+      '@payloadcms/email-nodemailer':
+        specifier: 3.75.0
+        version: 3.75.0(payload@3.75.0(graphql@16.14.1)(typescript@5.7.3))
       '@payloadcms/next':
         specifier: 3.75.0
         version: 3.75.0(@types/react@19.2.9)(graphql@16.14.1)(monaco-editor@0.55.1)(next@15.4.11(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.75.0(graphql@16.14.1)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3)
@@ -1193,6 +1196,12 @@ packages:
 
   '@payloadcms/drizzle@3.75.0':
     resolution: {integrity: sha512-RdP0pPIpTQOZcR2F7Rdi7BUes6kPre2tpoEfzc1kVvR5qLgE+cFsSDOBxYL8mOyrqXV7Nn1N54fhI36tfkSbXw==}
+    peerDependencies:
+      payload: 3.75.0
+
+  '@payloadcms/email-nodemailer@3.75.0':
+    resolution: {integrity: sha512-fsOdA2/h1uXRNGVTIryEpXXuM4A5kFZCOkMEVLX+yOQVMwYTSP5J0G9qe8WTrJLaInK7deXUb6GzqDR9CPtMJw==}
+    engines: {node: ^18.20.2 || >=20.9.0}
     peerDependencies:
       payload: 3.75.0
 
@@ -2725,6 +2734,10 @@ packages:
   node-exports-info@1.6.0:
     resolution: {integrity: sha512-pyFS63ptit/P5WqUkt+UUfe+4oevH+bFeIiPPdfb0pFeYEu/1ELnJu5l+5EcTKYL5M7zaAa7S8ddywgXypqKCw==}
     engines: {node: '>= 0.4'}
+
+  nodemailer@7.0.12:
+    resolution: {integrity: sha512-H+rnK5bX2Pi/6ms3sN4/jRQvYSMltV6vqup/0SFOrxYYY/qoNvhXPlYq3e+Pm9RFJRwrMGbMIwi81M4dxpomhA==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -4500,6 +4513,11 @@ snapshots:
       - prisma
       - sql.js
       - sqlite3
+
+  '@payloadcms/email-nodemailer@3.75.0(payload@3.75.0(graphql@16.14.1)(typescript@5.7.3))':
+    dependencies:
+      nodemailer: 7.0.12
+      payload: 3.75.0(graphql@16.14.1)(typescript@5.7.3)
 
   '@payloadcms/graphql@3.75.0(graphql@16.14.1)(payload@3.75.0(graphql@16.14.1)(typescript@5.7.3))(typescript@5.7.3)':
     dependencies:
@@ -6368,6 +6386,8 @@ snapshots:
       es-errors: 1.3.0
       object.entries: 1.1.9
       semver: 6.3.1
+
+  nodemailer@7.0.12: {}
 
   normalize-path@3.0.0: {}
 
