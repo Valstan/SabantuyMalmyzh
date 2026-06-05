@@ -165,12 +165,34 @@ jobs:
           echo "deployed $SHA"
           REMOTE
 
-      - name: Smoke check — local /
+      # #011 content-smoke: проверяем не только корень, а ключевые публичные
+      # маршруты — главная, карта фестиваля и вход в админку. Все проверки гоним
+      # одним ssh-заходом на боксе и собираем ВСЕ провалы (не падаем на первом),
+      # чтобы в логе сразу был виден полный расклад. `::error::`-аннотации с бокса
+      # уходят в stdout шага → GitHub Actions их подхватывает.
+      - name: Smoke check — local routes (/, /map, /admin)
         run: |
           set -e
-          STATUS=$(ssh sabantuy "sleep 6 && curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000/")
-          echo "local / → $STATUS"
-          [ "$STATUS" = "200" ] || { echo "::error::local / = $STATUS, ожидался 200"; exit 1; }
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set -e
+          sleep 6   # дать сервису подняться после systemctl restart
+          fail=0
+          check() {
+            path="$1"; expected="$2"
+            status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://127.0.0.1:3000$path" || true)
+            echo "local $path → $status (ожидалось: $expected)"
+            case " $expected " in
+              *" $status "*) ;;
+              *) echo "::error::local $path = $status, ожидалось одно из: $expected"; fail=1 ;;
+            esac
+          }
+          check "/"      "200"
+          check "/map"   "200"
+          # /admin без сессии отдаёт экран входа (на этом сетапе 200); допускаем и
+          # редирект на /admin/login — главное, что не 5xx/000.
+          check "/admin" "200 302 307 308"
+          exit $fail
+          REMOTE
 
       - name: On failure — журналы прода
         if: failure()
