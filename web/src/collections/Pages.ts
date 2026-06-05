@@ -29,11 +29,13 @@ export const Pages: CollectionConfig<'pages'> = {
       type: 'text',
       label: 'Заголовок',
       required: true,
+      localized: true,
     },
     {
       name: 'content',
       type: 'richText',
       label: 'Содержимое',
+      localized: true,
     },
     {
       name: 'publishedAt',

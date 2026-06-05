@@ -20,7 +20,10 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             </Link>
             <nav className="site-nav-links" aria-label="Основная навигация">
               <Link href="/">Расписание</Link>
+              <Link href="/gallery">Галерея</Link>
               <Link href="/map">Карта</Link>
+              <Link href="/o-sabantuy">О фестивале</Link>
+              <Link href="/kontakty">Контакты</Link>
             </nav>
           </div>
         </header>

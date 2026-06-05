@@ -31,6 +31,7 @@ export const FestivalMap: GlobalConfig = {
       name: 'intro',
       type: 'textarea',
       label: 'Короткое описание',
+      localized: true,
     },
     {
       name: 'points',

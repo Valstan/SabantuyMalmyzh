@@ -94,14 +94,14 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ru' | 'tt') | ('ru' | 'tt')[];
   globals: {
     'festival-map': FestivalMap;
   };
   globalsSelect: {
     'festival-map': FestivalMapSelect<false> | FestivalMapSelect<true>;
   };
-  locale: null;
+  locale: 'ru' | 'tt';
   user: User;
   jobs: {
     tasks: unknown;

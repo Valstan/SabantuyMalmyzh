@@ -1,0 +1,88 @@
+import type { Metadata } from 'next'
+
+import config from '@payload-config'
+import Link from 'next/link'
+import { getPayload } from 'payload'
+
+// Галерея — список альбомов. ISR: контент меняется редко.
+// Без БД (сборка) find в try/catch → пустое состояние, build не падает.
+export const revalidate = 60
+
+export const metadata: Metadata = { title: 'Галерея — Сабантуй Малмыж' }
+
+type MediaLike = { url?: string | null; alt?: string | null; sizes?: Record<string, { url?: string | null }> }
+
+function thumb(m: unknown): MediaLike | null {
+  return m && typeof m === 'object' ? (m as MediaLike) : null
+}
+
+async function getAlbums() {
+  try {
+    const payload = await getPayload({ config })
+    const res = await payload.find({
+      collection: 'gallery',
+      where: { _status: { equals: 'published' } },
+      sort: '-date',
+      depth: 1,
+      limit: 100,
+    })
+    return res.docs
+  } catch {
+    return null
+  }
+}
+
+const fmtDate = (d?: string | null) =>
+  d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }) : null
+
+export default async function GalleryPage() {
+  const albums = await getAlbums()
+
+  return (
+    <main className="container">
+      <section className="hero">
+        <h1>Галерея</h1>
+        <p>Фотографии с фестиваля «Сабантуй» в Малмыже.</p>
+      </section>
+
+      {albums && albums.length > 0 ? (
+        <div className="gallery-grid">
+          {albums.map((a) => {
+            const cover = thumb(a.coverImage)
+            const src = cover?.sizes?.card?.url || cover?.url || null
+            const count = Array.isArray(a.photos) ? a.photos.length : 0
+            return (
+              <Link className="gallery-card" href={`/gallery/${a.slug}`} key={a.id}>
+                <div className="gallery-card-img">
+                  {src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={src} alt={cover?.alt || a.title} loading="lazy" />
+                  ) : (
+                    <div className="gallery-card-fallback" aria-hidden="true">
+                      🎪
+                    </div>
+                  )}
+                </div>
+                <div className="gallery-card-body">
+                  <h2>{a.title}</h2>
+                  <p className="meta">
+                    {fmtDate(a.date)}
+                    {count > 0 && ` · ${count} фото`}
+                  </p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="placeholder">
+          Альбомы появятся, когда организаторы добавят фотографии в{' '}
+          <Link href="/admin" prefetch={false}>
+            админке
+          </Link>
+          .
+        </div>
+      )}
+    </main>
+  )
+}

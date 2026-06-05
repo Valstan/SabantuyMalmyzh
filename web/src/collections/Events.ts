@@ -29,11 +29,13 @@ export const Events: CollectionConfig<'events'> = {
       type: 'text',
       label: 'Название',
       required: true,
+      localized: true,
     },
     {
       name: 'summary',
       type: 'textarea',
       label: 'Краткое описание',
+      localized: true,
     },
     {
       name: 'startDate',
@@ -56,11 +58,13 @@ export const Events: CollectionConfig<'events'> = {
       name: 'location',
       type: 'text',
       label: 'Место проведения',
+      localized: true,
     },
     {
       name: 'venue',
       type: 'text',
       label: 'Площадка / сцена',
+      localized: true,
       admin: {
         description: 'Например: Главная сцена, Спортивная площадка, Детская поляна. Группирует программу по площадкам.',
       },
@@ -89,6 +93,7 @@ export const Events: CollectionConfig<'events'> = {
       name: 'content',
       type: 'richText',
       label: 'Подробное описание',
+      localized: true,
     },
     {
       name: 'capacity',

@@ -5,9 +5,11 @@
 
 ---
 
-**Статус:** IDLE
+**Статус:** PR на ревью (ветка `feat/localization-tt-ru`, не смержена)
 **Дата обновления:** 2026-06-04
-**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · M3 деплой ✅ · **season-MVP на проде: «Программа» ✅ (PR #13) + «Карта» ✅ (PR #15)** — обе фичи выкачены, миграции `events.venue` и `festival_map` применены через CI, деплои зелёные. Дальше: домен/DNS/TLS, первый admin + контент (включая загрузку плана территории на /map).
+**Веха:** M1 ✅ · M2 ✅ · усиление+фронт ✅ · M3 деплой ✅ · season-MVP «Программа» ✅ (PR #13) + «Карта» ✅ (PR #15) · **двуязычие RU/TT ✅ (код+миграция, ветка на ревью) + перенос контента со старого WP ✅ (локально)**. Дальше: применить миграцию `20260604_160000` на проде (#017-поток) перед мержем; домен/DNS/TLS; первый admin + контент на проде.
+
+> ⚠️ **brain sync не прошёл в эту сессию:** репо `brain_matrica` стоит на рабочей ветке `chore/process-2026-06-04-batch-mail` (не `main`), `git pull --ff-only` отказал. Не форсировал. Входящие читал из рабочего дерева. При следующем `/start` проверить, вернулся ли brain на main.
 
 ## Сделано
 
@@ -36,6 +38,10 @@
   - Клиентский `ScheduleList`: **«● Идёт сейчас / Далее»** (часы на клиенте, тик 60с — не зависит от ISR-staleness; `live`=start≤now≤end, `next`=ближайшее будущее), баннер **«Сейчас на фестивале»**, фильтр-чипы по **площадкам** (2-е измерение к категориям), 🎪 площадка в карточке.
   - Зелёным: typecheck, lint, `next build`, e2e node (login→create published event с venue+live-слот→venue персистится, главная рендерит площадку/фильтр→cleanup). now/next-бейджи — client-only (progressive enhancement, в SSR-HTML нет — by design).
   - **Ack brain** + scope-решение по карте (#2, отложена — нет asset) + **архитектурное решение по localization** — `mailbox/to-brain/2026-06-04-season-mvp-program-ack-and-localization-decision.md`.
+- **Двуязычие RU/TT** (ветка `feat/localization-tt-ru`, **на ревью, не смержена**): `localization` в `payload.config` (locales ru+tt, default+fallback ru). Локализованы user-facing текстовые поля: Events (title/summary/location/venue/content), Pages (title/content), Gallery (title/description), Media (alt/caption), FestivalMap (intro). **Массивы НЕ локализованы** (gallery.photos.caption, map points.label/note) — иначе медиа-связи дублируются по локалям (by design, MVP).
+  - **Миграция `20260604_160000`** (#017 push-inspect): 8 зеркальных `*_locales` таблиц + enum `_locales` + `published_locale`/`snapshot` на `_v`; локализованные колонки переезжают из базовых/версионных таблиц. DDL снят `pg_dump`'ом с dev-push на пустую БД. **Верифицирована строго:** `git stash` → push на пустую БД = прод-эквивалент baseline → применил миграцию через `psql` → `pg_dump` → дифф против каноничного push сошёлся 1:1 (колонки/PK/уникальные индексы/FK), идемпотентна при повторе. Зелёным: typecheck, lint, `next build` (compile+prerender 9/9; standalone-symlink EPERM — Windows-only, CI/Linux ок).
+  - **Публичный язык-тумблер отложён** до реальных TT-переводов (решение владельца): пока tt пуст, фронт отдаёт ru (fallback); cookie-locale убил бы ISR. Админка уже даёт ru/tt-селектор. Когда появятся переводы — добавить тумблер + locale-aware чтение во фронт-`payload.find`.
+- **Перенос контента со старого WP** (`feat/localization-tt-ru`, локально): idempotent seed-портер `web/src/seed/seedFromWp.ts` (`payload run`) тянет с `сабантуймалмыж.рф` через WP REST API (node fetch, UTF-8 — G11): страницы «О фестивале» (`/o-sabantuy`), «Контакты» (`/kontakty`), плейсхолдер «Политика ПДн» (`/privacy`); фотоотчёт «Сабантуй 2023» (9 реальных фото → альбом `/gallery/sabantuy-2023`); афиша+программа 2024 (постеры → `/gallery/afisha-programma-2024`). Даты сохранены. Кириллица в именах файлов транслитерируется (иначе дедуп схлопывал постеры). Новый фронт `/gallery` (список + `/gallery/[slug]`) + nav-ссылки «Галерея/О фестивале/Контакты». Проверено в preview: все страницы 200, фото грузятся, консоль чистая, API `?locale=ru|tt` с ru-fallback. **Контент засеян только локально** — на проде запустить seed после первого admin (или вводить вручную).
 
 ## Прод-деплой (M3 ✅ — PR #10, сессия 2026-06-04)
 
@@ -63,8 +69,10 @@
 
 > На машине 2026-06-03 в `DATABASE_URL` обязателен **`127.0.0.1`**, не `localhost`: `::1:5432` даёт `Permission denied (10013)` (IPv6-loopback), IPv4 работает.
 
+> Машина сессии 2026-06-04 (localization): локальная БД **пересоздана** под localization-схему (drop+push) и засеяна портером `seedFromWp.ts` — 3 страницы (`o-sabantuy`/`kontakty`/`privacy`), 2 альбома галереи (13 фото). Dev-админ пересоздан портером. Прежний демо-контент перезатёрт. Чтобы повторить на любой машине: `corepack pnpm -C web payload run src/seed/seedFromWp.ts` (idempotent).
+
 Общее на всех машинах:
-- **Dev-админ Payload:** `admin@sabantuy.local` / `SabantuyDev!2026` (роль admin). Если на твоей машине пароль иной — выровняй на этот через `payload run` (`payload.update` user, `overrideAccess`).
+- **Dev-админ Payload:** `admin@sabantuy.local` / `SabantuyDev!2026` (роль admin) — заводится автоматически портером `seedFromWp.ts`, если в БД нет ни одного пользователя. Если на твоей машине пароль иной — выровняй на этот через `payload run` (`payload.update` user, `overrideAccess`).
 - **Запуск:** `corepack pnpm -C web dev` → http://localhost:3000 · `/admin`.
 - **M2 e2e зелёный** (проверено на обеих машинах): заявка `open+valid`→201 · закрытое событие→400 · без согласия→400 · неизв. `event`→400 · anon `GET /api/registrations`→403 (PII, #015) · `/privacy`→200 · email-хук в консоль.
 
@@ -79,7 +87,7 @@
    - **Рабочий поток для будущих миграций:** merge PR → авто-деплой падает на migration-guard (прод цел) → `gh workflow run apply-migration.yml -f migration=<ts>` (накат по SSH из CI) → `gh workflow run deploy-prod.yml` (деплой кода, guard пропускается на dispatch).
 4. **SMTP email-адаптер** в `payload.config` + реальный `ORGANIZER_EMAIL` → уведомления о заявках на проде заработают (сейчас `No email adapter` → лог).
 5. **Season-MVP #2 «Карта фестиваля»** — ✅ **выкачена на прод (PR #15)**. Глобал `festival-map` + `/map`; миграция `20260604_140000` применена через `apply-migration.yml`, деплой зелёный. Осталось наполнение: владелец загружает **план территории** (картинка) в `/admin` → раздел «Карта фестиваля» + добавляет объекты. До загрузки `/map` показывает заглушку.
-6. **Localization TT/RU** — ДО первого ввода сезонного контента оргами на проде (прод-БД пока пустая → окно ещё открыто): включить `localization` (ru+tt, default/fallback ru) в `payload.config` + пометить user-facing текстовые поля `localized:true` + миграция (#017). Открытый вопрос владельцу — нужна ли тат.-версия и кто переводит (см. письмо brain).
+6. **Localization TT/RU** — ✅ **сделано в коде** (ветка `feat/localization-tt-ru`, на ревью). Осталось: (а) применить миграцию `20260604_160000` на проде через `apply-migration.yml` **до** мержа PR (#017-поток — CI migration-guard упадёт иначе); (б) **публичный язык-тумблер** добавить позже, когда появятся реальные TT-переводы (cookie/locale + locale-aware `payload.find`, осторожно с ISR); (в) открытый вопрос владельцу — кто переводит TT-контент.
 7. Опц.: deprecation `actions/setup-node@v4` (Node 20) → бампнуть; фронт (hero-изображения событий через админку; фильтр по дням ✅ сделан); rate-limit при масштабе → Redis; **расширить deploy-smoke** с `/` на `/admin` + `/map` (#011 content-smoke) — сейчас деплой проверяет только `/`.
 
 ## Открытые вопросы / решения для владельца
@@ -100,4 +108,5 @@
 - **`curl` в git-bash на Windows искажает кириллицу в теле запроса** (cp1251 вместо UTF-8) → авто-slug приходит пустым, заголовки — мусором. Для API-тестов с не-ASCII использовать **node fetch** (UTF-8), НЕ curl. Само приложение/`slugField` корректны (проверено). Плюс git-bash съедает ведущий `/` в `curl -w "%{...}"` (MSYS path-conversion) — коды верные, текст шаблона мусорный.
 - **myjino VPS — контейнер, swap запрещён** (`swapon: Operation not permitted`). На 1.5 GiB `next build` (Payload) ловит OOM (пик 1.5G/1.5G). Не пытаться собирать на боксе и не лить swapfile — собирать в CI, на сервер только standalone-артефакт.
 - **Payload `push:true` гейтится `NODE_ENV`** — в production push НЕ выполняется. Прод-рантайм схему не создаёт/не меняет. Первичную схему накатывать разовым `payload run` с `NODE_ENV=development`; дальнейшие изменения — миграции (#017). НЕ полагаться на рантайм-push в проде.
+- **`drizzle-kit push` уходит в ИНТЕРАКТИВ на структурных правках** (напр. включение localization: колонки переезжают в `*_locales`). На непустой БД спрашивает «`snapshot` — новая колонка или rename `version_title`?» и **виснет на stdin** (в Claude Code / headless — мёртвый замок). Обход для генерации DDL: `DROP SCHEMA public CASCADE; CREATE SCHEMA public` → push на **пустую** БД создаёт схему без интерактива → `pg_dump -t <table>` снимает точный DDL для миграции. Верификация миграции: `git stash` → push пустую = baseline → применить миграцию `psql`'ом → `pg_dump` → дифф против каноничного push (письмо brain 2026-06-04, кандидат в #017/GOTCHAS).
 - **nginx на сервере — из репо `nginx.org` (mainline 1.30)**, его apt-репо отключён (`/etc/apt/sources.list.d/nginx.list.disabled`) из-за NO_PUBKEY — иначе падает `apt update` и за ним NodeSource-setup. Нужны апдейты nginx — добавить ключ и вернуть `.list`.
