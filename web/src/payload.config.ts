@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import sharp from 'sharp'
 import path from 'path'
@@ -37,6 +38,31 @@ export default buildConfig({
   }),
   collections: [Pages, Events, Gallery, Media, Registrations, Users],
   globals: [FestivalMap],
+  // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
+  // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)
+  // задаётся через env. Пока SMTP_HOST не задан, адаптер не подключаем → Payload
+  // пишет письма в консоль (dev/CI: тот самый WARN «No email adapter») — сборка и
+  // типы остаются зелёными без секретов. Реальные SMTP-доступы живут ТОЛЬКО в
+  // /etc/sabantuy/sabantuy.env на проде (#008), в репозиторий не попадают.
+  email: process.env.SMTP_HOST
+    ? nodemailerAdapter({
+        defaultFromAddress: process.env.SMTP_FROM_ADDRESS || 'no-reply@sabantuy-malmyzh.ru',
+        defaultFromName: process.env.SMTP_FROM_NAME || 'Сабантуй Малмыж',
+        transportOptions: {
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT) || 587,
+          // 465 = implicit TLS (secure); 587/2525 = STARTTLS (secure:false).
+          // Переопределяется явным SMTP_SECURE=true|false при нестандартном relay.
+          secure: process.env.SMTP_SECURE
+            ? process.env.SMTP_SECURE === 'true'
+            : Number(process.env.SMTP_PORT) === 465,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        },
+      })
+    : undefined,
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,
