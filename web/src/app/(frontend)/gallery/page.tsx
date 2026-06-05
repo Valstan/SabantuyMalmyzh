@@ -4,6 +4,8 @@ import config from '@payload-config'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
+import { SectionHeading } from '../components/SectionHeading'
+
 // Галерея — список альбомов. ISR: контент меняется редко.
 // Без БД (сборка) find в try/catch → пустое состояние, build не падает.
 export const revalidate = 60
@@ -39,14 +41,18 @@ export default async function GalleryPage() {
   const albums = await getAlbums()
 
   return (
-    <main className="container">
-      <section className="hero">
-        <h1>Галерея</h1>
-        <p>Фотографии с фестиваля «Сабантуй» в Малмыже.</p>
+    <main>
+      <section className="section section--tint">
+        <div className="section-inner">
+          <SectionHeading eyebrow="Фотолетопись" title="Галерея" />
+          <p className="section-lead">Фотографии с фестиваля «Сабантуй» в Малмыже.</p>
+        </div>
       </section>
 
-      {albums && albums.length > 0 ? (
-        <div className="gallery-grid">
+      <section className="section">
+        <div className="section-inner">
+          {albums && albums.length > 0 ? (
+            <div className="gallery-grid">
           {albums.map((a) => {
             const cover = thumb(a.coverImage)
             const src = cover?.sizes?.card?.url || cover?.url || null
@@ -81,8 +87,10 @@ export default async function GalleryPage() {
             админке
           </Link>
           .
+            </div>
+          )}
         </div>
-      )}
+      </section>
     </main>
   )
 }

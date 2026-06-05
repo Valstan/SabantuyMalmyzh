@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { MAP_TYPE, MAP_TYPE_ORDER } from '../../../lib/mapTypes'
+import { SectionHeading } from '../components/SectionHeading'
 
 // ISR: карта меняется редко; on-demand ревалидация — revalidateFestivalMap.
 // Без БД (сборка) findGlobal в try/catch → пустое состояние, build не падает.
@@ -38,13 +39,13 @@ export default async function MapPage() {
   })).filter((g) => g.items.length > 0)
 
   return (
-    <main className="container">
-      <section className="hero">
-        <h1>Карта фестиваля</h1>
-        {map?.intro && <p>{map.intro}</p>}
-      </section>
+    <main>
+      <section className="section">
+        <div className="section-inner">
+          <SectionHeading eyebrow="Ориентируйтесь на месте" title="Карта фестиваля" />
+          {map?.intro && <p className="section-lead">{map.intro}</p>}
 
-      {plan?.url ? (
+          {plan?.url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="map-plan" src={plan.url} alt={plan.alt || 'План территории фестиваля'} />
       ) : (
@@ -78,6 +79,8 @@ export default async function MapPage() {
           Объекты появятся, когда организаторы заполнят карту в админке.
         </p>
       )}
+        </div>
+      </section>
     </main>
   )
 }

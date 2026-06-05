@@ -50,12 +50,16 @@ export default async function EventPage({ params }: Args) {
   const hero = typeof event.heroImage === 'object' && event.heroImage !== null ? event.heroImage : null
 
   return (
-    <main className="container">
-      <p className="meta">
-        <Link href="/">← Расписание</Link>
-      </p>
+    <main>
+      <section className="section">
+        <div className="section-inner narrow">
+          <p style={{ marginBottom: '1rem' }}>
+            <Link className="breadcrumb" href="/">
+              ← Расписание
+            </Link>
+          </p>
 
-      <article className="event-detail">
+          <article className="event-detail">
         {hero?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="event-hero" src={hero.url} alt={hero.alt || event.title} />
@@ -89,6 +93,8 @@ export default async function EventPage({ params }: Args) {
         ) : (
           <div className="placeholder">Регистрация на это мероприятие пока не открыта.</div>
         )}
+          </section>
+        </div>
       </section>
     </main>
   )

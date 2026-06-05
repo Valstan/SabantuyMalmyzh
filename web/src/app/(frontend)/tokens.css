@@ -1,0 +1,62 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   tokens.css — палитра, типографика, ритм. Подключается первым из globals.css.
+   Базовые brand-токены (--brand-*) живут в globals.css и НЕ дублируются здесь —
+   на них завязаны существующие правила. Тут — фолк-праздничный слой поверх.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Насыщенная татарская палитра (акценты — баннеры, разделители, CTA) */
+  --c-green-state: #0a7d3e;
+  --c-crimson: #c8203f;
+  --c-crimson-deep: #a3142f;
+  --c-gold: #e8b53a;
+  --c-gold-deep: #c8902a;
+  --c-burgundy: #7a1228;
+  --c-cream: #fff7e6;
+
+  /* Семантические */
+  --accent: var(--c-crimson);
+  --accent-soft: #fbe7ea;
+  --gold-soft: #fff4d2;
+
+  /* Тёплые тинты секций (фон не плоский, чередуется) */
+  --section-tint-a: #fbf6ea;
+  --section-tint-b: #f3eede;
+
+  /* Градиенты */
+  --grad-festive: linear-gradient(150deg, var(--brand-green-dark), var(--c-crimson));
+  --grad-green: linear-gradient(160deg, var(--brand-green), var(--brand-green-dark));
+  --grad-crimson: linear-gradient(160deg, var(--c-crimson), var(--c-burgundy));
+  --grad-gold: linear-gradient(120deg, var(--c-gold), var(--c-gold-deep));
+  --hero-overlay: linear-gradient(
+    180deg,
+    rgba(10, 60, 35, 0.42) 0%,
+    rgba(70, 16, 36, 0.5) 55%,
+    rgba(122, 18, 40, 0.72) 100%
+  );
+
+  /* Шрифты: --font-display / --font-body задаёт next/font на <html> (layout.tsx).
+     Фолбэк-цепочки подставляются вторым аргументом var() в местах применения
+     (body, заголовки), чтобы не конфликтовать со специфичностью next/font. */
+
+  /* Типографическая шкала (fluid) */
+  --fs-hero: clamp(2.4rem, 5vw + 1rem, 4.5rem);
+  --fs-h2: clamp(1.6rem, 2.5vw + 0.5rem, 2.5rem);
+  --fs-h3: clamp(1.2rem, 1vw + 0.65rem, 1.5rem);
+  --fs-eyebrow: clamp(0.8rem, 0.4vw + 0.7rem, 0.95rem);
+
+  /* Раскладка / ритм */
+  --container-w: 1120px;
+  --container-narrow: 760px;
+  --space-section: clamp(2.75rem, 6vw, 5.5rem);
+  --radius: 14px;
+  --radius-lg: 22px;
+
+  /* Тени / свечение */
+  --shadow-sm: 0 1px 6px rgba(29, 29, 27, 0.08);
+  --shadow-md: 0 10px 30px rgba(29, 29, 27, 0.14);
+  --shadow-gold: 0 6px 22px rgba(232, 181, 58, 0.34);
+
+  /* Орнамент */
+  --ornament-gold: var(--c-gold);
+  --ornament-ink: var(--c-burgundy);
+}

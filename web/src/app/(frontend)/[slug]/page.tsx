@@ -5,6 +5,8 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { SectionHeading } from '../components/SectionHeading'
+
 // Статические страницы (политика обработки ПДн, о фестивале и т.п.) рендерим по slug.
 // Сосуществует с /admin (Payload) и /events/[slug]: статические сегменты имеют приоритет
 // над этим динамическим — проверено на референсе GONBA.
@@ -38,15 +40,21 @@ export default async function PageBySlug({ params }: Args) {
   if (!page) notFound()
 
   return (
-    <main className="container">
-      <article className="page">
-        <h1>{page.title}</h1>
-        {page.content ? (
-          <RichText data={page.content} />
-        ) : (
-          <p className="meta">Содержимое страницы пока не заполнено.</p>
-        )}
-      </article>
+    <main>
+      <section className="section">
+        <div className="section-inner narrow">
+          <article className="page">
+            <SectionHeading title={page.title} as="h1" />
+            <div className="page-prose">
+              {page.content ? (
+                <RichText data={page.content} />
+              ) : (
+                <p className="meta">Содержимое страницы пока не заполнено.</p>
+              )}
+            </div>
+          </article>
+        </div>
+      </section>
     </main>
   )
 }
