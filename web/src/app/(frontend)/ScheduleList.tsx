@@ -52,9 +52,42 @@ function dayKey(d: string): string {
   ).padStart(2, '0')}`
 }
 
+const STAR_KEY = 'sabantuy:my-program'
+
 export function ScheduleList({ items }: { items: ScheduleItem[] }) {
   const [activeCat, setActiveCat] = useState<string | null>(null)
   const [activeDay, setActiveDay] = useState<string | null>(null)
+  const [onlyStarred, setOnlyStarred] = useState(false)
+
+  // «Моя программа» — отмеченные события хранятся в браузере (localStorage),
+  // анонимно, без БД. Грузим после монтирования (на сервере localStorage нет),
+  // поэтому до гидрации звёзды пустые — совпадает с SSR, без mismatch.
+  const [starred, setStarred] = useState<Set<number>>(new Set())
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STAR_KEY)
+      if (raw) setStarred(new Set((JSON.parse(raw) as number[]).filter((n) => typeof n === 'number')))
+    } catch {
+      /* приватный режим / повреждённое значение — игнорируем */
+    }
+    setHydrated(true)
+  }, [])
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem(STAR_KEY, JSON.stringify([...starred]))
+    } catch {
+      /* квота/приватный режим — не критично */
+    }
+  }, [starred, hydrated])
+  const toggleStar = (id: number) =>
+    setStarred((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   // Часы на клиенте: «сейчас идёт / далее» считаем после монтирования, чтобы не
   // ловить hydration-mismatch (на сервере «сейчас» — это момент ISR-ревалидации).
   // Тик раз в минуту — статусы остаются живыми, не завися от staleness ISR.
@@ -123,9 +156,10 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
       items.filter(
         (i) =>
           (!activeCat || i.category === activeCat) &&
-          (!activeDay || (i.startDate && dayKey(i.startDate) === activeDay)),
+          (!activeDay || (i.startDate && dayKey(i.startDate) === activeDay)) &&
+          (!onlyStarred || starred.has(i.id)),
       ),
-    [items, activeCat, activeDay],
+    [items, activeCat, activeDay, onlyStarred, starred],
   )
 
   // Группировка по площадкам: секции в порядке первого появления (т.к. items уже
@@ -171,6 +205,19 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
               </>
             )
           )}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="filters" role="group" aria-label="Личная программа">
+          <button
+            type="button"
+            className={`chip star-chip${onlyStarred ? ' active' : ''}`}
+            aria-pressed={onlyStarred}
+            onClick={() => setOnlyStarred((v) => !v)}
+          >
+            ★ Моя программа{hydrated && starred.size > 0 ? ` (${starred.size})` : ''}
+          </button>
         </div>
       )}
 
@@ -240,6 +287,16 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
                     {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
                     {status === 'live' && <span className="status-badge live">● Идёт сейчас</span>}
                     {status === 'next' && <span className="status-badge next">Далее</span>}
+                    <button
+                      type="button"
+                      className={`star-btn${starred.has(event.id) ? ' on' : ''}`}
+                      aria-pressed={starred.has(event.id)}
+                      aria-label={starred.has(event.id) ? 'Убрать из моей программы' : 'Добавить в мою программу'}
+                      title={starred.has(event.id) ? 'Убрать из моей программы' : 'В мою программу'}
+                      onClick={() => toggleStar(event.id)}
+                    >
+                      {starred.has(event.id) ? '★' : '☆'}
+                    </button>
                   </div>
                   <h4 className="schedule-item-title">
                     {href ? <Link href={href}>{event.title}</Link> : event.title}
@@ -260,7 +317,11 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
           </section>
         ))
       ) : (
-        <div className="placeholder">По выбранному фильтру событий нет.</div>
+        <div className="placeholder">
+          {onlyStarred
+            ? 'В вашей программе пока пусто. Отметьте ☆ у интересных событий — они появятся здесь и сохранятся в этом браузере.'
+            : 'По выбранному фильтру событий нет.'}
+        </div>
       )}
     </>
   )

@@ -593,6 +593,36 @@ a.feature-card:hover {
   border-bottom-color: var(--c-gold);
 }
 
+/* ── «Моя программа»: звёздочка события + чип-фильтр ───────────────────────── */
+.star-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--muted);
+  padding: 0 0.1rem;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+.star-btn:hover {
+  transform: scale(1.18);
+  color: var(--c-gold);
+}
+.star-btn.on {
+  color: var(--c-gold);
+  text-shadow: 0 1px 5px rgba(232, 181, 58, 0.55);
+}
+.star-chip {
+  font-weight: 600;
+}
+.star-chip:not(.active) {
+  border-color: var(--c-gold);
+  color: var(--brand-green-dark);
+}
+
 /* ── Событие: праздничный фолбэк-баннер ────────────────────────────────────── */
 .event-hero-fallback {
   background: var(--grad-festive);
