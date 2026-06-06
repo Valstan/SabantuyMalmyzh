@@ -123,18 +123,34 @@ corepack pnpm -C web dev                   # http://localhost:3000  ·  /admin
 
 В репо — только `web/.env.example`. Локально — `web/.env` (в `.gitignore`). На проде — `/etc/sabantuy/sabantuy.env` (root:0640) + systemd `EnvironmentFile=`. Токены/пароли никогда не коммитим и не пишем в чат.
 
-### PR-only flow (cross-project, ADR-0002)
+### PR-only flow (cross-project, ADR-0002) + автономия под гейтами (pool #027)
 
-**Никакого `git push origin main`.** Любое изменение — ветка → PR → merge. Префиксы: `feat/ fix/ chore/ docs/ refactor/`. Merge `--squash` по умолчанию, только после явного OK пользователя на diff.
+**Никакого `git push origin main`.** Любое изменение — ветка → PR → merge. Префиксы: `feat/ fix/ chore/ docs/ refactor/`.
+
+**Под директивой #027 (mandate 2026-06-06) человеческий «окей на дифф/мерж/деплой» заменён автоматическими гейтами** — см. `.claude/settings.json` (`defaultMode: auto`, коммитится). Ярусно по риску:
+
+| Ярус | Режим | Гейт = подтверждение |
+|---|---|---|
+| Правки файлов, ветка, коммит, push ветки, PR, **авто-мерж** | **авто** | `corepack pnpm -C web typecheck` + `lint` (+ `build` для нетривиального) зелёные **и** CI зелёный |
+| **Деплой на прод** (`deploy-prod.yml`, авто-триггер на merge в main + dispatch) | **авто** | встроенный smoke-check содержимого (#011/PR #23: `/`+`/map`+`/admin`) |
+| Контент-сиды (`seed-prod`/`seed-culture`/`seed-program`) | **авто** | идемпотентны, без схемы/PII |
+| **Накат миграций** (`apply-migration.yml`) | **`ask` — спрашивает** | дисциплина `--ref <feature-branch>` (G28) не выражается префикс-правилом → человек сверяет команду |
+| **Необратимые прод-операции с данными** (versioned Payload только через API — G25; `DELETE`/`UPDATE` на живых данных) | **подтверждать в том же ходе** (#025) | **эту черту не пересекаем** — гейт остаётся человеческим |
+
+Прод почти пустой → риск низкий, настроено агрессивнее; **при наполнении реальными данными ужесточить** (см. #025/G25/G29).
 
 ```bash
 git checkout -b feat/<slug>
-# работа, коммиты
-git push -u origin feat/<slug>
-gh pr create --title "..." --body "..."
-# показать diff → дождаться OK → gh pr merge --squash --delete-branch
+# работа, коммиты (авто)
+corepack pnpm -C web typecheck && corepack pnpm -C web lint   # гейт-предпосылка
+git push -u origin feat/<slug>                                # авто
+gh pr create --title "..." --body "..."                       # авто
+gh pr checks <n> --watch                                      # дождаться зелёного CI
+gh pr merge --squash --delete-branch                          # авто-мерж (гейты зелёные)
 git checkout main && git pull --ff-only
 ```
+
+> Миграции схемы — **до** мержа: `gh workflow run apply-migration.yml --ref feat/<slug> -f migration=<ts>` (спросит подтверждение; **`--ref` обязателен**, иначе чекаут `main` без файла миграции — G28).
 
 ### Медиа → внешнее хранилище (план)
 
@@ -160,8 +176,9 @@ git checkout main && git pull --ff-only
 - **#008** секреты вне репо — ✅ `.env.example` only; план `/etc/sabantuy/` на проде.
 - **#003** SESSION_HANDOFF — ✅ заведён.
 - **#009** share-findings reflex — ✅ канал `mailbox/to-brain/` заведён.
-- **#001** изолированный SSH-deploy-ключ — план (на этапе деплоя, когда будет VPS).
-- **#011** deploy content-smoke-check — план (на этапе CI/CD).
+- **#001** изолированный SSH-deploy-ключ — ✅ `~/.ssh/id_ed25519_sabantuy` (M3, PR #10).
+- **#011** deploy content-smoke-check — ✅ применено (PR #23: smoke `/`+`/map`+`/admin` в `deploy-prod.yml`).
+- **#027** gate-replaced autonomy — ✅ применено (`.claude/settings.json` `auto` + ярусные гейты; mandate 2026-06-06). См. §PR-only flow.
 - **Media → внешнее хранилище** — план (ADR-0001), MVP локально.
 
 ---
