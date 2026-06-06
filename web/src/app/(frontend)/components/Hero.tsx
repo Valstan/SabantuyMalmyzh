@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Petals } from './Petals'
 import { SectionDivider } from './SectionDivider'
 
 /**
@@ -40,6 +41,7 @@ export function Hero({
         <div className="hero-fallback" aria-hidden="true" />
       )}
       <div className="hero-veil" aria-hidden="true" />
+      <Petals />
 
       <div className="hero-content">
         {eyebrow && <p className="hero-eyebrow">{eyebrow}</p>}
