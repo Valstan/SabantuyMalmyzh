@@ -82,8 +82,11 @@ jobs:
           DB=$(grep '^DATABASE_URL=' /etc/sabantuy/sabantuy.env | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
           echo "Применяю $NAME ..."
           psql "$DB" -v ON_ERROR_STOP=1 -f /tmp/mig.sql
-          # запись в реестр — best-effort (таблицы может ещё не быть)
-          psql "$DB" -c "INSERT INTO payload_migrations (name, batch) SELECT '$NAME', COALESCE(MAX(batch),0)+1 FROM payload_migrations WHERE NOT EXISTS (SELECT 1 FROM payload_migrations WHERE name='$NAME');" \
+          # запись в реестр — best-effort (таблицы может ещё не быть) И идемпотентно:
+          # WHERE NOT EXISTS гейтит ВНЕШНИЙ SELECT (без FROM → одна строка-константа),
+          # MAX(batch) берём скалярным подзапросом. Иначе (NOT EXISTS после FROM) агрегат
+          # над отфильтрованной пустой выборкой всё равно отдаёт строку → вставлялся дубль.
+          psql "$DB" -c "INSERT INTO payload_migrations (name, batch) SELECT '$NAME', (SELECT COALESCE(MAX(batch),0)+1 FROM payload_migrations) WHERE NOT EXISTS (SELECT 1 FROM payload_migrations WHERE name='$NAME');" \
             && echo "записано в payload_migrations" || echo "payload_migrations нет — запись пропущена (колонка применена)"
           rm -f /tmp/mig.sql
           # Миграция уже прошла под `psql -v ON_ERROR_STOP=1` (строка выше) — это и есть
