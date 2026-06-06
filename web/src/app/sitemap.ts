@@ -4,8 +4,13 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 // /sitemap.xml — события, страницы (Pages), альбомы галереи + статические маршруты.
-// Ревалидируется раз в час.
-export const revalidate = 3600
+//
+// force-dynamic — строим в рантайме против реальной прод-БД, НЕ пререндерим в сборке.
+// Иначе Next пререндерит sitemap в CI против ПУСТОЙ build-БД (sabantuy_build) →
+// в бандл запекается вырожденный sitemap (только статические маршруты), и при
+// ISR он считается свежим (раньше revalidate=3600 → целый час после каждого
+// деплоя). Запросы лёгкие (depth:0), краулеры ходят редко → рантайм-генерация дёшева.
+export const dynamic = 'force-dynamic'
 
 const baseUrl = (process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '')
 
