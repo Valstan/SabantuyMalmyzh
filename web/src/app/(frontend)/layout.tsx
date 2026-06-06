@@ -23,9 +23,32 @@ const body = Manrope({
   variable: '--font-body',
 })
 
+// metadataBase делает относительный /og.jpg абсолютным URL для соц-скрейперов.
+// Берём боевой URL из env (бейкается при сборке), с разумным фолбэком.
+const SITE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://1942c6fc87be.vps.myjino.ru'
+const SITE_DESC = 'Народный праздник Малмыжа — труда, силы и дружбы народов. Программа, галерея, история и традиции Сабантуя.'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Сабантуй Малмыж',
-  description: 'Сайт фестиваля «Сабантуй Малмыж»: расписание, галерея, регистрация.',
+  description: SITE_DESC,
+  // I9 — OG/Twitter card: при шеринге ссылки в VK/Telegram/соцсетях показывается
+  // брендовый баннер /og.jpg + заголовок + описание (генератор: src/seed/genOgImage.ts).
+  openGraph: {
+    title: 'Сабантуй Малмыж',
+    description: SITE_DESC,
+    url: '/',
+    siteName: 'Сабантуй Малмыж',
+    locale: 'ru_RU',
+    type: 'website',
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Сабантуй Малмыж — народный праздник' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Сабантуй Малмыж',
+    description: SITE_DESC,
+    images: ['/og.jpg'],
+  },
 }
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
