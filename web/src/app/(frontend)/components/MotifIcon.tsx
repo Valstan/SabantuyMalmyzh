@@ -13,6 +13,10 @@ export type MotifName =
   | 'cuisine'
   | 'concert'
   | 'kids'
+  | 'peoples'
+  | 'scroll'
+  | 'compass'
+  | 'question'
 
 const PATHS: Record<MotifName, React.ReactNode> = {
   // Тюльпан — главный татарский мотив
@@ -78,6 +82,38 @@ const PATHS: Record<MotifName, React.ReactNode> = {
       <path d="M12 3l6 7-6 7-6-7Z" />
       <path d="M12 3v14M6 10h12" />
       <path d="M12 17q1 1.5 0 3t0 3" />
+    </>
+  ),
+  // Народы края — две фигуры рядом (дружба народов)
+  peoples: (
+    <>
+      <circle cx="8" cy="8" r="2.4" />
+      <path d="M3.8 19c0-3 1.9-5 4.2-5s4.2 2 4.2 5" />
+      <circle cx="16" cy="8" r="2.4" />
+      <path d="M11.8 19c0-3 1.9-5 4.2-5s4.2 2 4.2 5" />
+    </>
+  ),
+  // История — свиток с текстом
+  scroll: (
+    <>
+      <path d="M6 5c0-1.1.9-2 2-2h10v13" />
+      <path d="M18 16v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2c0-1.1.9-2 2-2h9" />
+      <path d="M9 7h6M9 10.5h6" />
+    </>
+  ),
+  // Как добраться — компас со стрелкой
+  compass: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.5l-2.2 4.8-4.8 2.2 2.2-4.8z" />
+    </>
+  ),
+  // Частые вопросы — знак вопроса
+  question: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.3 9.4a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.2-2.7 4" />
+      <circle cx="12" cy="17.4" r="0.5" />
     </>
   ),
 }

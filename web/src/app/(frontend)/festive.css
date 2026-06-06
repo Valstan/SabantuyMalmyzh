@@ -282,6 +282,13 @@ h3,
   gap: 1rem;
   margin-top: 1.75rem;
 }
+/* Хаб «Традиции и культура»: карточки с описанием — просторнее фича-ряда */
+.culture-hub {
+  grid-template-columns: repeat(2, 1fr);
+}
+.culture-hub .feature-card p {
+  font-size: 0.9rem;
+}
 .feature-card {
   display: flex;
   flex-direction: column;
@@ -491,6 +498,16 @@ a.feature-card:hover {
 .site-footer a:hover {
   text-decoration: underline;
 }
+/* Подвал-навигация по разделам сайта */
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 1.1rem;
+  max-width: var(--container-w);
+  margin: 0 auto 0.4rem;
+  font-size: 0.92rem;
+}
 
 /* ── Прозовые страницы: буквица + орнамент-заголовки ───────────────────────── */
 .page :where(h2, h3) {
@@ -504,6 +521,45 @@ a.feature-card:hover {
   line-height: 0.8;
   padding: 0.3rem 0.6rem 0.1rem 0;
   color: var(--c-crimson);
+}
+.page-prose p {
+  margin: 0 0 1rem;
+}
+/* Списки с тюльпан-маркером вместо точки */
+.page-prose ul {
+  list-style: none;
+  margin: 1rem 0 1.5rem;
+  padding: 0;
+}
+.page-prose ul li {
+  position: relative;
+  padding: 0.15rem 0 0.15rem 1.7rem;
+  margin: 0.4rem 0;
+}
+.page-prose ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 15px;
+  height: 15px;
+  background: var(--motif-tulip) no-repeat center / contain;
+}
+/* Цитата-врезка */
+.page-prose blockquote {
+  margin: 1.6rem 0;
+  padding: 0.85rem 1.3rem;
+  border-left: 4px solid var(--c-gold);
+  background: #fff;
+  border-radius: 0 10px 10px 0;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-style: italic;
+  color: var(--brand-green-dark);
+  box-shadow: var(--shadow-sm);
+}
+.page-prose blockquote p {
+  margin: 0;
 }
 
 /* ── Хлебная крошка-чип ────────────────────────────────────────────────────── */
@@ -583,6 +639,9 @@ a.feature-card:hover {
   .feature-row {
     grid-template-columns: repeat(6, 1fr);
     gap: 1.1rem;
+  }
+  .culture-hub {
+    grid-template-columns: repeat(3, 1fr);
   }
   .split {
     grid-template-columns: 1fr 1fr;
