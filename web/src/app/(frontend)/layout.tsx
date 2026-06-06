@@ -1,10 +1,11 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Manrope, Playfair_Display } from 'next/font/google'
 import Link from 'next/link'
 import React from 'react'
 
 import './globals.css'
 import { SectionDivider } from './components/SectionDivider'
+import { ServiceWorkerRegister } from './components/ServiceWorkerRegister'
 import { CULTURE_SECTIONS } from '../../lib/cultureSections'
 
 // Шрифты self-hosted при сборке (кириллица). Переменные вешаем на <html> —
@@ -49,12 +50,22 @@ export const metadata: Metadata = {
     description: SITE_DESC,
     images: ['/og.jpg'],
   },
+  // PWA (I10): apple-touch при «добавить на экран» в iOS; manifest Next впрыскивает
+  // сам из app/manifest.ts. appleWebApp — полноэкранный режим на iOS.
+  icons: { apple: '/icons/apple-touch-icon.png' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Сабантуй' },
+}
+
+// themeColor в Next 15 — отдельный viewport-экспорт (не в metadata).
+export const viewport: Viewport = {
+  themeColor: '#155c39',
 }
 
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru" className={`${display.variable} ${body.variable}`}>
       <body>
+        <ServiceWorkerRegister />
         <header className="site-header">
           <div className="container site-nav" style={{ padding: 0 }}>
             <Link className="site-brand" href="/">
