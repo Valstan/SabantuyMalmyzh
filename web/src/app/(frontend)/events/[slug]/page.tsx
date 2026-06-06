@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CATEGORY_LABELS } from '../../../../lib/categories'
+import { isCompetitionCategory } from '../../../../lib/competitions'
 import { FestivalNotice } from '../../components/FestivalNotice'
 import { RegistrationForm } from './RegistrationForm'
 
@@ -90,9 +91,13 @@ export default async function EventPage({ params }: Args) {
       </article>
 
       <section id="register" className="register-section">
-        <h2>Регистрация участников</h2>
+        <h2>{isCompetitionCategory(event.category) ? 'Заявка на состязание' : 'Регистрация участников'}</h2>
         {event.registrationEnabled ? (
-          <RegistrationForm eventId={event.id} eventTitle={event.title} />
+          <RegistrationForm
+            eventId={event.id}
+            eventTitle={event.title}
+            competitionMode={isCompetitionCategory(event.category)}
+          />
         ) : (
           <div className="placeholder">Регистрация на это мероприятие пока не открыта.</div>
         )}

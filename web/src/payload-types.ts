@@ -297,6 +297,10 @@ export interface Registration {
   phone: string;
   email?: string | null;
   event: number | Event;
+  /**
+   * Для заявок на майдан-состязания (куреш, скачки, детские игры…).
+   */
+  competitionType?: ('koresh' | 'skachki' | 'meshki' | 'beg_v_meshkah' | 'kanat' | 'girya' | 'stolb' | 'kids') | null;
   participants: number;
   comment?: string | null;
   /**
@@ -568,6 +572,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
   phone?: T;
   email?: T;
   event?: T;
+  competitionType?: T;
   participants?: T;
   comment?: T;
   consent?: T;
