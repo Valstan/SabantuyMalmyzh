@@ -72,6 +72,7 @@ export interface Config {
     gallery: Gallery;
     media: Media;
     registrations: Registration;
+    'poll-votes': PollVote;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -85,6 +86,7 @@ export interface Config {
     gallery: GallerySelect<false> | GallerySelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
+    'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -307,6 +309,18 @@ export interface Registration {
   createdAt: string;
 }
 /**
+ * Голоса анонимного опроса «Любимое состязание». Итоги — на сайте (агрегат).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "poll-votes".
+ */
+export interface PollVote {
+  id: number;
+  option: 'koresh' | 'skachki' | 'stolb' | 'meshki' | 'kanat' | 'motokross';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -376,6 +390,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'registrations';
         value: number | Registration;
+      } | null)
+    | ({
+        relationTo: 'poll-votes';
+        value: number | PollVote;
       } | null)
     | ({
         relationTo: 'users';
@@ -555,6 +573,15 @@ export interface RegistrationsSelect<T extends boolean = true> {
   consent?: T;
   status?: T;
   source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "poll-votes_select".
+ */
+export interface PollVotesSelect<T extends boolean = true> {
+  option?: T;
   updatedAt?: T;
   createdAt?: T;
 }

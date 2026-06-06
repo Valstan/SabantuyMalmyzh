@@ -623,6 +623,92 @@ a.feature-card:hover {
   color: var(--brand-green-dark);
 }
 
+/* ── Опрос «любимое состязание» ───────────────────────────────────────────── */
+.poll-q {
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.08rem;
+  margin: 0 0 1.1rem;
+}
+.poll-options,
+.poll-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.poll-opt {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--c-gold);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease;
+}
+.poll-opt:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-left-color: var(--c-crimson);
+}
+.poll-opt:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+.poll-result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  margin-bottom: 0.25rem;
+}
+.poll-results .mine .poll-result-head {
+  font-weight: 700;
+  color: var(--brand-green-dark);
+}
+.poll-pct {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.poll-bar {
+  height: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.poll-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--grad-gold);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.poll-results .mine .poll-bar > span {
+  background: var(--grad-green);
+}
+.poll-total {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 1rem 0 0;
+}
+.poll-error {
+  text-align: center;
+  color: #c0392b;
+  font-size: 0.9rem;
+  margin: 0.6rem 0 0;
+}
+
 /* ── Событие: праздничный фолбэк-баннер ────────────────────────────────────── */
 .event-hero-fallback {
   background: var(--grad-festive);
