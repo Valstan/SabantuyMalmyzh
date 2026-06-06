@@ -12,13 +12,18 @@ name: Deploy to production
 on:
   push:
     branches: [main]
-    # docs/почта/markdown не трогают прод — не гоняем пересборку+рестарт зря.
+    # docs/почта/markdown/инфра не трогают прод-артефакт — не гоняем пересборку+рестарт зря.
     # Мешанина (код + docs) всё равно триггерит: ignore срабатывает, только если
     # ВСЕ изменённые файлы под паттернами.
+    # .github/** безопасно игнорить для push-триггера: тело воркфлоу читается в момент
+    # запуска, поэтому новая версия любого workflow всё равно применится на следующем
+    # РЕАЛЬНОМ деплое (или через workflow_dispatch). seed-*/apply-migration — dispatch-only.
     paths-ignore:
       - 'docs/**'
       - 'mailbox/**'
       - '**.md'
+      - '.github/**'
+      - '.claude/**'
   workflow_dispatch:
 
 concurrency:
