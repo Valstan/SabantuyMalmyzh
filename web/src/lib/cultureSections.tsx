@@ -21,6 +21,12 @@ export const CULTURE_SECTIONS: CultureSection[] = [
     href: '/narody',
   },
   {
+    icon: 'house',
+    title: 'Подворья',
+    text: 'Национальные дворы народов края и ярмарка ремёсел',
+    href: '/podvorya',
+  },
+  {
     icon: 'scroll',
     title: 'История Сабантуя',
     text: 'От древнего праздника плуга к народному торжеству',
@@ -31,6 +37,12 @@ export const CULTURE_SECTIONS: CultureSection[] = [
     title: 'Майдан',
     text: 'Куреш, скачки, столб с призом и весёлые состязания',
     href: '/maydan',
+  },
+  {
+    icon: 'kids',
+    title: 'Детский майдан',
+    text: 'Игры, мастер-классы и сладости для ребят',
+    href: '/detskiy-maydan',
   },
   {
     icon: 'cuisine',

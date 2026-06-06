@@ -102,13 +102,13 @@ jobs:
 
           # 5. Сводка (read-only)
           echo "pages всего: $(psql "$DB" -tAc "SELECT count(*) FROM pages;")"
-          echo "культурные slug в БД: $(psql "$DB" -tAc "SELECT string_agg(slug, ', ') FROM pages WHERE slug IN ('narody','istoriya-sabantuya','maydan','kuhnya','kak-dobratsya','faq');")"
+          echo "культурные slug в БД: $(psql "$DB" -tAc "SELECT string_agg(slug, ', ') FROM pages WHERE slug IN ('narody','istoriya-sabantuya','maydan','kuhnya','kak-dobratsya','faq','podvorya','detskiy-maydan');")"
           REMOTE
 
       - name: Smoke — культурные страницы
         run: |
           set -e
-          for p in /narody /istoriya-sabantuya /maydan /kuhnya /kak-dobratsya /faq; do
+          for p in /narody /istoriya-sabantuya /maydan /kuhnya /kak-dobratsya /faq /podvorya /detskiy-maydan; do
             S=$(ssh sabantuy "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000$p")
             echo "$p → $S"
             [ "$S" = "200" ] || { echo "::error::$p вернул $S, ожидался 200"; exit 1; }

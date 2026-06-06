@@ -17,6 +17,7 @@ export type MotifName =
   | 'scroll'
   | 'compass'
   | 'question'
+  | 'house'
 
 const PATHS: Record<MotifName, React.ReactNode> = {
   // Тюльпан — главный татарский мотив
@@ -114,6 +115,14 @@ const PATHS: Record<MotifName, React.ReactNode> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M9.3 9.4a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.2-2.7 4" />
       <circle cx="12" cy="17.4" r="0.5" />
+    </>
+  ),
+  // Подворья — национальный дом-двор
+  house: (
+    <>
+      <path d="M4 11l8-6 8 6" />
+      <path d="M6 10v9h12v-9" />
+      <path d="M10 19v-5h4v5" />
     </>
   ),
 }
