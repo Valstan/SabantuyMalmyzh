@@ -6,11 +6,13 @@ import type { CSSProperties } from 'react'
 import { CULTURE_SECTIONS } from '../../lib/cultureSections'
 import { excerpt } from '../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../lib/mapTypes'
+import { POLL_OPTIONS } from '../../lib/pollOptions'
 import { Countdown } from './components/Countdown'
 import { CtaBand } from './components/CtaBand'
 import { FeatureCard } from './components/FeatureCard'
 import { FeatureRow } from './components/FeatureRow'
 import { FestivalNotice } from './components/FestivalNotice'
+import { Poll } from './components/Poll'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
 import { SectionHeading } from './components/SectionHeading'
@@ -96,12 +98,34 @@ async function getMapTeaser() {
   }
 }
 
+// Итоги опроса — серверный агрегат (count по каждому варианту). read коллекции
+// закрыт (#015) → читаем через overrideAccess; наружу идут только суммы.
+async function getPollTallies(): Promise<Record<string, number> | null> {
+  try {
+    const payload = await getPayload({ config })
+    const entries = await Promise.all(
+      POLL_OPTIONS.map(async (o) => {
+        const r = await payload.count({
+          collection: 'poll-votes',
+          where: { option: { equals: o.value } },
+          overrideAccess: true,
+        })
+        return [o.value, r.totalDocs] as const
+      }),
+    )
+    return Object.fromEntries(entries)
+  } catch {
+    return null
+  }
+}
+
 export default async function HomePage() {
-  const [events, albums, about, map] = await Promise.all([
+  const [events, albums, about, map, pollTallies] = await Promise.all([
     getPublishedEvents(),
     getRecentAlbums(),
     getAboutTeaser(),
     getMapTeaser(),
+    getPollTallies(),
   ])
 
   const items: ScheduleItem[] = (events ?? []).map((e) => ({
@@ -287,6 +311,16 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Опрос «любимое состязание» — анонимный, без БД-PII */}
+      <section className="section section--alt">
+        <div className="section-inner">
+          <SectionHeading eyebrow="Ваше мнение" title="Что вам по душе на майдане?" align="center" />
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <Poll initialTallies={pollTallies ?? {}} />
+          </div>
+        </div>
+      </section>
 
       {/* Карта — тизер */}
       {hasMapTeaser && (
