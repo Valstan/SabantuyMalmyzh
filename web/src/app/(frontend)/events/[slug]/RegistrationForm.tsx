@@ -3,14 +3,18 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
+import { COMPETITIONS } from '../../../../lib/competitions'
+
 type Props = {
   eventId: number
   eventTitle: string
+  // I5: показывать выбор дисциплины (событие — состязание, category sport/kids).
+  competitionMode?: boolean
 }
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
-export function RegistrationForm({ eventId, eventTitle }: Props) {
+export function RegistrationForm({ eventId, eventTitle, competitionMode = false }: Props) {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -28,11 +32,19 @@ export function RegistrationForm({ eventId, eventTitle }: Props) {
       return
     }
 
+    const competitionType = String(data.get('competitionType') ?? '').trim()
+    if (competitionMode && !competitionType) {
+      setStatus('error')
+      setError('Выберите дисциплину состязания.')
+      return
+    }
+
     const payload = {
       event: eventId,
       fullName: String(data.get('fullName') ?? '').trim(),
       phone: String(data.get('phone') ?? '').trim(),
       email: String(data.get('email') ?? '').trim() || undefined,
+      competitionType: competitionType || undefined,
       participants: Number(data.get('participants') ?? 1),
       comment: String(data.get('comment') ?? '').trim() || undefined,
       consent: true,
@@ -93,6 +105,24 @@ export function RegistrationForm({ eventId, eventTitle }: Props) {
         <span>Email</span>
         <input name="email" type="email" maxLength={200} autoComplete="email" />
       </label>
+
+      {competitionMode && (
+        <label className="field">
+          <span>
+            Дисциплина <abbr title="обязательно">*</abbr>
+          </span>
+          <select name="competitionType" required defaultValue="">
+            <option value="" disabled>
+              Выберите состязание…
+            </option>
+            {COMPETITIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="field">
         <span>

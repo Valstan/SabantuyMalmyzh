@@ -6,6 +6,7 @@ import { anyone } from '../access/anyone'
 import { enforceRegistrationOpen } from '../hooks/enforceRegistrationOpen'
 import { notifyOrganizer } from '../hooks/notifyOrganizer'
 import { rateLimitRegistration } from '../hooks/rateLimitRegistration'
+import { COMPETITIONS } from '../lib/competitions'
 
 // Заявки на участие в мероприятиях.
 //
@@ -32,7 +33,7 @@ export const Registrations: CollectionConfig<'registrations'> = {
     delete: adminOrEditor,
   },
   admin: {
-    defaultColumns: ['fullName', 'event', 'participants', 'status', 'createdAt'],
+    defaultColumns: ['fullName', 'event', 'competitionType', 'participants', 'status', 'createdAt'],
     useAsTitle: 'fullName',
     description: 'Заявки посетителей. Содержат персональные данные (152-ФЗ) — доступ только у персонала.',
   },
@@ -62,6 +63,19 @@ export const Registrations: CollectionConfig<'registrations'> = {
       label: 'Мероприятие',
       relationTo: 'events',
       required: true,
+    },
+    {
+      name: 'competitionType',
+      type: 'select',
+      label: 'Дисциплина (состязание)',
+      // I5: заполняется, когда заявка на спортивное/детское состязание. Опционально —
+      // обычные события (концерт, кухня…) дисциплины не имеют. Значение приходит от
+      // посетителя (в отличие от status/source) → field-level lock НЕ нужен; Payload
+      // валидирует против options (чужое значение отклоняется). Список — lib/competitions.
+      options: COMPETITIONS,
+      admin: {
+        description: 'Для заявок на майдан-состязания (куреш, скачки, детские игры…).',
+      },
     },
     {
       name: 'participants',
