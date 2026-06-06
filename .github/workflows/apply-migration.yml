@@ -86,6 +86,13 @@ jobs:
           psql "$DB" -c "INSERT INTO payload_migrations (name, batch) SELECT '$NAME', COALESCE(MAX(batch),0)+1 FROM payload_migrations WHERE NOT EXISTS (SELECT 1 FROM payload_migrations WHERE name='$NAME');" \
             && echo "записано в payload_migrations" || echo "payload_migrations нет — запись пропущена (колонка применена)"
           rm -f /tmp/mig.sql
-          echo "verify events.venue (1=ok): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='events' AND column_name='venue';")"
-          echo "verify _events_v.version_venue (1=ok): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='_events_v' AND column_name='version_venue';")"
+          # Миграция уже прошла под `psql -v ON_ERROR_STOP=1` (строка выше) — это и есть
+          # настоящий гейт: при SQL-ошибке psql упал бы и `set -e` завалил шаг. Ниже —
+          # generic verify (для любой миграции, не только venue): записано ли имя в реестр
+          # payload_migrations. psql пишет результат ПРЯМО в stdout (как INSERT выше), без
+          # обёртки echo "$(psql … "…'…'…")" — её вложенные кавычки через heredoc/SSH давали
+          # ложный 0 (прогоны 27072590681 / 27064229374 / 26998791240 при здоровом проде).
+          echo "verify: записей '$NAME' в payload_migrations (>=1 = в реестре; 0 — реестра ещё нет, запись best-effort):"
+          psql "$DB" -tAc "SELECT count(*) FROM payload_migrations WHERE name = '$NAME';" 2>/dev/null \
+            || echo "0 (payload_migrations недоступна — колонка применена, реестр досоздаст payload migrate)"
           REMOTE
