@@ -73,6 +73,7 @@ export interface Config {
     media: Media;
     registrations: Registration;
     'poll-votes': PollVote;
+    subscribers: Subscriber;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -87,6 +88,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
+    subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -325,6 +327,24 @@ export interface PollVote {
   createdAt: string;
 }
 /**
+ * Подписчики на анонс праздника. Содержат email (152-ФЗ) — доступ только у персонала. Рассылку-напоминание орги делают вручную ближе к дате.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers".
+ */
+export interface Subscriber {
+  id: number;
+  email: string;
+  name?: string | null;
+  /**
+   * Обязательно. Посетитель подтверждает согласие при подписке.
+   */
+  consent: boolean;
+  source?: ('website' | 'other') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -398,6 +418,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'poll-votes';
         value: number | PollVote;
+      } | null)
+    | ({
+        relationTo: 'subscribers';
+        value: number | Subscriber;
       } | null)
     | ({
         relationTo: 'users';
@@ -587,6 +611,18 @@ export interface RegistrationsSelect<T extends boolean = true> {
  */
 export interface PollVotesSelect<T extends boolean = true> {
   option?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers_select".
+ */
+export interface SubscribersSelect<T extends boolean = true> {
+  email?: T;
+  name?: T;
+  consent?: T;
+  source?: T;
   updatedAt?: T;
   createdAt?: T;
 }
