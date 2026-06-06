@@ -6,8 +6,9 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { SectionHeading } from '../../components/SectionHeading'
+import { AlbumGallery, type AlbumPhoto } from './AlbumGallery'
 
-// Альбом галереи: фото-сетка + встроенные видео (Rutube/VK), если есть.
+// Альбом галереи: masonry-фотостена + лайтбокс.
 export const revalidate = 60
 
 type Args = { params: Promise<{ slug: string }> }
@@ -38,7 +39,16 @@ export default async function AlbumPage({ params }: Args) {
   const album = await queryAlbum(decodeURIComponent(slug))
   if (!album) notFound()
 
-  const photos = Array.isArray(album.photos) ? album.photos : []
+  const rawPhotos = Array.isArray(album.photos) ? album.photos : []
+  const photos: AlbumPhoto[] = rawPhotos
+    .map((p): AlbumPhoto | null => {
+      const img = p.image && typeof p.image === 'object' ? (p.image as MediaLike) : null
+      const src = img?.sizes?.card?.url || img?.url || null
+      if (!src) return null
+      const full = img?.sizes?.wide?.url || img?.url || src
+      return { src, full, alt: p.caption || img?.alt || album.title, caption: p.caption || null }
+    })
+    .filter((p): p is AlbumPhoto => p !== null)
 
   return (
     <main>
@@ -54,23 +64,7 @@ export default async function AlbumPage({ params }: Args) {
           {fmtDate(album.date) && <p className="meta">{fmtDate(album.date)}</p>}
 
           {photos.length > 0 ? (
-            <div className="photo-grid">
-          {photos.map((p, i) => {
-            const img = p.image && typeof p.image === 'object' ? (p.image as MediaLike) : null
-            const src = img?.sizes?.card?.url || img?.url || null
-            const full = img?.url || src
-            if (!src) return null
-            return (
-              <figure className="photo-grid-item" key={i}>
-                <a href={full || src} target="_blank" rel="noopener noreferrer">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={p.caption || img?.alt || album.title} loading="lazy" />
-                </a>
-                {p.caption && <figcaption>{p.caption}</figcaption>}
-              </figure>
-            )
-          })}
-            </div>
+            <AlbumGallery photos={photos} />
           ) : (
             <div className="placeholder">В этом альбоме пока нет фотографий.</div>
           )}

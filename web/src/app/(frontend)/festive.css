@@ -626,6 +626,138 @@ a.feature-card:hover {
   color: transparent;
 }
 
+/* ── Галерея альбома: masonry-«фотостена» (натуральные пропорции) ──────────── */
+.photo-masonry {
+  columns: 240px;
+  column-gap: 0.85rem;
+  margin-top: 1.5rem;
+}
+.photo-masonry-item {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  border: 1px solid var(--c-gold);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  cursor: zoom-in;
+  break-inside: avoid;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.photo-masonry-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.photo-masonry-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.photo-masonry-item .photo-cap {
+  display: block;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: left;
+}
+
+/* ── Лайтбокс — просмотр фото поверх страницы ─────────────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  background: rgba(10, 28, 18, 0.93);
+  animation: lb-fade 0.18s ease;
+}
+@keyframes lb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.lightbox-fig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: min(1100px, 94vw);
+}
+.lightbox-fig img {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55);
+}
+.lightbox-fig figcaption {
+  color: var(--c-cream);
+  text-align: center;
+  font-size: 0.95rem;
+}
+.lightbox-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 247, 230, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  border-radius: 999px;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.lightbox-btn:hover {
+  background: rgba(232, 181, 58, 0.9);
+  color: #3a2400;
+}
+.lightbox-close {
+  top: 1rem;
+  right: 1.1rem;
+  width: 44px;
+  height: 44px;
+  font-size: 1.8rem;
+}
+.lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  font-size: 2.4rem;
+  padding-bottom: 5px;
+}
+.lightbox-nav.prev {
+  left: 0.6rem;
+}
+.lightbox-nav.next {
+  right: 0.6rem;
+}
+.lightbox-count {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--c-cream);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+}
+
 /* ── Адаптив ───────────────────────────────────────────────────────────────── */
 @media (min-width: 640px) {
   .feature-row {
