@@ -17,6 +17,7 @@ import { Poll } from './components/Poll'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
 import { SectionHeading } from './components/SectionHeading'
+import { SubscribeForm } from './components/SubscribeForm'
 import { ScheduleList, type ScheduleItem } from './ScheduleList'
 
 // ISR: главная кэшируется и фоново ревалидируется. Все запросы — в try/catch →
@@ -369,6 +370,23 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Подписка на анонс (I6) — без даты пользователю не нужно следить вручную */}
+      <section className="section section--alt">
+        <div className="section-inner">
+          <SectionHeading
+            eyebrow="Не пропустите"
+            title="Напомнить о празднике"
+            align="center"
+          />
+          <p className="section-lead" style={{ textAlign: 'center' }}>
+            Оставьте email — пришлём анонс с датой и программой ближе к Сабантую.
+          </p>
+          <div style={{ maxWidth: 480, margin: '1.5rem auto 0' }}>
+            <SubscribeForm />
+          </div>
+        </div>
+      </section>
 
       <CtaBand
         eyebrow="Добро пожаловать"
