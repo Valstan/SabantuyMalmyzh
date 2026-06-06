@@ -120,6 +120,29 @@ h3,
   height: clamp(28px, 5vw, 54px);
 }
 
+/* ── V2 фотолента-разделитель: полоса реальных кадров между секциями ───────── */
+.photo-strip-divider {
+  display: flex;
+  width: 100%;
+  height: clamp(92px, 13vw, 150px);
+  overflow: hidden;
+  border-top: 3px solid var(--c-gold);
+  border-bottom: 3px solid var(--c-gold);
+  background: var(--brand-green-dark);
+}
+.photo-strip-divider img {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 640px) {
+  .photo-strip-divider img:nth-child(n + 4) {
+    display: none;
+  }
+}
+
 /* ── Кнопки: золотое свечение + bloom ──────────────────────────────────────── */
 .btn {
   display: inline-flex;

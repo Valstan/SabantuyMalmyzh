@@ -12,6 +12,7 @@ import { CtaBand } from './components/CtaBand'
 import { FeatureCard } from './components/FeatureCard'
 import { FeatureRow } from './components/FeatureRow'
 import { FestivalNotice } from './components/FestivalNotice'
+import { PhotoStripDivider } from './components/PhotoStripDivider'
 import { Poll } from './components/Poll'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
@@ -177,6 +178,12 @@ export default async function HomePage() {
       coverUrl: mediaUrl(a.coverImage, 'card'),
     }))
     .filter((a) => a.slug)
+  // V2 фотолента-разделитель — последние кадры альбома (отличаются от превью-ленты).
+  const stripPhotos = featuredPhotos
+    .slice(-6)
+    .map((p) => mediaUrl(p?.image, 'card'))
+    .filter((s): s is string => Boolean(s))
+
   const previewPhotos: PreviewPhoto[] = featuredPhotos
     .slice(0, 6)
     .map((p) => {
@@ -282,6 +289,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* V2 — фотолента-разделитель из реальных кадров праздника */}
+      <PhotoStripDivider photos={stripPhotos} />
 
       {/* Программа */}
       <section id="program" className="section">
