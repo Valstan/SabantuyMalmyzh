@@ -66,7 +66,8 @@ jobs:
           set -e
           DB=$(grep '^DATABASE_URL=' /etc/sabantuy/sabantuy.env | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
           echo "host: $(hostname)"
-          echo "events.venue present (1=есть, 0=нет): $(psql "$DB" -tAc "SELECT count(*) FROM information_schema.columns WHERE table_name='events' AND column_name='venue';")"
+          # generic-префлайт: только наличие реестра миграций (имя таблицы целевой колонки
+          # зависит от миграции — для локализованных полей это *_locales, не базовая таблица).
           echo "payload_migrations table: $(psql "$DB" -tAc "SELECT to_regclass('public.payload_migrations');")"
           REMOTE
 
@@ -92,9 +93,13 @@ jobs:
           # Миграция уже прошла под `psql -v ON_ERROR_STOP=1` (строка выше) — это и есть
           # настоящий гейт: при SQL-ошибке psql упал бы и `set -e` завалил шаг. Ниже —
           # generic verify (для любой миграции, не только venue): записано ли имя в реестр
-          # payload_migrations. psql пишет результат ПРЯМО в stdout (как INSERT выше), без
-          # обёртки echo "$(psql … "…'…'…")" — её вложенные кавычки через heredoc/SSH давали
-          # ложный 0 (прогоны 27072590681 / 27064229374 / 26998791240 при здоровом проде).
+          # payload_migrations. Прежний verify хардкодил table_name='events' и честно
+          # отдавал 0: venue — локализованное поле Payload, его колонка живёт в
+          # events_locales, а не в events (отсюда ложный 0 на прогонах 27072590681 /
+          # 27064229374 / 26998791240 при здоровом проде — не баг кавычек). Проверка по
+          # payload_migrations обходит вопрос имени целевой таблицы вообще. psql пишет
+          # результат ПРЯМО в stdout (как INSERT выше) — стилистически ровно с соседними
+          # командами; мангления вложенных кавычек через heredoc/SSH здесь нет.
           echo "verify: записей '$NAME' в payload_migrations (>=1 = в реестре; 0 — реестра ещё нет, запись best-effort):"
           psql "$DB" -tAc "SELECT count(*) FROM payload_migrations WHERE name = '$NAME';" 2>/dev/null \
             || echo "0 (payload_migrations недоступна — колонка применена, реестр досоздаст payload migrate)"
