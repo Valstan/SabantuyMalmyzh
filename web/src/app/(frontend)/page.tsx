@@ -6,9 +6,11 @@ import type { CSSProperties } from 'react'
 import { CULTURE_SECTIONS } from '../../lib/cultureSections'
 import { excerpt } from '../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../lib/mapTypes'
+import { Countdown } from './components/Countdown'
 import { CtaBand } from './components/CtaBand'
 import { FeatureCard } from './components/FeatureCard'
 import { FeatureRow } from './components/FeatureRow'
+import { FestivalNotice } from './components/FestivalNotice'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
 import { SectionHeading } from './components/SectionHeading'
@@ -115,6 +117,12 @@ export default async function HomePage() {
     registrationEnabled: Boolean(e.registrationEnabled),
   }))
 
+  // Обратный отсчёт — к ближайшему будущему событию (дата демо-программы).
+  const futureStarts = items
+    .map((i) => (i.startDate ? new Date(i.startDate).getTime() : NaN))
+    .filter((t) => !Number.isNaN(t) && t > Date.now())
+  const festivalStartIso = futureStarts.length ? new Date(Math.min(...futureStarts)).toISOString() : null
+
   // «Фото-альбом» для оформления — с наибольшим числом снимков (живой фоторепортаж,
   // а не афиша-постер): его обложка идёт в герой, кадры — в тизер и ленту.
   const photoCount = (g: { photos?: unknown }) => (Array.isArray(g.photos) ? g.photos.length : 0)
@@ -186,6 +194,17 @@ export default async function HomePage() {
         </Link>
       </Hero>
 
+      {/* Обратный отсчёт до праздника (демо-дата) + обязательное предупреждение */}
+      {festivalStartIso && (
+        <section className="section section--crimson">
+          <div className="section-inner" style={{ textAlign: 'center' }}>
+            <SectionHeading eyebrow="До праздника осталось" title="Обратный отсчёт" align="center" />
+            <Countdown targetIso={festivalStartIso} />
+            <FestivalNotice />
+          </div>
+        </section>
+      )}
+
       {/* Что вас ждёт — фича-карточки поверх реального кадра праздника (V1) */}
       <section
         className={`section ${featurePhoto ? 'section--photo' : 'section--tint'}`}
@@ -244,6 +263,7 @@ export default async function HomePage() {
       <section id="program" className="section">
         <div className="section-inner">
           <SectionHeading eyebrow="Расписание" title="Программа фестиваля" />
+          {items.length > 0 && <FestivalNotice />}
           {items.length > 0 ? (
             <ScheduleList items={items} />
           ) : (
