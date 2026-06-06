@@ -3,9 +3,11 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import type { CSSProperties } from 'react'
 
+import { CULTURE_SECTIONS } from '../../lib/cultureSections'
 import { excerpt } from '../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../lib/mapTypes'
 import { CtaBand } from './components/CtaBand'
+import { FeatureCard } from './components/FeatureCard'
 import { FeatureRow } from './components/FeatureRow'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
@@ -217,6 +219,26 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Традиции и культура — хаб культурно-краеведческих разделов */}
+      <section className="section section--green">
+        <div className="section-inner">
+          <SectionHeading
+            eyebrow="О празднике"
+            title="Традиции и культура"
+            align="center"
+            tulip
+          />
+          <p className="section-lead" style={{ margin: '0 auto', textAlign: 'center' }}>
+            Откуда пришёл Сабантуй, кто живёт на малмыжской земле и что ждёт вас на майдане.
+          </p>
+          <div className="feature-row culture-hub">
+            {CULTURE_SECTIONS.map((s) => (
+              <FeatureCard key={s.href} {...s} />
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Программа */}
       <section id="program" className="section">

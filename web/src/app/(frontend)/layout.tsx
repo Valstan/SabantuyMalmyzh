@@ -5,6 +5,7 @@ import React from 'react'
 
 import './globals.css'
 import { SectionDivider } from './components/SectionDivider'
+import { CULTURE_SECTIONS } from '../../lib/cultureSections'
 
 // Шрифты self-hosted при сборке (кириллица). Переменные вешаем на <html> —
 // читаются в CSS как var(--font-display)/var(--font-body). Админку (payload)
@@ -47,6 +48,18 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         </header>
         {children}
         <footer className="site-footer">
+          <nav className="footer-nav" aria-label="Разделы сайта">
+            <Link href="/">Расписание</Link>
+            <Link href="/gallery">Галерея</Link>
+            <Link href="/map">Карта</Link>
+            <Link href="/o-sabantuy">О фестивале</Link>
+            {CULTURE_SECTIONS.map((s) => (
+              <Link key={s.href} href={s.href}>
+                {s.title}
+              </Link>
+            ))}
+            <Link href="/kontakty">Контакты</Link>
+          </nav>
           <div style={{ maxWidth: 220, margin: '0 auto 0.85rem' }}>
             <SectionDivider variant="vine" />
           </div>

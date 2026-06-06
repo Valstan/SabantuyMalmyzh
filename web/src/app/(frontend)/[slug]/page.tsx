@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import config from '@payload-config'
 import { RichText } from '@payloadcms/richtext-lexical/react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
@@ -44,6 +45,9 @@ export default async function PageBySlug({ params }: Args) {
       <section className="section">
         <div className="section-inner narrow">
           <article className="page">
+            <Link className="breadcrumb" href="/">
+              ← На главную
+            </Link>
             <SectionHeading title={page.title} as="h1" />
             <div className="page-prose">
               {page.content ? (
