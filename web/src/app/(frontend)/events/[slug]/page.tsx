@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CATEGORY_LABELS } from '../../../../lib/categories'
+import { FestivalNotice } from '../../components/FestivalNotice'
 import { RegistrationForm } from './RegistrationForm'
 
 // ISR: детали события кэшируются, фоновая ревалидация + on-demand (revalidateEvent).
@@ -58,6 +59,8 @@ export default async function EventPage({ params }: Args) {
               ← Расписание
             </Link>
           </p>
+
+          <FestivalNotice />
 
           <article className="event-detail">
         {hero?.url ? (

@@ -1,0 +1,110 @@
+name: Seed demo program (manual)
+
+# Заливает ПРЕДВАРИТЕЛЬНУЮ (демо) программу фестиваля — микс по прошлым годам —
+# сидом web/src/seed/seedDemoProgram.ts. На сайте рядом с программой и обратным
+# отсчётом показывается обязательное предупреждение, что дата не настоящая
+# (lib/festival.ts → DEMO_SCHEDULE / FestivalNotice).
+#
+# Безопасно для прода:
+#   • Создаёт только записи коллекции Events — без новых таблиц/полей → миграции
+#     (#017) НЕ нужны. push в production выключен (NODE_ENV).
+#   • Идемпотентно: существующие по slug пропускаются; force=1 (SEED_FORCE) —
+#     обновить. Слаги начинаются с «demo-» → легко удалить, когда будет реальная
+#     программа.
+#   • Медиа не качает.
+#
+# Предусловие: deploy-prod уже выкатил релиз с обратным отсчётом + предупреждением.
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git-ref репозитория для seed-кода на боксе'
+        required: true
+        default: 'main'
+      force:
+        description: 'Перезаписать существующие события (1 = да, SEED_FORCE)'
+        required: false
+        default: '0'
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Seed on box
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" "${{ inputs.force }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"
+          FORCE="${2:-0}"
+          BASE=/home/valstan/sabantuy
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+
+          echo "Запускаю seedDemoProgram на проде (force=$FORCE) ..."
+          NODE_ENV=production SEED_FORCE="$FORCE" \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+            corepack pnpm -C web payload run src/seed/seedDemoProgram.ts
+
+          echo "events demo в БД: $(psql "$DB" -tAc "SELECT count(*) FROM events WHERE slug LIKE 'demo-%';")"
+          REMOTE
+
+      - name: Smoke — главная и демо-события
+        run: |
+          set -e
+          for p in / /events/demo-otkrytie /events/demo-koresh-final; do
+            S=$(ssh sabantuy "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000$p")
+            echo "$p → $S"
+            [ "$S" = "200" ] || { echo "::error::$p вернул $S, ожидался 200"; exit 1; }
+          done
