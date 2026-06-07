@@ -4,7 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { MAP_TYPE, MAP_TYPE_ORDER } from '../../../lib/mapTypes'
+import { MAP_TYPE_ORDER, mapTypeMeta } from '../../../lib/mapTypes'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Общее тело карты фестиваля (ru: /map, tt: /tt/map). intro/points — с locale.
@@ -29,7 +29,7 @@ export async function MapView({ locale }: { locale: Locale }) {
 
   const grouped = MAP_TYPE_ORDER.map((type) => ({
     type,
-    meta: MAP_TYPE[type],
+    meta: mapTypeMeta(type, locale),
     items: points.filter((p) => (p.type ?? 'other') === type && p.label),
   })).filter((g) => g.items.length > 0)
 

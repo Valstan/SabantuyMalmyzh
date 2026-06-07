@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { POLL_OPTIONS, POLL_QUESTION } from '../../../lib/pollOptions'
+import { getPollOptions, pollQuestion } from '../../../lib/pollOptions'
 
 /**
  * Анонимный опрос «Любимое состязание». Итоги (initialTallies) считает сервер
@@ -36,7 +36,8 @@ export function Poll({
     setMounted(true)
   }, [])
 
-  const total = POLL_OPTIONS.reduce((s, o) => s + (tallies[o.value] || 0), 0)
+  const options = getPollOptions(locale)
+  const total = options.reduce((s, o) => s + (tallies[o.value] || 0), 0)
 
   async function vote(option: string) {
     if (busy || voted) return
@@ -69,11 +70,11 @@ export function Poll({
 
   return (
     <div className="poll">
-      <p className="poll-q">{POLL_QUESTION}</p>
+      <p className="poll-q">{pollQuestion(locale)}</p>
 
       {!showResults ? (
         <ul className="poll-options">
-          {POLL_OPTIONS.map((o) => (
+          {options.map((o) => (
             <li key={o.value}>
               <button
                 type="button"
@@ -89,7 +90,7 @@ export function Poll({
       ) : (
         <>
           <ul className="poll-results">
-            {POLL_OPTIONS.map((o) => {
+            {options.map((o) => {
               const c = tallies[o.value] || 0
               const pct = total > 0 ? Math.round((c / total) * 100) : 0
               return (

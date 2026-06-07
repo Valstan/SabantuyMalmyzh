@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
-import { CATEGORY_LABELS } from '../../lib/categories'
+import { CATEGORY_LABELS, categoryLabel } from '../../lib/categories'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
 
@@ -266,7 +266,7 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
               aria-pressed={activeCat === c}
               onClick={() => setActiveCat(c)}
             >
-              {CATEGORY_LABELS[c]}
+              {categoryLabel(c, locale)}
             </button>
           ))}
         </div>
@@ -304,7 +304,7 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
                   <h4 className="schedule-item-title">
                     {href ? <Link href={href}>{event.title}</Link> : event.title}
                     {event.category && (
-                      <span className="badge">{CATEGORY_LABELS[event.category]}</span>
+                      <span className="badge">{categoryLabel(event.category, locale)}</span>
                     )}
                   </h4>
                   {event.summary && <p>{event.summary}</p>}

@@ -1,5 +1,7 @@
-// Категории событий — единый источник подписей (использует главная и детали события).
-// Порядок ключей задаёт порядок чипов-фильтров на главной.
+import type { Locale } from './i18n'
+
+// Категории событий — единый источник подписей. CATEGORY_LABELS (ru) используют
+// чипы-фильтры/бейджи; categoryLabel(cat, locale) даёт перевод (tt-черновик, I11).
 export const CATEGORY_LABELS: Record<string, string> = {
   concert: 'Концерт',
   sport: 'Спорт',
@@ -10,5 +12,18 @@ export const CATEGORY_LABELS: Record<string, string> = {
   other: 'Другое',
 }
 
-export const categoryLabel = (category?: string | null): string =>
-  category ? (CATEGORY_LABELS[category] ?? category) : ''
+const CATEGORY_LABELS_TT: Record<string, string> = {
+  concert: 'Концерт',
+  sport: 'Спорт',
+  food: 'Милли аш',
+  kids: 'Балаларга',
+  crafts: 'Һөнәрләр',
+  ceremony: 'Тантана',
+  other: 'Башка',
+}
+
+export const categoryLabel = (category?: string | null, locale: Locale = 'ru'): string => {
+  if (!category) return ''
+  const map = locale === 'tt' ? CATEGORY_LABELS_TT : CATEGORY_LABELS
+  return map[category] ?? CATEGORY_LABELS[category] ?? category
+}

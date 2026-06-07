@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
-import { CULTURE_SECTIONS } from '../../../lib/cultureSections'
+import { getCultureSections } from '../../../lib/cultureSections'
 import { excerpt } from '../../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../../lib/mapTypes'
 import { POLL_OPTIONS } from '../../../lib/pollOptions'
@@ -260,7 +260,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
             align="center"
             tulip
           />
-          <FeatureRow />
+          <FeatureRow locale={locale} />
         </div>
       </section>
 
@@ -298,7 +298,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
             {t(locale, 'home.culture.lead')}
           </p>
           <div className="feature-row culture-hub">
-            {CULTURE_SECTIONS.map((s) => (
+            {getCultureSections(locale).map((s) => (
               <FeatureCard key={s.href} {...s} href={h(s.href)} />
             ))}
           </div>
