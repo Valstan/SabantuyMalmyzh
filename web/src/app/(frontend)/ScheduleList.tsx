@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { CATEGORY_LABELS } from '../../lib/categories'
+import { t, type Locale } from '../../lib/i18n'
+import { localeHref } from '../../lib/localeHref'
 
 export type ScheduleItem = {
   id: number
@@ -54,7 +56,7 @@ function dayKey(d: string): string {
 
 const STAR_KEY = 'sabantuy:my-program'
 
-export function ScheduleList({ items }: { items: ScheduleItem[] }) {
+export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; locale?: Locale }) {
   const [activeCat, setActiveCat] = useState<string | null>(null)
   const [activeDay, setActiveDay] = useState<string | null>(null)
   const [onlyStarred, setOnlyStarred] = useState(false)
@@ -179,10 +181,10 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
     const venued = order.filter((v): v is string => v !== null)
     const result = venued.map((v) => ({ key: v, label: v, items: map.get(v)! }))
     if (map.has(null)) {
-      result.push({ key: '', label: venued.length ? 'Без площадки' : '', items: map.get(null)! })
+      result.push({ key: '', label: venued.length ? t(locale, 'schedule.noVenue') : '', items: map.get(null)! })
     }
     return result
-  }, [shown])
+  }, [shown, locale])
 
   return (
     <>
@@ -190,13 +192,13 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
         <div className="now-banner" role="status" aria-live="polite">
           {liveItems.length > 0 ? (
             <>
-              <span className="now-banner-label">● Сейчас на фестивале</span>
+              <span className="now-banner-label">● {t(locale, 'schedule.nowBanner')}</span>
               <span className="now-banner-body">{liveItems.map((i) => i.title).join(' · ')}</span>
             </>
           ) : (
             nextItem && (
               <>
-                <span className="now-banner-label next">Далее</span>
+                <span className="now-banner-label next">{t(locale, 'schedule.next')}</span>
                 <span className="now-banner-body">
                   {nextItem.title}
                   {nextItem.startDate && ` — ${timeFmt.format(new Date(nextItem.startDate))}`}
@@ -209,27 +211,28 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
       )}
 
       {items.length > 0 && (
-        <div className="filters" role="group" aria-label="Личная программа">
+        <div className="filters" role="group" aria-label={t(locale, 'schedule.myProgram')}>
           <button
             type="button"
             className={`chip star-chip${onlyStarred ? ' active' : ''}`}
             aria-pressed={onlyStarred}
             onClick={() => setOnlyStarred((v) => !v)}
           >
-            ★ Моя программа{hydrated && starred.size > 0 ? ` (${starred.size})` : ''}
+            {t(locale, 'schedule.myProgramChip')}
+            {hydrated && starred.size > 0 ? ` (${starred.size})` : ''}
           </button>
         </div>
       )}
 
       {days.length > 1 && (
-        <div className="filters" role="group" aria-label="Фильтр по дням">
+        <div className="filters" role="group" aria-label={t(locale, 'schedule.filterDays')}>
           <button
             type="button"
             className={`chip${activeDay === null ? ' active' : ''}`}
             aria-pressed={activeDay === null}
             onClick={() => setActiveDay(null)}
           >
-            Все дни
+            {t(locale, 'schedule.allDays')}
           </button>
           {days.map((d) => (
             <button
@@ -246,14 +249,14 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
       )}
 
       {categories.length > 0 && (
-        <div className="filters" role="group" aria-label="Фильтр по категориям">
+        <div className="filters" role="group" aria-label={t(locale, 'schedule.filterCategories')}>
           <button
             type="button"
             className={`chip${activeCat === null ? ' active' : ''}`}
             aria-pressed={activeCat === null}
             onClick={() => setActiveCat(null)}
           >
-            Все категории
+            {t(locale, 'schedule.allCategories')}
           </button>
           {categories.map((c) => (
             <button
@@ -274,7 +277,7 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
           <section className="venue-group" key={group.key}>
             {group.label && <h3 className="venue-group-title">🎪 {group.label}</h3>}
             {group.items.map((event) => {
-              const href = event.slug ? `/events/${encodeURIComponent(event.slug)}` : undefined
+              const href = event.slug ? localeHref(locale, `/events/${encodeURIComponent(event.slug)}`) : undefined
               const status = statusById.get(event.id)
               return (
                 <article
@@ -285,14 +288,14 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
                 >
                   <div className="schedule-item-head">
                     {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-                    {status === 'live' && <span className="status-badge live">● Идёт сейчас</span>}
-                    {status === 'next' && <span className="status-badge next">Далее</span>}
+                    {status === 'live' && <span className="status-badge live">{t(locale, 'schedule.live')}</span>}
+                    {status === 'next' && <span className="status-badge next">{t(locale, 'schedule.next')}</span>}
                     <button
                       type="button"
                       className={`star-btn${starred.has(event.id) ? ' on' : ''}`}
                       aria-pressed={starred.has(event.id)}
-                      aria-label={starred.has(event.id) ? 'Убрать из моей программы' : 'Добавить в мою программу'}
-                      title={starred.has(event.id) ? 'Убрать из моей программы' : 'В мою программу'}
+                      aria-label={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAdd')}
+                      title={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAddTitle')}
                       onClick={() => toggleStar(event.id)}
                     >
                       {starred.has(event.id) ? '★' : '☆'}
@@ -308,7 +311,7 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
                   {event.location && <p className="meta">📍 {event.location}</p>}
                   {event.registrationEnabled && href && (
                     <Link className="reg-badge" href={`${href}#register`}>
-                      Запись открыта →
+                      {t(locale, 'schedule.regOpen')}
                     </Link>
                   )}
                 </article>
@@ -318,9 +321,7 @@ export function ScheduleList({ items }: { items: ScheduleItem[] }) {
         ))
       ) : (
         <div className="placeholder">
-          {onlyStarred
-            ? 'В вашей программе пока пусто. Отметьте ☆ у интересных событий — они появятся здесь и сохранятся в этом браузере.'
-            : 'По выбранному фильтру событий нет.'}
+          {onlyStarred ? t(locale, 'schedule.emptyStarred') : t(locale, 'schedule.emptyFilter')}
         </div>
       )}
     </>

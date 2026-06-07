@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { t, type Locale } from '../../../lib/i18n'
 import { POLL_OPTIONS, POLL_QUESTION } from '../../../lib/pollOptions'
 
 /**
@@ -12,7 +13,13 @@ import { POLL_OPTIONS, POLL_QUESTION } from '../../../lib/pollOptions'
  */
 const KEY = 'sabantuy:poll-voted'
 
-export function Poll({ initialTallies }: { initialTallies: Record<string, number> }) {
+export function Poll({
+  initialTallies,
+  locale = 'ru',
+}: {
+  initialTallies: Record<string, number>
+  locale?: Locale
+}) {
   const [mounted, setMounted] = useState(false)
   const [voted, setVoted] = useState<string | null>(null)
   const [tallies, setTallies] = useState<Record<string, number>>(initialTallies)
@@ -42,11 +49,7 @@ export function Poll({ initialTallies }: { initialTallies: Record<string, number
         body: JSON.stringify({ option }),
       })
       if (!res.ok) {
-        throw new Error(
-          res.status === 429
-            ? 'Слишком много голосов, попробуйте позже.'
-            : 'Не удалось засчитать голос. Попробуйте ещё раз.',
-        )
+        throw new Error(t(locale, 'poll.error'))
       }
       setTallies((t) => ({ ...t, [option]: (t[option] || 0) + 1 }))
       setVoted(option)
@@ -56,7 +59,7 @@ export function Poll({ initialTallies }: { initialTallies: Record<string, number
         /* приватный режим — голос всё равно засчитан на сервере */
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Ошибка сети.')
+      setError(e instanceof Error ? e.message : t(locale, 'form.netError'))
     } finally {
       setBusy(false)
     }
@@ -106,7 +109,7 @@ export function Poll({ initialTallies }: { initialTallies: Record<string, number
             })}
           </ul>
           <p className="poll-total">
-            Спасибо за голос! Всего проголосовало: {total}
+            {t(locale, 'poll.voted')} {total} {t(locale, 'poll.votes')}
           </p>
         </>
       )}

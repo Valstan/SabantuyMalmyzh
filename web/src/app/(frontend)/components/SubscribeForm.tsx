@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
-// I6 «Подписка на анонс»: email + согласие 152-ФЗ → POST /api/subscribers.
-// Зеркало RegistrationForm (тот же гейт согласия и обработка ошибок/дедупа).
+import { t, type Locale } from '../../../lib/i18n'
+import { localeHref } from '../../../lib/localeHref'
+
+// I6 «Подписка на анонс»: email + согласие 152-ФЗ → POST /api/subscribers (локализовано, I11).
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
-export function SubscribeForm() {
+export function SubscribeForm({ locale = 'ru' }: { locale?: Locale }) {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -21,7 +23,7 @@ export function SubscribeForm() {
 
     if (data.get('consent') !== 'on') {
       setStatus('error')
-      setError('Без согласия на обработку персональных данных подписаться нельзя.')
+      setError(t(locale, 'form.consent'))
       return
     }
 
@@ -41,10 +43,9 @@ export function SubscribeForm() {
       if (!res.ok) {
         const body = await res.json().catch(() => null)
         const raw = body?.errors?.[0]?.message || ''
-        // Дедуп (unique email) → дружелюбное сообщение вместо сырого «duplicate».
         const msg = /unique|already|exist|duplicate/i.test(raw)
-          ? 'Этот email уже подписан на анонс.'
-          : raw || 'Не удалось оформить подписку. Попробуйте ещё раз.'
+          ? t(locale, 'subscribe.dup')
+          : raw || t(locale, 'form.netError')
         setStatus('error')
         setError(msg)
         return
@@ -54,15 +55,15 @@ export function SubscribeForm() {
       setStatus('success')
     } catch {
       setStatus('error')
-      setError('Сеть недоступна. Проверьте подключение и попробуйте ещё раз.')
+      setError(t(locale, 'form.netError'))
     }
   }
 
   if (status === 'success') {
     return (
       <div className="form-success" role="status">
-        <strong>Готово — вы подписаны!</strong>
-        <p>Напомним о дате и программе праздника ближе к мероприятию.</p>
+        <strong>{t(locale, 'subscribe.success')}</strong>
+        <p>{t(locale, 'subscribe.successText')}</p>
       </div>
     )
   }
@@ -70,13 +71,13 @@ export function SubscribeForm() {
   return (
     <form className="reg-form" onSubmit={handleSubmit} noValidate>
       <label className="field">
-        <span>Имя</span>
+        <span>{t(locale, 'form.name')}</span>
         <input name="name" type="text" maxLength={200} autoComplete="name" />
       </label>
 
       <label className="field">
         <span>
-          Email <abbr title="обязательно">*</abbr>
+          {t(locale, 'form.email')} <abbr title={t(locale, 'form.required')}>*</abbr>
         </span>
         <input name="email" type="email" required maxLength={200} autoComplete="email" />
       </label>
@@ -84,11 +85,11 @@ export function SubscribeForm() {
       <label className="field field-checkbox">
         <input name="consent" type="checkbox" required />
         <span>
-          Я даю согласие на обработку персональных данных в соответствии с{' '}
-          <Link href="/privacy" prefetch={false} target="_blank">
-            Политикой обработки персональных данных
+          {t(locale, 'form.consent')}{' '}
+          <Link href={localeHref(locale, '/privacy')} prefetch={false} target="_blank">
+            {t(locale, 'form.consentPolicy')}
           </Link>{' '}
-          (152-ФЗ). <abbr title="обязательно">*</abbr>
+          (152-ФЗ). <abbr title={t(locale, 'form.required')}>*</abbr>
         </span>
       </label>
 
@@ -99,7 +100,7 @@ export function SubscribeForm() {
       )}
 
       <button type="submit" className="btn-primary" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Подписываем…' : 'Напомнить о празднике'}
+        {status === 'submitting' ? t(locale, 'subscribe.submitting') : t(locale, 'subscribe.submit')}
       </button>
     </form>
   )

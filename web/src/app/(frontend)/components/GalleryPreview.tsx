@@ -1,31 +1,37 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { t, type Locale } from '../../../lib/i18n'
+import { localeHref } from '../../../lib/localeHref'
+
 /**
- * Превью галереи на главной: карточки свежих альбомов + лента реальных фото из
- * новейшего альбома + CTA «Вся галерея». Данные готовит страница (чистые props).
+ * Превью галереи на главной: карточки свежих альбомов + лента реальных фото +
+ * CTA «Вся галерея». Данные готовит страница (чистые props, href уже локализован).
  */
 export type PreviewAlbum = {
   slug: string
   title: string
   meta: string
   coverUrl: string | null
+  href: string
 }
 export type PreviewPhoto = { src: string; full: string; alt: string }
 
 export function GalleryPreview({
   albums,
   photos,
+  locale = 'ru',
 }: {
   albums: PreviewAlbum[]
   photos: PreviewPhoto[]
+  locale?: Locale
 }) {
   return (
     <>
       {albums.length > 0 && (
         <div className="gallery-grid">
           {albums.map((a) => (
-            <Link className="gallery-card" href={`/gallery/${a.slug}`} key={a.slug}>
+            <Link className="gallery-card" href={a.href} key={a.slug}>
               <div className="gallery-card-img">
                 {a.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -57,8 +63,8 @@ export function GalleryPreview({
       )}
 
       <div className="section-cta">
-        <Link className="btn btn-gold" href="/gallery">
-          Вся галерея →
+        <Link className="btn btn-gold" href={localeHref(locale, '/gallery')}>
+          {t(locale, 'nav.gallery')} →
         </Link>
       </div>
     </>
