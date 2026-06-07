@@ -5,6 +5,7 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
+import type { CSSProperties } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
@@ -31,16 +32,47 @@ async function queryPageBySlug(slug: string, locale: Locale) {
   }
 }
 
+// URL кадра из featured-альбома (с наибольшим числом фото) по индексу декора —
+// атмосферный фон шапки (R2). Index берётся по модулю длины. Нет фото/альбома →
+// null → шапка остаётся орнаментной. Запрос только для страниц с decor.photo.
+async function queryHeroPhoto(index: number, locale: Locale): Promise<string | null> {
+  try {
+    const payload = await getPayload({ config })
+    const res = await payload.find({
+      collection: 'gallery',
+      where: { _status: { equals: 'published' } },
+      sort: '-date',
+      depth: 1,
+      limit: 5,
+      locale,
+    })
+    const albums = res.docs.filter((a) => Array.isArray(a.photos) && a.photos.length > 0)
+    if (!albums.length) return null
+    const featured = albums.slice().sort((a, b) => (b.photos?.length ?? 0) - (a.photos?.length ?? 0))[0]
+    const photos = (featured.photos ?? []) as Array<{ image?: unknown }>
+    const pick = photos[index % photos.length]?.image as
+      | { url?: string | null; sizes?: Record<string, { url?: string | null } | undefined> }
+      | undefined
+    if (!pick) return null
+    return pick.sizes?.wide?.url || pick.sizes?.card?.url || pick.url || null
+  } catch {
+    return null
+  }
+}
+
 export async function PageView({ slug, locale }: { slug: string; locale: Locale }) {
   const decoded = decodeURIComponent(slug)
   const page = await queryPageBySlug(decoded, locale)
   if (!page) notFound()
   const decor = getPageDecor(decoded, locale)
+  const heroPhoto = decor.photo !== null ? await queryHeroPhoto(decor.photo, locale) : null
+  const heroClass = heroPhoto ? 'page-hero page-hero--photo' : `page-hero page-hero--${decor.accent} pattern-petals`
+  const heroStyle = heroPhoto ? ({ ['--section-photo']: `url("${heroPhoto}")` } as CSSProperties) : undefined
 
   return (
     <main>
-      {/* Контент-aware декоративная шапка: мотив-медальон + орнамент-текстура */}
-      <header className={`page-hero page-hero--${decor.accent} pattern-petals`}>
+      {/* Контент-aware шапка: реальное фото (R2) или орнамент-слой + мотив-медальон */}
+      <header className={heroClass} style={heroStyle}>
         <div className="section-inner narrow">
           <Link className="breadcrumb" href={localeHref(locale, '/')}>
             ← {t(locale, 'notFound.home')}
