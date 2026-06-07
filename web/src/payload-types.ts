@@ -74,6 +74,8 @@ export interface Config {
     registrations: Registration;
     'poll-votes': PollVote;
     subscribers: Subscriber;
+    raffle: Raffle;
+    'raffle-entries': RaffleEntry;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -89,6 +91,8 @@ export interface Config {
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    raffle: RaffleSelect<false> | RaffleSelect<true>;
+    'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -345,6 +349,52 @@ export interface Subscriber {
   createdAt: string;
 }
 /**
+ * Розыгрыш призов. Заявки участников — в коллекции «Заявки на розыгрыш» (ПДн, доступ у персонала).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "raffle".
+ */
+export interface Raffle {
+  id: number;
+  title: string;
+  description?: string | null;
+  prize?: string | null;
+  /**
+   * Если включено — на сайте показывается форма участия.
+   */
+  isOpen?: boolean | null;
+  /**
+   * Поставьте галку и сохраните — система выберет случайного победителя из заявок, закроет приём и снимет эту галку.
+   */
+  drawNow?: boolean | null;
+  /**
+   * Заполняется автоматически при розыгрыше.
+   */
+  winner?: (number | null) | RaffleEntry;
+  drawnAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Заявки на участие в розыгрыше. Содержат персональные данные (152-ФЗ) — доступ только у персонала.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "raffle-entries".
+ */
+export interface RaffleEntry {
+  id: number;
+  fullName: string;
+  phone: string;
+  raffle: number | Raffle;
+  /**
+   * Обязательно. Участник подтверждает согласие при подаче заявки.
+   */
+  consent: boolean;
+  source?: ('website' | 'other') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -422,6 +472,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'raffle';
+        value: number | Raffle;
+      } | null)
+    | ({
+        relationTo: 'raffle-entries';
+        value: number | RaffleEntry;
       } | null)
     | ({
         relationTo: 'users';
@@ -621,6 +679,34 @@ export interface PollVotesSelect<T extends boolean = true> {
 export interface SubscribersSelect<T extends boolean = true> {
   email?: T;
   name?: T;
+  consent?: T;
+  source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "raffle_select".
+ */
+export interface RaffleSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  prize?: T;
+  isOpen?: T;
+  drawNow?: T;
+  winner?: T;
+  drawnAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "raffle-entries_select".
+ */
+export interface RaffleEntriesSelect<T extends boolean = true> {
+  fullName?: T;
+  phone?: T;
+  raffle?: T;
   consent?: T;
   source?: T;
   updatedAt?: T;

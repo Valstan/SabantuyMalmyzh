@@ -14,6 +14,7 @@ import { FeatureRow } from './components/FeatureRow'
 import { FestivalNotice } from './components/FestivalNotice'
 import { PhotoStripDivider } from './components/PhotoStripDivider'
 import { Poll } from './components/Poll'
+import { RaffleForm } from './components/RaffleForm'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from './components/GalleryPreview'
 import { Hero } from './components/Hero'
 import { SectionHeading } from './components/SectionHeading'
@@ -121,13 +122,30 @@ async function getPollTallies(): Promise<Record<string, number> | null> {
   }
 }
 
+async function getOpenRaffle() {
+  try {
+    const payload = await getPayload({ config })
+    const res = await payload.find({
+      collection: 'raffle',
+      where: { isOpen: { equals: true } },
+      limit: 1,
+      pagination: false,
+      depth: 0,
+    })
+    return res.docs[0] ?? null
+  } catch {
+    return null
+  }
+}
+
 export default async function HomePage() {
-  const [events, albums, about, map, pollTallies] = await Promise.all([
+  const [events, albums, about, map, pollTallies, openRaffle] = await Promise.all([
     getPublishedEvents(),
     getRecentAlbums(),
     getAboutTeaser(),
     getMapTeaser(),
     getPollTallies(),
+    getOpenRaffle(),
   ])
 
   const items: ScheduleItem[] = (events ?? []).map((e) => ({
@@ -366,6 +384,28 @@ export default async function HomePage() {
                   Открыть карту →
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Розыгрыш призов (I4) — секция только когда есть открытый розыгрыш */}
+      {openRaffle && (
+        <section className="section section--green">
+          <div className="section-inner">
+            <SectionHeading eyebrow="Розыгрыш призов" title={openRaffle.title} align="center" />
+            {openRaffle.prize && (
+              <p className="section-lead" style={{ textAlign: 'center' }}>
+                🎁 Приз: {openRaffle.prize}
+              </p>
+            )}
+            {openRaffle.description && (
+              <p className="section-lead" style={{ textAlign: 'center' }}>
+                {openRaffle.description}
+              </p>
+            )}
+            <div style={{ maxWidth: 480, margin: '1.5rem auto 0' }}>
+              <RaffleForm raffleId={openRaffle.id} />
             </div>
           </div>
         </section>
