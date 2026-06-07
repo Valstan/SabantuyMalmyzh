@@ -100,6 +100,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sabantuy_build
           PAYLOAD_SECRET: ci-build-only-secret-not-used-at-runtime
           NEXT_PUBLIC_SERVER_URL: ${{ vars.NEXT_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000' }}
+          # Включает output:'standalone' (next.config.js). На локальной машине флаг НЕ
+          # ставят → обычная сборка, которая не мутирует node_modules (см. next.config.js).
+          STANDALONE_BUILD: '1'
         run: pnpm build
 
       - name: Assemble standalone bundle
