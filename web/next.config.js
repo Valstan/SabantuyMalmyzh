@@ -13,7 +13,14 @@ const nextConfig = {
   // Прод-VPS (1.5 GiB RAM, без swap) не тянет `next build` (OOM). Сборка едет в CI
   // (GitHub Actions, ubuntu), на сервер кладём готовый standalone-сервер (≈150-300 МБ
   // в рантайме). tracingRoot = web/ — чтобы server.js лёг в корень .next/standalone.
-  output: 'standalone',
+  //
+  // ⚠️ standalone-сборка делает outputFileTracing, который МУТИРУЕТ локальный
+  // node_modules (удаляет next/dist/client/components/builtin/* → следующая локальная
+  // сборка падает «Cannot find module … global-not-found»; CI не страдает — там
+  // свежий install на каждую сборку). Поэтому standalone включаем ТОЛЬКО по флагу
+  // STANDALONE_BUILD=1 (его ставит deploy-prod.yml). Локальный `next build` — обычный,
+  // node_modules не портит → можно собирать повторно без реинстолла.
+  output: process.env.STANDALONE_BUILD === '1' ? 'standalone' : undefined,
   outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
