@@ -657,26 +657,17 @@ a.feature-card:hover {
   background: #fff;
   color: var(--brand-green-dark);
 }
-/* Вариант с реальным фото-фоном (R2): кадр праздника + вуаль + светлый текст */
-.page-hero--photo {
-  background-color: var(--brand-green-dark);
-  background-image: var(--pat-islimi), var(--hero-overlay), var(--section-photo, none);
-  background-size: 120px 28px, cover, cover;
-  background-position: center, center, center;
-  background-repeat: repeat, no-repeat, no-repeat;
-  border-bottom: 0;
-  color: #fff;
-}
-.page-hero--photo .eyebrow {
-  color: var(--c-gold);
-}
-.page-hero--photo .heading-brush {
-  color: #fff;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}
-.page-hero--photo .page-hero-medallion {
-  background: var(--grad-gold);
-  color: var(--c-burgundy);
+/* Тематическая иллюстрация по смыслу (R3) — крупно в кремовой рамке-карточке */
+.page-hero-scene {
+  display: block;
+  width: clamp(180px, 44vw, 290px);
+  height: auto;
+  margin: 0 auto 1rem;
+  padding: 0.7rem 1.1rem;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--c-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Лёгкое обогащение карточек галереи / расписания ───────────────────────── */
