@@ -6,7 +6,7 @@ import React from 'react'
 
 import { t } from '../../../lib/i18n'
 import { localeHref, pathLocale } from '../../../lib/localeHref'
-import { CULTURE_SECTIONS } from '../../../lib/cultureSections'
+import { getCultureSections } from '../../../lib/cultureSections'
 import { LanguageToggle } from './LanguageToggle'
 import { SectionDivider } from './SectionDivider'
 
@@ -46,7 +46,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
           <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>
           <Link href={h('/map')}>{t(locale, 'nav.map')}</Link>
           <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
-          {CULTURE_SECTIONS.map((s) => (
+          {getCultureSections(locale).map((s) => (
             <Link key={s.href} href={h(s.href)}>
               {s.title}
             </Link>

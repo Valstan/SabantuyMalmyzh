@@ -8,7 +8,7 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
-import { CATEGORY_LABELS } from '../../../lib/categories'
+import { categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
 import { FestivalNotice } from '../components/FestivalNotice'
 import { RegistrationForm } from '../events/[slug]/RegistrationForm'
@@ -72,7 +72,7 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
 
             <p className="event-facts">
               {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-              {event.category && <span className="badge">{CATEGORY_LABELS[event.category] ?? event.category}</span>}
+              {event.category && <span className="badge">{categoryLabel(event.category, locale)}</span>}
             </p>
 
             {event.location && <p className="meta">📍 {event.location}</p>}
