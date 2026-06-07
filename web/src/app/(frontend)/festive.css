@@ -603,6 +603,61 @@ a.feature-card:hover {
   border-color: var(--c-gold);
 }
 
+/* ── Декоративная шапка прозовой страницы (page-hero, контент-aware) ────────── */
+.page-hero {
+  position: relative;
+  padding: clamp(1.4rem, 4vw, 2.6rem) 0 clamp(1.9rem, 5vw, 3.1rem);
+  background-color: var(--section-tint-a);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.page-hero .section-inner.narrow {
+  text-align: center;
+}
+.page-hero .breadcrumb {
+  margin-bottom: 1.2rem;
+}
+.page-hero-medallion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 0.9rem;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow:
+    0 0 0 3px var(--c-cream),
+    0 0 0 4px var(--c-gold),
+    var(--shadow-md);
+}
+.page-hero .eyebrow {
+  justify-content: center;
+}
+.page-hero .heading-brush {
+  font-size: var(--fs-h2);
+  margin-bottom: 0;
+}
+.page-hero .heading-brush::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Акцентные варианты — заливка медальона по смыслу страницы */
+.page-hero--green .page-hero-medallion {
+  background: var(--grad-green);
+}
+.page-hero--crimson .page-hero-medallion {
+  background: var(--grad-crimson);
+}
+.page-hero--gold .page-hero-medallion {
+  background: var(--grad-gold);
+  color: var(--c-burgundy);
+}
+.page-hero--tint .page-hero-medallion {
+  background: #fff;
+  color: var(--brand-green-dark);
+}
+
 /* ── Лёгкое обогащение карточек галереи / расписания ───────────────────────── */
 .gallery-card:hover {
   box-shadow: var(--shadow-md);
