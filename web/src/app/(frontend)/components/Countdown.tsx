@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react'
 
+import { t, type Locale } from '../../../lib/i18n'
+
+const UNITS: Record<Locale, [string, string, string, string]> = {
+  ru: ['дн.', 'ч.', 'мин.', 'сек.'],
+  tt: ['көн', 'сәг.', 'мин.', 'сек.'],
+}
+
 /**
  * Обратный отсчёт до праздника. Цель (targetIso) приходит с сервера — дата
  * ближайшего события. Числа считаются на клиенте (тик раз в секунду), поэтому
@@ -19,7 +26,7 @@ function split(ms: number) {
   return { d, h, m, s }
 }
 
-export function Countdown({ targetIso }: { targetIso: string }) {
+export function Countdown({ targetIso, locale = 'ru' }: { targetIso: string; locale?: Locale }) {
   const target = new Date(targetIso).getTime()
   const [now, setNow] = useState<number | null>(null)
 
@@ -32,16 +39,17 @@ export function Countdown({ targetIso }: { targetIso: string }) {
   if (Number.isNaN(target)) return null
   if (now !== null && target <= now) return null // праздник идёт/прошёл
 
-  const t = now === null ? null : split(target - now)
+  const rem = now === null ? null : split(target - now)
+  const u = UNITS[locale]
   const cells: { v: number | null; label: string }[] = [
-    { v: t?.d ?? null, label: 'дн.' },
-    { v: t?.h ?? null, label: 'ч.' },
-    { v: t?.m ?? null, label: 'мин.' },
-    { v: t?.s ?? null, label: 'сек.' },
+    { v: rem?.d ?? null, label: u[0] },
+    { v: rem?.h ?? null, label: u[1] },
+    { v: rem?.m ?? null, label: u[2] },
+    { v: rem?.s ?? null, label: u[3] },
   ]
 
   return (
-    <div className="countdown" role="timer" aria-label="Обратный отсчёт до праздника">
+    <div className="countdown" role="timer" aria-label={t(locale, 'countdown.aria')}>
       {cells.map((c, i) => (
         <div className="countdown-cell" key={i}>
           <span className="countdown-num">

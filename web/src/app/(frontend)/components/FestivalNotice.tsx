@@ -1,20 +1,18 @@
-import { DEMO_SCHEDULE, FESTIVAL_NOTICE } from '../../../lib/festival'
+import { DEMO_SCHEDULE } from '../../../lib/festival'
+import { t, type Locale } from '../../../lib/i18n'
 
 /**
- * Заметное предупреждение посетителям, что текущие дата/программа —
- * предварительные (демо по прошлым годам). Рендерится только в демо-режиме
- * (DEMO_SCHEDULE). Ставится рядом с обратным отсчётом и расписанием.
+ * Заметное предупреждение посетителям, что текущие дата/программа — предварительные
+ * (демо). Рендерится только в демо-режиме (DEMO_SCHEDULE). Локализовано (I11).
  */
-export function FestivalNotice() {
+export function FestivalNotice({ locale = 'ru' }: { locale?: Locale }) {
   if (!DEMO_SCHEDULE) return null
   return (
     <p className="festival-notice" role="note">
       <span className="festival-notice-icon" aria-hidden="true">
         ⚠️
       </span>
-      <span>
-        <strong>Дата предварительная, не настоящая.</strong> {FESTIVAL_NOTICE}
-      </span>
+      <span>{t(locale, 'festival.demoNotice')}</span>
     </p>
   )
 }

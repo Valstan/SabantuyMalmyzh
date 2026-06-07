@@ -1,81 +1,18 @@
 import type { Metadata } from 'next'
 
-import config from '@payload-config'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { getPayload } from 'payload'
+import { AlbumView, albumMeta } from '../../_views/AlbumView'
 
-import { SectionHeading } from '../../components/SectionHeading'
-import { AlbumGallery, type AlbumPhoto } from './AlbumGallery'
-
-// Альбом галереи: masonry-фотостена + лайтбокс.
+// Альбом галереи. Тело — _views/AlbumView (ru/tt). ISR.
 export const revalidate = 60
 
 type Args = { params: Promise<{ slug: string }> }
 
-type MediaLike = { url?: string | null; alt?: string | null; sizes?: Record<string, { url?: string | null }> }
-
-async function queryAlbum(slug: string) {
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'gallery',
-      where: { and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }] },
-      limit: 1,
-      pagination: false,
-      depth: 1,
-    })
-    return res.docs[0] ?? null
-  } catch {
-    return null
-  }
-}
-
-const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' }) : null
-
 export default async function AlbumPage({ params }: Args) {
   const { slug } = await params
-  const album = await queryAlbum(decodeURIComponent(slug))
-  if (!album) notFound()
-
-  const rawPhotos = Array.isArray(album.photos) ? album.photos : []
-  const photos: AlbumPhoto[] = rawPhotos
-    .map((p): AlbumPhoto | null => {
-      const img = p.image && typeof p.image === 'object' ? (p.image as MediaLike) : null
-      const src = img?.sizes?.card?.url || img?.url || null
-      if (!src) return null
-      const full = img?.sizes?.wide?.url || img?.url || src
-      return { src, full, alt: p.caption || img?.alt || album.title, caption: p.caption || null }
-    })
-    .filter((p): p is AlbumPhoto => p !== null)
-
-  return (
-    <main>
-      <section className="section">
-        <div className="section-inner">
-          <p style={{ marginBottom: '1rem' }}>
-            <Link className="breadcrumb" href="/gallery">
-              ← Галерея
-            </Link>
-          </p>
-          <SectionHeading eyebrow="Альбом" title={album.title} />
-          {album.description && <p className="section-lead">{album.description}</p>}
-          {fmtDate(album.date) && <p className="meta">{fmtDate(album.date)}</p>}
-
-          {photos.length > 0 ? (
-            <AlbumGallery photos={photos} />
-          ) : (
-            <div className="placeholder">В этом альбоме пока нет фотографий.</div>
-          )}
-        </div>
-      </section>
-    </main>
-  )
+  return <AlbumView slug={slug} locale="ru" />
 }
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { slug } = await params
-  const album = await queryAlbum(decodeURIComponent(slug))
-  return { title: album ? `${album.title} — Галерея` : 'Альбом не найден' }
+  return albumMeta(slug, 'ru')
 }

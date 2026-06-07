@@ -4,17 +4,20 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { COMPETITIONS } from '../../../../lib/competitions'
+import { t, type Locale } from '../../../../lib/i18n'
+import { localeHref } from '../../../../lib/localeHref'
 
 type Props = {
   eventId: number
   eventTitle: string
   // I5: показывать выбор дисциплины (событие — состязание, category sport/kids).
   competitionMode?: boolean
+  locale?: Locale
 }
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
-export function RegistrationForm({ eventId, eventTitle, competitionMode = false }: Props) {
+export function RegistrationForm({ eventId, eventTitle, competitionMode = false, locale = 'ru' }: Props) {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -28,14 +31,14 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
 
     if (data.get('consent') !== 'on') {
       setStatus('error')
-      setError('Без согласия на обработку персональных данных заявку отправить нельзя.')
+      setError(t(locale, 'form.consent'))
       return
     }
 
     const competitionType = String(data.get('competitionType') ?? '').trim()
     if (competitionMode && !competitionType) {
       setStatus('error')
-      setError('Выберите дисциплину состязания.')
+      setError(t(locale, 'reg.pickDiscipline'))
       return
     }
 
@@ -59,7 +62,7 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
 
       if (!res.ok) {
         const body = await res.json().catch(() => null)
-        const msg = body?.errors?.[0]?.message || 'Не удалось отправить заявку. Попробуйте ещё раз.'
+        const msg = body?.errors?.[0]?.message || t(locale, 'form.netError')
         setStatus('error')
         setError(msg)
         return
@@ -69,18 +72,17 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
       setStatus('success')
     } catch {
       setStatus('error')
-      setError('Сеть недоступна. Проверьте подключение и попробуйте ещё раз.')
+      setError(t(locale, 'form.netError'))
     }
   }
+
+  const req = <abbr title={t(locale, 'form.required')}>*</abbr>
 
   if (status === 'success') {
     return (
       <div className="form-success" role="status">
-        <strong>Заявка отправлена!</strong>
-        <p>Спасибо за регистрацию на «{eventTitle}». Организаторы свяжутся с вами при необходимости.</p>
-        <button type="button" className="btn-link" onClick={() => setStatus('idle')}>
-          Отправить ещё одну заявку
-        </button>
+        <strong>{t(locale, 'reg.success')}</strong>
+        <p>«{eventTitle}»</p>
       </div>
     )
   }
@@ -89,31 +91,31 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
     <form className="reg-form" onSubmit={handleSubmit} noValidate>
       <label className="field">
         <span>
-          ФИО <abbr title="обязательно">*</abbr>
+          {t(locale, 'form.fullName')} {req}
         </span>
         <input name="fullName" type="text" required maxLength={200} autoComplete="name" />
       </label>
 
       <label className="field">
         <span>
-          Телефон <abbr title="обязательно">*</abbr>
+          {t(locale, 'form.phone')} {req}
         </span>
         <input name="phone" type="tel" required maxLength={32} autoComplete="tel" />
       </label>
 
       <label className="field">
-        <span>Email</span>
+        <span>{t(locale, 'form.email')}</span>
         <input name="email" type="email" maxLength={200} autoComplete="email" />
       </label>
 
       {competitionMode && (
         <label className="field">
           <span>
-            Дисциплина <abbr title="обязательно">*</abbr>
+            {t(locale, 'form.discipline')} {req}
           </span>
           <select name="competitionType" required defaultValue="">
             <option value="" disabled>
-              Выберите состязание…
+              {t(locale, 'reg.pickDiscipline')}
             </option>
             {COMPETITIONS.map((c) => (
               <option key={c.value} value={c.value}>
@@ -126,24 +128,24 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
 
       <label className="field">
         <span>
-          Количество участников <abbr title="обязательно">*</abbr>
+          {t(locale, 'form.participants')} {req}
         </span>
         <input name="participants" type="number" required min={1} defaultValue={1} />
       </label>
 
       <label className="field">
-        <span>Комментарий</span>
+        <span>{t(locale, 'form.comment')}</span>
         <textarea name="comment" rows={3} maxLength={1000} />
       </label>
 
       <label className="field field-checkbox">
         <input name="consent" type="checkbox" required />
         <span>
-          Я даю согласие на обработку персональных данных в соответствии с{' '}
-          <Link href="/privacy" prefetch={false} target="_blank">
-            Политикой обработки персональных данных
+          {t(locale, 'form.consent')}{' '}
+          <Link href={localeHref(locale, '/privacy')} prefetch={false} target="_blank">
+            {t(locale, 'form.consentPolicy')}
           </Link>{' '}
-          (152-ФЗ). <abbr title="обязательно">*</abbr>
+          (152-ФЗ). {req}
         </span>
       </label>
 
@@ -154,7 +156,7 @@ export function RegistrationForm({ eventId, eventTitle, competitionMode = false 
       )}
 
       <button type="submit" className="btn-primary" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Отправляем…' : 'Отправить заявку'}
+        {status === 'submitting' ? t(locale, 'reg.submitting') : t(locale, 'reg.submit')}
       </button>
     </form>
   )
