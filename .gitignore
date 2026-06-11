@@ -145,3 +145,9 @@ vite.config.ts.timestamp-*
 # Claude Code — per-machine local overrides (committed: .claude/settings.json)
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# AI-image pipeline (docs/design/IMAGE_PIPELINE.md) — картинки не коммитим,
+# в репо живут только оптимизированные web/public/decor/*
+design/incoming/*
+design/accepted/*
+!design/incoming/.gitkeep
