@@ -170,26 +170,41 @@ const SCENES: Record<SceneName, React.ReactNode> = {
     </>
   ),
 
-  // История Сабантуя — плуг (сабан) и колос
+  // История Сабантуя — деревянный плуг (сабан) в борозде, солнце и колос
   plough: (
     <>
       <line x1="10" y1="124" x2="210" y2="124" stroke={GD} strokeWidth="3" strokeLinecap="round" />
-      {/* плуг */}
-      <g stroke={B} strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M60 56 L150 96" />
-        <path d="M60 56 q-10 4 -8 16" />
-        <path d="M150 96 L120 116" />
-        <path d="M150 96 L168 116" />
+      {/* отвал вспаханной земли за лемехом */}
+      <path d="M36 124 q16 -14 34 -9 q14 4 20 9 Z" fill="#5a3a28" />
+      <path d="M46 121 q11 -8 24 -5" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+      {/* грядиль (от упряжи к рукоятям) */}
+      <path d="M26 62 Q96 80 150 88" stroke={B} strokeWidth="7" fill="none" strokeLinecap="round" />
+      {/* стойка к лемеху */}
+      <path d="M88 72 L80 118" stroke={B} strokeWidth="7" strokeLinecap="round" />
+      {/* две рукояти с золотыми хватами */}
+      <g stroke={B} strokeWidth="6" fill="none" strokeLinecap="round">
+        <path d="M150 88 L188 48" />
+        <path d="M132 86 L162 42" />
       </g>
-      <path d="M150 96 l18 8 -6 16 -20 -8Z" fill={YD} stroke={B} strokeWidth="1.5" />
+      <g stroke={Y} strokeWidth="7" strokeLinecap="round">
+        <line x1="188" y1="48" x2="194" y2="41" />
+        <line x1="162" y1="42" x2="167" y2="34" />
+      </g>
+      {/* лемех в борозде */}
+      <path d="M62 122 L102 122 L82 102 Z" fill={Y} stroke={YD} strokeWidth="2" strokeLinejoin="round" />
+      {/* упряжное кольцо */}
+      <circle cx="24" cy="60" r="6" fill="none" stroke={YD} strokeWidth="4" />
+      {/* солнце */}
+      <circle cx="40" cy="22" r="11" fill={Y} />
+      <circle cx="40" cy="22" r="11" fill="none" stroke={YD} strokeWidth="1.5" />
       {/* колос */}
       <g stroke={YD} strokeWidth="3" fill={Y} strokeLinecap="round">
-        <line x1="186" y1="118" x2="186" y2="64" />
-        <ellipse cx="186" cy="58" rx="5" ry="9" />
-        <ellipse cx="177" cy="70" rx="4" ry="7" transform="rotate(-32 177 70)" />
-        <ellipse cx="195" cy="70" rx="4" ry="7" transform="rotate(32 195 70)" />
-        <ellipse cx="178" cy="84" rx="4" ry="7" transform="rotate(-32 178 84)" />
-        <ellipse cx="194" cy="84" rx="4" ry="7" transform="rotate(32 194 84)" />
+        <line x1="204" y1="118" x2="204" y2="70" />
+        <ellipse cx="204" cy="64" rx="5" ry="9" />
+        <ellipse cx="195" cy="76" rx="4" ry="7" transform="rotate(-32 195 76)" />
+        <ellipse cx="213" cy="76" rx="4" ry="7" transform="rotate(32 213 76)" />
+        <ellipse cx="196" cy="90" rx="4" ry="7" transform="rotate(-32 196 90)" />
+        <ellipse cx="212" cy="90" rx="4" ry="7" transform="rotate(32 212 90)" />
       </g>
     </>
   ),
