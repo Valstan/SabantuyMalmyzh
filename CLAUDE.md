@@ -88,7 +88,7 @@ ref:
 |---|---|
 | `web/src/payload.config.ts` | Конфиг Payload: postgres-адаптер (`push:true` в dev), коллекции, lexical, i18n ru |
 | `web/src/collections/` | `Pages`, `Events` (Расписание), `Gallery`, `Media`, `Registrations`, `Users` |
-| `web/src/access/` | Хелперы доступа: `anyone`, `adminOnly`, `adminOrEditor`, `adminOrSelf`, `authenticated`, `authenticatedOrPublished` |
+| `web/src/access/` | Хелперы доступа: `anyone`, `adminOnly`, `adminOrEditor`, `adminOrSelf`, `authenticatedOrPublished` |
 | `web/src/app/(payload)/` | Сгенерённая Payload-обвязка админки (`/admin`, `/api`) — `importMap.js` регенерится `generate:importmap` |
 | `web/src/app/(frontend)/` | Публичный фронт (home = расписание) |
 | `web/.env.example` | Шаблон env. Реальные значения — `web/.env` (gitignored) локально / `/etc/sabantuy/sabantuy.env` на проде (#008) |

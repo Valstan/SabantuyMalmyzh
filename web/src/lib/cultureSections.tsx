@@ -75,6 +75,3 @@ const SECTIONS: CultureDef[] = [
 export function getCultureSections(locale: Locale = 'ru'): CultureSection[] {
   return SECTIONS.map((s) => ({ icon: s.icon, href: s.href, ...(locale === 'tt' ? s.tt : s.ru) }))
 }
-
-// Совместимость: ru-список (если где-то нужен без локали).
-export const CULTURE_SECTIONS: CultureSection[] = getCultureSections('ru')

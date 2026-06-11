@@ -13,7 +13,7 @@ import type { Locale } from './i18n'
  * MotifName на каждый slug). Здесь добавлены служебные страницы (o-sabantuy и т.п.),
  * сцена-иллюстрация, акцент и eyebrow.
  */
-export type DecorAccent = 'green' | 'crimson' | 'gold' | 'tint'
+type DecorAccent = 'green' | 'crimson' | 'gold' | 'tint'
 
 export type PageDecor = {
   icon: MotifName
