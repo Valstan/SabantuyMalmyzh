@@ -54,5 +54,3 @@ const FEATURES: FeatureDef[] = [
 export function getFeatures(locale: Locale = 'ru'): Feature[] {
   return FEATURES.map((f) => ({ icon: f.icon, ...(locale === 'tt' ? f.tt : f.ru) }))
 }
-
-export const SABANTUY_FEATURES: Feature[] = getFeatures('ru')

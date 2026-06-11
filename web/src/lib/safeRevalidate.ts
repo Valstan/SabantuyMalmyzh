@@ -32,12 +32,3 @@ export const safeRevalidatePath = (path: string, type?: 'layout' | 'page') => {
   }
 }
 
-export const safeRevalidateTag = (tag: string) => {
-  const mod = getNextCacheModule()
-  if (!mod?.revalidateTag) return
-  try {
-    mod.revalidateTag(tag)
-  } catch {
-    // вне Next-рантайма — игнорируем
-  }
-}

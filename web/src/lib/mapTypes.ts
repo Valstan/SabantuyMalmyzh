@@ -3,7 +3,7 @@ import type { Locale } from './i18n'
 // Типы объектов на карте фестиваля — единый источник подписей и иконок.
 // MAP_TYPE (ru) — порядок групп в легенде; mapTypeMeta(type, locale) даёт перевод
 // метки (tt-черновик, I11). Иконки общие.
-export const MAP_TYPE: Record<string, { label: string; icon: string }> = {
+const MAP_TYPE: Record<string, { label: string; icon: string }> = {
   stage: { label: 'Сцены и площадки', icon: '🎤' },
   food: { label: 'Еда и напитки', icon: '🍽️' },
   entrance: { label: 'Входы', icon: '🚪' },

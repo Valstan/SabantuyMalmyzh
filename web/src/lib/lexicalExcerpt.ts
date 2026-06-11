@@ -13,7 +13,7 @@ function isObj(v: unknown): v is LexNode {
   return typeof v === 'object' && v !== null
 }
 
-export function lexicalToPlainText(node: unknown): string {
+function lexicalToPlainText(node: unknown): string {
   if (!isObj(node)) return ''
   if (typeof node.text === 'string') return node.text
   const kids = node.root?.children ?? node.children ?? []

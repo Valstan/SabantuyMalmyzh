@@ -16,13 +16,8 @@ export const COMPETITIONS: { value: string; label: string }[] = [
   { value: 'kids', label: 'Детские состязания' },
 ]
 
-export const COMPETITION_VALUES = COMPETITIONS.map((c) => c.value)
-
-export const competitionLabel = (value?: string | null): string =>
-  value ? (COMPETITIONS.find((c) => c.value === value)?.label ?? value) : ''
-
 // Категории событий, для которых на форме показываем выбор дисциплины.
-export const COMPETITION_CATEGORIES = ['sport', 'kids']
+const COMPETITION_CATEGORIES = ['sport', 'kids']
 
 export const isCompetitionCategory = (category?: string | null): boolean =>
   !!category && COMPETITION_CATEGORIES.includes(category)
