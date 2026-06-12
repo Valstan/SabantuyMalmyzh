@@ -2,9 +2,10 @@
 // design/incoming/<src> → кадр 21:9 → web/public/decor/<slug>-{w}.{webp,jpg}.
 // Запуск из web/: node scripts/process-decor.mjs
 import sharp from 'sharp'
-import { mkdirSync } from 'fs'
+import { existsSync, mkdirSync } from 'fs'
 
-const IN = '../design/incoming'
+// Принятые оригиналы переезжают в accepted/ — ищем в обоих, чтобы скрипт был перезапускаем
+const DIRS = ['../design/incoming', '../design/accepted']
 const OUT = 'public/decor'
 
 // slug → исходник; large-ширина = ширина кадра 21:9 без апскейла
@@ -18,14 +19,28 @@ const JOBS = [
     large: 1344,
   },
   { slug: 'page-o-sabantuy', src: '_3d374651-9aea-4849-9965-853375499818.jpg', large: 1248 },
+  // Карточка №2 (2026-06-13)
+  {
+    slug: 'page-narody',
+    src: 'lucid-origin_Festive_display_of_folk_cultures_at_a_summer_festival_traditional_Tatar_Russian_-0 (1).jpg',
+    large: 1344,
+  },
+  { slug: 'page-podvorya', src: '_36754e55-73eb-482f-a145-0525646e271e.jpg', large: 1248 },
+  { slug: 'page-detskiy', src: '_d1bb9229-c8d0-4bcb-bb25-e43610d54aa1.jpg', large: 1248 },
+  { slug: 'page-doroga', src: '_62090581-cd7e-4090-8bc2-0b0da5e5a5d7.jpg', large: 1248 },
 ]
 
 const h = (w) => Math.round((w * 9) / 21)
 
 mkdirSync(OUT, { recursive: true })
 for (const { slug, src, large, position = 'attention' } of JOBS) {
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (!dir) {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+    continue
+  }
   for (const w of [large, 960]) {
-    const base = sharp(`${IN}/${src}`).resize(w, h(w), { fit: 'cover', position })
+    const base = sharp(`${dir}/${src}`).resize(w, h(w), { fit: 'cover', position })
     await base.clone().webp({ quality: 80 }).toFile(`${OUT}/${slug}-${w === 960 ? 960 : 'lg'}.webp`)
     await base.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${OUT}/${slug}-${w === 960 ? 960 : 'lg'}.jpg`)
   }

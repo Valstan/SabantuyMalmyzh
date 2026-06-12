@@ -43,12 +43,14 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'peoples',
     accent: 'green',
     eyebrow: { ru: 'Дружба народов', tt: 'Халыклар дуслыгы' },
+    photo: { base: 'page-narody', largeWidth: 1344 },
   },
   podvorya: {
     icon: 'house',
     scene: 'house',
     accent: 'gold',
     eyebrow: { ru: 'Национальные дворы', tt: 'Милли йортлар' },
+    photo: { base: 'page-podvorya', largeWidth: 1248 },
   },
   'istoriya-sabantuya': {
     icon: 'scroll',
@@ -69,6 +71,7 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'kids',
     accent: 'gold',
     eyebrow: { ru: 'Для самых маленьких', tt: 'Иң кечкенәләр өчен' },
+    photo: { base: 'page-detskiy', largeWidth: 1248 },
   },
   kuhnya: {
     icon: 'cuisine',
@@ -82,6 +85,7 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'road',
     accent: 'green',
     eyebrow: { ru: 'Дорога до Малмыжа', tt: 'Малмыжга юл' },
+    photo: { base: 'page-doroga', largeWidth: 1248 },
   },
   faq: {
     icon: 'question',
