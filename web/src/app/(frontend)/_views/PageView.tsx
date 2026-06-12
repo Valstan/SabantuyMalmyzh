@@ -38,10 +38,21 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
   if (!page) notFound()
   const decor = getPageDecor(decoded, locale)
 
+  // Гибрид «AI-фото-фон + SVG-эмблема поверх»: image-set webp/jpg, 2 размера через CSS-vars
+  const photoStyle = decor.photo
+    ? ({
+        '--hero-photo': `image-set(url(/decor/${decor.photo.base}-lg.webp) type("image/webp"), url(/decor/${decor.photo.base}-lg.jpg) type("image/jpeg"))`,
+        '--hero-photo-sm': `image-set(url(/decor/${decor.photo.base}-960.webp) type("image/webp"), url(/decor/${decor.photo.base}-960.jpg) type("image/jpeg"))`,
+      } as React.CSSProperties)
+    : undefined
+
   return (
     <main>
       {/* Контент-aware шапка: тематическая иллюстрация по смыслу + орнамент-слой */}
-      <header className={`page-hero page-hero--${decor.accent} pattern-petals`}>
+      <header
+        className={`page-hero page-hero--${decor.accent} pattern-petals${decor.photo ? ' page-hero--photo' : ''}`}
+        style={photoStyle}
+      >
         <div className="section-inner narrow">
           <Link className="breadcrumb" href={localeHref(locale, '/')}>
             ← {t(locale, 'notFound.home')}

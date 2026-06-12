@@ -670,6 +670,47 @@ a.feature-card:hover {
   box-shadow: var(--shadow-sm);
 }
 
+/* Гибрид «AI-фото-фон + SVG-эмблема» (IMAGE_PIPELINE): фото инлайн-переменными
+   --hero-photo / --hero-photo-sm (image-set webp/jpg), сверху вуаль как у
+   .section--photo, текст светлый. Без фото класс не ставится — цветной фолбэк. */
+.page-hero--photo {
+  background-color: var(--brand-green-dark);
+  background-image: var(--hero-photo-sm, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+@media (min-width: 900px) {
+  .page-hero--photo {
+    background-image: var(--hero-photo, none);
+  }
+}
+.page-hero--photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--pat-islimi), var(--hero-overlay);
+  background-size: 120px 28px, cover;
+  pointer-events: none;
+}
+.page-hero--photo .section-inner.narrow {
+  position: relative;
+  z-index: 1;
+}
+.page-hero--photo .eyebrow {
+  color: var(--c-gold);
+}
+.page-hero--photo .heading-brush,
+.page-hero--photo .eyebrow {
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+.page-hero--photo .breadcrumb {
+  color: rgba(255, 247, 230, 0.92);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
 /* ── Лёгкое обогащение карточек галереи / расписания ───────────────────────── */
 .gallery-card:hover {
   box-shadow: var(--shadow-md);
