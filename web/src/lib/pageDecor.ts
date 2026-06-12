@@ -21,13 +21,19 @@ export type PageDecor = {
   scene: SceneName | null
   accent: DecorAccent
   eyebrow: string
+  /** AI-фото-фон шапки (гибрид «фото + SVG-эмблема»): базовое имя в /decor/. */
+  photo: PagePhoto | null
 }
+
+/** Базовое имя файлов web/public/decor/<base>-{lg,960}.{webp,jpg} + ширина lg-кадра. */
+export type PagePhoto = { base: string; largeWidth: number }
 
 type DecorDef = {
   icon: MotifName
   scene: SceneName | null
   accent: DecorAccent
   eyebrow: { ru: string; tt: string }
+  photo?: PagePhoto
 }
 
 const DECOR: Record<string, DecorDef> = {
@@ -49,12 +55,14 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'plough',
     accent: 'crimson',
     eyebrow: { ru: 'Из глубины веков', tt: 'Гасырлар тирәнлегеннән' },
+    photo: { base: 'page-istoriya', largeWidth: 1536 },
   },
   maydan: {
     icon: 'koresh',
     scene: 'wrestling',
     accent: 'green',
     eyebrow: { ru: 'Состязания батыров', tt: 'Батырлар ярышы' },
+    photo: { base: 'page-maydan', largeWidth: 1920 },
   },
   'detskiy-maydan': {
     icon: 'kids',
@@ -67,6 +75,7 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'feast',
     accent: 'crimson',
     eyebrow: { ru: 'Вкусы праздника', tt: 'Бәйрәм тәмнәре' },
+    photo: { base: 'page-kuhnya', largeWidth: 1344 },
   },
   'kak-dobratsya': {
     icon: 'compass',
@@ -87,6 +96,7 @@ const DECOR: Record<string, DecorDef> = {
     scene: 'celebration',
     accent: 'green',
     eyebrow: { ru: 'О фестивале', tt: 'Фестиваль турында' },
+    photo: { base: 'page-o-sabantuy', largeWidth: 1248 },
   },
   kontakty: {
     icon: 'compass',
@@ -112,5 +122,11 @@ const FALLBACK: DecorDef = {
 /** Декор для страницы по slug. Неизвестный slug → нейтральный fallback. */
 export function getPageDecor(slug: string, locale: Locale = 'ru'): PageDecor {
   const def = DECOR[slug] ?? FALLBACK
-  return { icon: def.icon, scene: def.scene, accent: def.accent, eyebrow: def.eyebrow[locale] }
+  return {
+    icon: def.icon,
+    scene: def.scene,
+    accent: def.accent,
+    eyebrow: def.eyebrow[locale],
+    photo: def.photo ?? null,
+  }
 }
