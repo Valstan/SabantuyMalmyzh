@@ -181,7 +181,12 @@ export async function HomeView({ locale }: { locale: Locale }) {
 
   const featurePhoto =
     mediaUrl(featuredPhotos[2]?.image, 'wide') || mediaUrl(featuredPhotos[3]?.image, 'wide') || heroUrl
-  const ctaPhoto = mediaUrl(featuredPhotos[4]?.image, 'wide') || mediaUrl(featuredPhotos[0]?.image, 'wide')
+  // CTA-полоса всегда на фото: галерейный кадр, иначе гарантированный декор-фон
+  // (без него падала на малиновый section--crimson — владелец просил убрать красный).
+  const ctaPhoto =
+    mediaUrl(featuredPhotos[4]?.image, 'wide') ||
+    mediaUrl(featuredPhotos[0]?.image, 'wide') ||
+    '/decor/page-maydan-lg.jpg'
 
   const aboutText = about ? excerpt(about.content, 300) : ''
   const aboutPhoto =

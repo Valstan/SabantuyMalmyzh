@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
-import { CATEGORY_LABELS, categoryLabel } from '../../lib/categories'
+import { CATEGORY_COVER, CATEGORY_LABELS, categoryLabel } from '../../lib/categories'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
 
@@ -279,6 +279,7 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
             {group.items.map((event) => {
               const href = event.slug ? localeHref(locale, `/events/${encodeURIComponent(event.slug)}`) : undefined
               const status = statusById.get(event.id)
+              const cover = event.category ? CATEGORY_COVER[event.category] : undefined
               return (
                 <article
                   className={`schedule-item${status === 'live' ? ' is-live' : ''}${
@@ -286,34 +287,40 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
                   }`}
                   key={event.id}
                 >
-                  <div className="schedule-item-head">
-                    {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
-                    {status === 'live' && <span className="status-badge live">{t(locale, 'schedule.live')}</span>}
-                    {status === 'next' && <span className="status-badge next">{t(locale, 'schedule.next')}</span>}
-                    <button
-                      type="button"
-                      className={`star-btn${starred.has(event.id) ? ' on' : ''}`}
-                      aria-pressed={starred.has(event.id)}
-                      aria-label={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAdd')}
-                      title={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAddTitle')}
-                      onClick={() => toggleStar(event.id)}
-                    >
-                      {starred.has(event.id) ? '★' : '☆'}
-                    </button>
-                  </div>
-                  <h4 className="schedule-item-title">
-                    {href ? <Link href={href}>{event.title}</Link> : event.title}
-                    {event.category && (
-                      <span className="badge">{categoryLabel(event.category, locale)}</span>
-                    )}
-                  </h4>
-                  {event.summary && <p>{event.summary}</p>}
-                  {event.location && <p className="meta">📍 {event.location}</p>}
-                  {event.registrationEnabled && href && (
-                    <Link className="reg-badge" href={`${href}#register`}>
-                      {t(locale, 'schedule.regOpen')}
-                    </Link>
+                  {cover && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img className="schedule-thumb" src={`/decor/${cover}-480.jpg`} alt="" loading="lazy" />
                   )}
+                  <div className="schedule-item-body">
+                    <div className="schedule-item-head">
+                      {event.startDate && <time>{dateFmt.format(new Date(event.startDate))}</time>}
+                      {status === 'live' && <span className="status-badge live">{t(locale, 'schedule.live')}</span>}
+                      {status === 'next' && <span className="status-badge next">{t(locale, 'schedule.next')}</span>}
+                      <button
+                        type="button"
+                        className={`star-btn${starred.has(event.id) ? ' on' : ''}`}
+                        aria-pressed={starred.has(event.id)}
+                        aria-label={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAdd')}
+                        title={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAddTitle')}
+                        onClick={() => toggleStar(event.id)}
+                      >
+                        {starred.has(event.id) ? '★' : '☆'}
+                      </button>
+                    </div>
+                    <h4 className="schedule-item-title">
+                      {href ? <Link href={href}>{event.title}</Link> : event.title}
+                      {event.category && (
+                        <span className="badge">{categoryLabel(event.category, locale)}</span>
+                      )}
+                    </h4>
+                    {event.summary && <p>{event.summary}</p>}
+                    {event.location && <p className="meta">📍 {event.location}</p>}
+                    {event.registrationEnabled && href && (
+                      <Link className="reg-badge" href={`${href}#register`}>
+                        {t(locale, 'schedule.regOpen')}
+                      </Link>
+                    )}
+                  </div>
                 </article>
               )
             })}

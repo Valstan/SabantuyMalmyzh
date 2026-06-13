@@ -22,6 +22,16 @@ const CATEGORY_LABELS_TT: Record<string, string> = {
   other: 'Башка',
 }
 
+/** Категория → базовый slug обложки-миниатюры в web/public/decor/ (карточки расписания). */
+export const CATEGORY_COVER: Record<string, string> = {
+  concert: 'feat-concert',
+  sport: 'feat-koresh',
+  food: 'feat-cuisine',
+  kids: 'feat-kids',
+  ceremony: 'cat-ceremony',
+  crafts: 'card-podvorya',
+}
+
 export const categoryLabel = (category?: string | null, locale: Locale = 'ru'): string => {
   if (!category) return ''
   const map = locale === 'tt' ? CATEGORY_LABELS_TT : CATEGORY_LABELS
