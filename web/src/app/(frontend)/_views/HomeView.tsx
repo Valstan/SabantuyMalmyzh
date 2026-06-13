@@ -17,6 +17,7 @@ import { FestivalNotice } from '../components/FestivalNotice'
 import { PhotoStripDivider } from '../components/PhotoStripDivider'
 import { Poll } from '../components/Poll'
 import { RaffleForm } from '../components/RaffleForm'
+import { SectionDivider } from '../components/SectionDivider'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from '../components/GalleryPreview'
 import { Hero } from '../components/Hero'
 import { SectionHeading } from '../components/SectionHeading'
@@ -40,6 +41,13 @@ const fmtMonth = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }) : ''
 const photoBg = (url: string | null): CSSProperties | undefined =>
   url ? ({ ['--section-photo']: `url("${url}")` } as CSSProperties) : undefined
+
+// Тюльпаны-фон секции отсчёта (карточка №3): статичный декор из web/public/decor/
+// (зелёная вуаль секции приглушает теплоту до изумрудной гаммы).
+const tulipBg = {
+  ['--section-photo']:
+    'image-set(url("/decor/decor-tulips-lg.webp") type("image/webp"), url("/decor/decor-tulips-lg.jpg") type("image/jpeg"))',
+} as CSSProperties
 
 async function getPublishedEvents(locale: Locale) {
   try {
@@ -236,7 +244,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
       </Hero>
 
       {festivalStartIso && (
-        <section className="section section--crimson">
+        <section className="section section--photo" style={tulipBg}>
           <div className="section-inner" style={{ textAlign: 'center' }}>
             <SectionHeading
               eyebrow={t(locale, 'countdown.title')}
@@ -410,6 +418,8 @@ export async function HomeView({ locale }: { locale: Locale }) {
           </div>
         </div>
       </section>
+
+      <SectionDivider variant="ornament" tall />
 
       <CtaBand
         eyebrow={t(locale, 'home.cta.eyebrow')}

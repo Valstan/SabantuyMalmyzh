@@ -5,7 +5,7 @@ import React from 'react'
  * баннеров. variant 'wave'|'drape' заливают цветом соседней секции (создают
  * вырез); 'vine' — золотой декоративный медальон по центру. aria-hidden.
  */
-type Variant = 'wave' | 'drape' | 'vine'
+type Variant = 'wave' | 'drape' | 'vine' | 'ornament'
 
 const FILL_PATHS: Record<'wave' | 'drape', string> = {
   // Плавная волна
@@ -19,11 +19,18 @@ export function SectionDivider({
   variant = 'wave',
   flip = false,
   color = 'var(--brand-sand)',
+  tall = false,
 }: {
   variant?: Variant
   flip?: boolean
   color?: string
+  /** Для variant='ornament' — высокая орнамент-полоса (баннер) вместо тонкого разделителя. */
+  tall?: boolean
 }) {
+  // Орнамент-полоса (карточка №3): декоративная лента-картинка из web/public/decor/
+  if (variant === 'ornament') {
+    return <div className={`ornament-band${tall ? ' ornament-band--tall' : ''}`} aria-hidden="true" />
+  }
   if (variant === 'vine') {
     return (
       <div className="ornament-divider" aria-hidden="true">

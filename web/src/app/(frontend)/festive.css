@@ -120,6 +120,23 @@ h3,
   height: clamp(28px, 5vw, 54px);
 }
 
+/* ── Орнамент-полоса (карточка №3): декор-лента между секциями / баннер ─────── */
+.ornament-band {
+  width: 100%;
+  height: clamp(50px, 8vw, 74px);
+  background-image: image-set(
+    url(/decor/decor-ornament-band.webp) type('image/webp'),
+    url(/decor/decor-ornament-band.jpg) type('image/jpeg')
+  );
+  background-size: cover;
+  background-position: center;
+  border-top: 3px solid var(--c-gold);
+  border-bottom: 3px solid var(--c-gold);
+}
+.ornament-band--tall {
+  height: clamp(104px, 16vw, 158px);
+}
+
 /* ── V2 фотолента-разделитель: полоса реальных кадров между секциями ───────── */
 .photo-strip-divider {
   display: flex;
