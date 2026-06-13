@@ -27,11 +27,13 @@
   --grad-green: linear-gradient(160deg, var(--brand-green), var(--brand-green-dark));
   --grad-crimson: linear-gradient(160deg, var(--c-crimson), var(--c-burgundy));
   --grad-gold: linear-gradient(120deg, var(--c-gold), var(--c-gold-deep));
+  /* Вуаль над фото-шапками/героем/секциями — зелёная (раньше уходила в малиновый
+     к низу; владелец: «красные затемнения раздражают» → изумрудная гамма). */
   --hero-overlay: linear-gradient(
     180deg,
-    rgba(10, 60, 35, 0.42) 0%,
-    rgba(70, 16, 36, 0.5) 55%,
-    rgba(122, 18, 40, 0.72) 100%
+    rgba(10, 60, 35, 0.4) 0%,
+    rgba(9, 48, 29, 0.52) 55%,
+    rgba(7, 38, 23, 0.74) 100%
   );
 
   /* Шрифты: --font-display / --font-body задаёт next/font на <html> (layout.tsx).

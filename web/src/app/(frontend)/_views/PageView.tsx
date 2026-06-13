@@ -10,7 +10,6 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { getPageDecor } from '../../../lib/pageDecor'
 import { MotifIcon } from '../components/MotifIcon'
-import { SceneIllustration } from '../components/SceneIllustration'
 import { SectionDivider } from '../components/SectionDivider'
 
 // Общее тело статической страницы (Pages по slug). Используют ru-маршрут [slug] и
@@ -48,7 +47,8 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
 
   return (
     <main>
-      {/* Контент-aware шапка: тематическая иллюстрация по смыслу + орнамент-слой */}
+      {/* Контент-aware шапка: AI-фото-фон (если есть) + орнамент-слой; без фото —
+          мотив-медальон по смыслу страницы. Рисованные SVG-сцены убраны. */}
       <header
         className={`page-hero page-hero--${decor.accent} pattern-petals${decor.photo ? ' page-hero--photo' : ''}`}
         style={photoStyle}
@@ -57,9 +57,7 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
           <Link className="breadcrumb" href={localeHref(locale, '/')}>
             ← {t(locale, 'notFound.home')}
           </Link>
-          {decor.scene ? (
-            <SceneIllustration name={decor.scene} className="page-hero-scene" />
-          ) : (
+          {!decor.photo && (
             <span className="page-hero-medallion" aria-hidden="true">
               <MotifIcon name={decor.icon} size={38} />
             </span>
