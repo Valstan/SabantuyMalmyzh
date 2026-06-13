@@ -77,7 +77,7 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
         </div>
       </section>
 
-      <SectionDivider variant="vine" />
+      <SectionDivider variant="ornament" />
     </main>
   )
 }

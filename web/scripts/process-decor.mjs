@@ -4,8 +4,9 @@
 import sharp from 'sharp'
 import { existsSync, mkdirSync } from 'fs'
 
-// Принятые оригиналы переезжают в accepted/ — ищем в обоих, чтобы скрипт был перезапускаем
-const DIRS = ['../design/incoming', '../design/accepted']
+// Принятые оригиналы переезжают в accepted/ (запас — в accepted/spare/) — ищем во всех,
+// чтобы скрипт был перезапускаем
+const DIRS = ['../design/incoming', '../design/accepted', '../design/accepted/spare']
 const OUT = 'public/decor'
 
 // slug → исходник; large-ширина = ширина кадра 21:9 без апскейла
@@ -97,6 +98,40 @@ for (const { slug, src, position = 'attention' } of COVERS) {
       .resize(size, size, { fit: 'cover', position: 'centre' })
       .jpeg({ quality: 82, mozjpeg: true })
       .toFile(`${OUT}/${slug}.jpg`)
+    console.log(slug, 'ok')
+  } else {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+  }
+}
+
+// Карточка №3 ч.2 — орнамент-полоса (разделитель секций + баннер на главной):
+// горизонтальная полоса из центра орнамент-панели, 1920×300, cover.
+{
+  const slug = 'decor-ornament-band'
+  const src = '_7fb6184d-a981-4312-82d0-cc3305b1a281.jpg'
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (dir) {
+    const base = sharp(`${dir}/${src}`).resize(1920, 300, { fit: 'cover', position: 'centre' })
+    await base.clone().webp({ quality: 80 }).toFile(`${OUT}/${slug}.webp`)
+    await base.clone().jpeg({ quality: 80, mozjpeg: true }).toFile(`${OUT}/${slug}.jpg`)
+    console.log(slug, 'ok')
+  } else {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+  }
+}
+
+// Карточка №3 ч.2 — тюльпаны фоном секции (отсчёт): широкий 16:9, lg+960.
+{
+  const slug = 'decor-tulips'
+  const src = 'lucid-origin_festive_summer_atmosphere_warm_sunlight_emerald_green_and_golden_palette_with_su-0.jpg'
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (dir) {
+    for (const w of [1600, 960]) {
+      const base = sharp(`${dir}/${src}`).resize(w, Math.round((w * 9) / 16), { fit: 'cover', position: 'attention' })
+      const tag = w === 960 ? 960 : 'lg'
+      await base.clone().webp({ quality: 80 }).toFile(`${OUT}/${slug}-${tag}.webp`)
+      await base.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${OUT}/${slug}-${tag}.jpg`)
+    }
     console.log(slug, 'ok')
   } else {
     console.warn(slug, 'SKIP — исходник не найден:', src)
