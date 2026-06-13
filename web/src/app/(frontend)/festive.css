@@ -671,6 +671,11 @@ a.feature-card--cover:hover .feature-cover img {
 }
 .page-hero .section-inner.narrow {
   text-align: center;
+  /* Колонка: крошка / медальон / eyebrow / заголовок — каждый на своей строке
+     (все inline-flex, иначе текут в одну строку и налезают друг на друга). */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .page-hero .breadcrumb {
   margin-bottom: 1.2rem;
