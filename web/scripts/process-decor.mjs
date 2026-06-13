@@ -30,7 +30,23 @@ const JOBS = [
   { slug: 'page-doroga', src: '_62090581-cd7e-4090-8bc2-0b0da5e5a5d7.jpg', large: 1248 },
 ]
 
+// Обложки культ-разделов (4:3) на главной — кроп тех же исходников, что и шапки
+// страниц, чтобы карточка хаба была мини-превью своей страницы. Два размера под
+// srcset: 768 (десктоп-retina, ~350px карточка) + 480 (моб. 2-колонки). faq — без
+// фото (нет тематического исходника), рисуется градиент-иконкой в FeatureCard.
+const COVERS = [
+  { slug: 'card-narody', src: 'lucid-origin_Festive_display_of_folk_cultures_at_a_summer_festival_traditional_Tatar_Russian_-0 (1).jpg' },
+  { slug: 'card-podvorya', src: '_36754e55-73eb-482f-a145-0525646e271e.jpg' },
+  { slug: 'card-istoriya', src: '_96e0359e-1553-4ccd-92d8-632f7de5be6c.jpg', position: 'south' },
+  { slug: 'card-maydan', src: 'page-maydan.jpg' },
+  { slug: 'card-detskiy', src: '_d1bb9229-c8d0-4bcb-bb25-e43610d54aa1.jpg' },
+  { slug: 'card-kuhnya', src: 'lucid-origin_a_cinematic_photo_of_Festive_Tatar_national_cuisine_spread_at_an_open-air_summer-0.jpg' },
+  { slug: 'card-doroga', src: '_62090581-cd7e-4090-8bc2-0b0da5e5a5d7.jpg' },
+]
+const COVER_SIZES = [768, 480]
+
 const h = (w) => Math.round((w * 9) / 21)
+const ch = (w) => Math.round((w * 3) / 4)
 
 mkdirSync(OUT, { recursive: true })
 for (const { slug, src, large, position = 'attention' } of JOBS) {
@@ -43,6 +59,23 @@ for (const { slug, src, large, position = 'attention' } of JOBS) {
     const base = sharp(`${dir}/${src}`).resize(w, h(w), { fit: 'cover', position })
     await base.clone().webp({ quality: 80 }).toFile(`${OUT}/${slug}-${w === 960 ? 960 : 'lg'}.webp`)
     await base.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${OUT}/${slug}-${w === 960 ? 960 : 'lg'}.jpg`)
+  }
+  console.log(slug, 'ok')
+}
+
+for (const { slug, src, position = 'attention' } of COVERS) {
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (!dir) {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+    continue
+  }
+  // Только JPG (mozjpeg): на этих детализированных кадрах webp тяжелее jpg, а
+  // обложки маленькие и ленивые — `<img srcset>` проще image-set и без лишнего веса.
+  for (const w of COVER_SIZES) {
+    await sharp(`${dir}/${src}`)
+      .resize(w, ch(w), { fit: 'cover', position })
+      .jpeg({ quality: 74, mozjpeg: true })
+      .toFile(`${OUT}/${slug}-${w}.jpg`)
   }
   console.log(slug, 'ok')
 }

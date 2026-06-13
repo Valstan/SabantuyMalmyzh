@@ -299,7 +299,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
           </p>
           <div className="feature-row culture-hub">
             {getCultureSections(locale).map((s) => (
-              <FeatureCard key={s.href} {...s} href={h(s.href)} />
+              <FeatureCard key={s.href} {...s} href={h(s.href)} coverLayout />
             ))}
           </div>
         </div>

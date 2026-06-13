@@ -363,6 +363,50 @@ a.feature-card:hover {
   color: var(--muted);
 }
 
+/* Хаб культ-разделов: карточка с обложкой 4:3 сверху (фото или градиент-иконка) */
+.feature-card--cover {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.feature-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--grad-green);
+  overflow: hidden;
+}
+.feature-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+a.feature-card--cover:hover .feature-cover img {
+  transform: scale(1.05);
+}
+/* Раздел без тематического фото (faq): мотив-иконка на фирменном градиенте */
+.feature-cover--icon {
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.feature-card--cover:nth-child(even) .feature-cover--icon {
+  background: var(--grad-crimson);
+}
+.feature-card-body {
+  display: block;
+  width: 100%;
+  padding: 1rem 1.1rem 1.25rem;
+}
+.feature-card--cover h3 {
+  margin: 0 0 0.35rem;
+}
+.feature-card--cover p {
+  margin: 0;
+}
+
 /* ── Двухколоночный тизер (о фестивале / карта) ────────────────────────────── */
 .split {
   display: grid;
