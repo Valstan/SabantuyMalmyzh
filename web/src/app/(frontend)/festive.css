@@ -326,6 +326,10 @@ h3,
 .culture-hub {
   grid-template-columns: repeat(2, 1fr);
 }
+/* Фича-ряд «Что вас ждёт» с фото-обложками — как культ-хаб (2 → 3 колонки) */
+.feature-row.feature-row--cover {
+  grid-template-columns: repeat(2, 1fr);
+}
 .culture-hub .feature-card p {
   font-size: 0.9rem;
 }
@@ -571,6 +575,15 @@ a.feature-card--cover:hover .feature-cover img {
   color: rgba(255, 247, 230, 0.85);
   border-top: 3px solid var(--c-gold);
   padding: 2rem 1.25rem;
+}
+/* Силуэт города лентой над подвалом: на всю ширину (минус паддинг), кремовый
+   скайлайн на зелёном фоне подвала (прозрачный PNG). */
+.footer-skyline {
+  display: block;
+  width: calc(100% + 2.5rem);
+  margin: -2rem -1.25rem 1.4rem;
+  height: auto;
+  opacity: 0.9;
 }
 .site-footer a {
   color: var(--c-gold);
@@ -1146,7 +1159,8 @@ a.feature-card--cover:hover .feature-cover img {
     grid-template-columns: repeat(6, 1fr);
     gap: 1.1rem;
   }
-  .culture-hub {
+  .culture-hub,
+  .feature-row.feature-row--cover {
     grid-template-columns: repeat(3, 1fr);
   }
   .split {

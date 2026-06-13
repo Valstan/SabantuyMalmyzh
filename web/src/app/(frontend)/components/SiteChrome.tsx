@@ -41,6 +41,9 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       {children}
 
       <footer className="site-footer">
+        {/* Декоративный силуэт Малмыжа (церковь, мечеть, крыши) лентой над подвалом */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="footer-skyline" src="/decor/footer-skyline.png" alt="" aria-hidden="true" />
         <nav className="footer-nav" aria-label={t(locale, 'footer.sections')}>
           <Link href={h('/')}>{t(locale, 'nav.schedule')}</Link>
           <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>

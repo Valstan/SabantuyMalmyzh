@@ -51,6 +51,14 @@ const COVERS = [
   { slug: 'card-detskiy', src: '_d1bb9229-c8d0-4bcb-bb25-e43610d54aa1.jpg' },
   { slug: 'card-kuhnya', src: 'lucid-origin_a_cinematic_photo_of_Festive_Tatar_national_cuisine_spread_at_an_open-air_summer-0.jpg' },
   { slug: 'card-doroga', src: '_62090581-cd7e-4090-8bc2-0b0da5e5a5d7.jpg' },
+  // Карточка №4 (2026-06-13): обложки фича-ряда «Что вас ждёт» + категория-миниатюры расписания
+  { slug: 'feat-koresh', src: '_89d7cce8-4e9f-48c8-b919-7bdc2f0166c3.jpg' },
+  { slug: 'feat-horse', src: 'high-level-description-a-photograph-of-t_MUAY_na2XCOm5dTrMP_5Uw_n_mQ9gI3SB2roSj-05YXwA.jpg' },
+  { slug: 'feat-pole', src: 'high-level-description-a-photograph-of-a_93BtB8v9WvqnjKvUP6rc9g_aN5Uxx5XSDSU8tcYs2J3Ig.jpg' },
+  { slug: 'feat-cuisine', src: 'lucid-origin_a_cinematic_photo_of_Festive_Tatar_national_cuisine_spread_at_an_open-air_summer-0.jpg' },
+  { slug: 'feat-concert', src: 'lucid-origin_Folk_dancers_in_colorful_Tatar_Russian_costumes_on_an_open-air_stage_dynamic_fro-0.jpg' },
+  { slug: 'feat-kids', src: 'lucid-origin_Children_s_play_meadow_painted_wooden_rocking_horses_swings_balloons_bunting_on_-0.jpg' },
+  { slug: 'cat-ceremony', src: 'lucid-origin_Festive_opening_ceremony_a_flag_being_raised_on_a_decorated_stage_bunting_crowd_-0.jpg' },
 ]
 const COVER_SIZES = [768, 480]
 
@@ -132,6 +140,40 @@ for (const { slug, src, position = 'attention' } of COVERS) {
       await base.clone().webp({ quality: 80 }).toFile(`${OUT}/${slug}-${tag}.webp`)
       await base.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${OUT}/${slug}-${tag}.jpg`)
     }
+    console.log(slug, 'ok')
+  } else {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+  }
+}
+
+// Карточка №4 — силуэт города Малмыжа для подвала: кроп полосы со скайлайном →
+// белый фон в прозрачность (порог по яркости) → перекрас в кремовый → прозрачный PNG.
+{
+  const slug = 'footer-skyline'
+  const src = 'lucid-origin_flat_single-color_silhouette_clean_simple_vector_shapes_no_gradient_no_inner_det-0.jpg'
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (dir) {
+    const meta = await sharp(`${dir}/${src}`).metadata()
+    // полоса со зданиями (≈36–66% высоты): от чуть выше шпилей до линии воды,
+    // плотно — чтобы в подвале была невысокой лентой (вставляется как <img> во всю ширину)
+    const top = Math.round(meta.height * 0.36)
+    const bandH = Math.round(meta.height * 0.3)
+    const band = sharp(`${dir}/${src}`).extract({ left: 0, top, width: meta.width, height: bandH })
+    const bandBuf = await band.toBuffer()
+    const bm = await sharp(bandBuf).metadata()
+    // alpha: тёмное (силуэт) → 255 (непрозрачно), белое → 0
+    const alpha = await sharp(bandBuf)
+      .greyscale()
+      .threshold(180)
+      .negate()
+      .toColourspace('b-w')
+      .raw()
+      .toBuffer()
+    // кремовая заливка + полученная маска как альфа
+    await sharp({ create: { width: bm.width, height: bm.height, channels: 3, background: { r: 244, g: 236, b: 216 } } })
+      .joinChannel(alpha, { raw: { width: bm.width, height: bm.height, channels: 1 } })
+      .png()
+      .toFile(`${OUT}/${slug}.png`)
     console.log(slug, 'ok')
   } else {
     console.warn(slug, 'SKIP — исходник не найден:', src)
