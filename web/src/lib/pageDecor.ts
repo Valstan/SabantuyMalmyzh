@@ -82,6 +82,7 @@ const DECOR: Record<string, DecorDef> = {
     icon: 'question',
     accent: 'tint',
     eyebrow: { ru: 'Памятка гостю', tt: 'Кунакка хәтерләтмә' },
+    photo: { base: 'page-faq', largeWidth: 1344 },
   },
 
   // ── Служебные / контентные страницы ───────────────────────────────────────
@@ -95,6 +96,7 @@ const DECOR: Record<string, DecorDef> = {
     icon: 'compass',
     accent: 'gold',
     eyebrow: { ru: 'Свяжитесь с нами', tt: 'Безнең белән бәйләнешегез' },
+    photo: { base: 'page-kontakty', largeWidth: 1344 },
   },
   privacy: {
     icon: 'scroll',
