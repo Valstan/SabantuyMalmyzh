@@ -28,7 +28,15 @@ const JOBS = [
   { slug: 'page-podvorya', src: '_36754e55-73eb-482f-a145-0525646e271e.jpg', large: 1248 },
   { slug: 'page-detskiy', src: '_d1bb9229-c8d0-4bcb-bb25-e43610d54aa1.jpg', large: 1248 },
   { slug: 'page-doroga', src: '_62090581-cd7e-4090-8bc2-0b0da5e5a5d7.jpg', large: 1248 },
+  // Карточка №3 (2026-06-13): фото-шапки последних страниц без фото
+  { slug: 'page-faq', src: 'lucid-origin_Wide_welcoming_entrance_to_an_open-air_Tatar_summer_festival_visitors_seen_from_-0.jpg', large: 1344 },
+  { slug: 'page-kontakty', src: 'lucid-origin_A_stunning_and_vibrant_cinematic_photo_of_Scenic_panorama_of_a_small_provincial_-0.jpg', large: 1344 },
 ]
+
+// Орнамент-медальон (карточка №3): круглая эмблема для шапок без фото (privacy и
+// неизвестные slug) вместо линейной мотив-иконки. Квадрат, кроп по центру → в CSS
+// border-radius:50%. Кремовый фон орнамента уходит за круг — кеинг не нужен.
+const ROUNDEL = { slug: 'decor-roundel', src: '_76b42a6c-aa1d-4f2d-97e0-1c995846c744.jpg', size: 320 }
 
 // Обложки культ-разделов (4:3) на главной — кроп тех же исходников, что и шапки
 // страниц, чтобы карточка хаба была мини-превью своей страницы. Два размера под
@@ -78,4 +86,19 @@ for (const { slug, src, position = 'attention' } of COVERS) {
       .toFile(`${OUT}/${slug}-${w}.jpg`)
   }
   console.log(slug, 'ok')
+}
+
+// Орнамент-медальон: квадратный кроп по центру
+{
+  const { slug, src, size } = ROUNDEL
+  const dir = DIRS.find((d) => existsSync(`${d}/${src}`))
+  if (dir) {
+    await sharp(`${dir}/${src}`)
+      .resize(size, size, { fit: 'cover', position: 'centre' })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toFile(`${OUT}/${slug}.jpg`)
+    console.log(slug, 'ok')
+  } else {
+    console.warn(slug, 'SKIP — исходник не найден:', src)
+  }
 }

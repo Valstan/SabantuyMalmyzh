@@ -9,7 +9,6 @@ import { getPayload } from 'payload'
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { getPageDecor } from '../../../lib/pageDecor'
-import { MotifIcon } from '../components/MotifIcon'
 import { SectionDivider } from '../components/SectionDivider'
 
 // Общее тело статической страницы (Pages по slug). Используют ru-маршрут [slug] и
@@ -58,8 +57,9 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
             ← {t(locale, 'notFound.home')}
           </Link>
           {!decor.photo && (
-            <span className="page-hero-medallion" aria-hidden="true">
-              <MotifIcon name={decor.icon} size={38} />
+            <span className="page-hero-medallion page-hero-medallion--ornament" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/decor/decor-roundel.jpg" alt="" />
             </span>
           )}
           <p className="eyebrow">{decor.eyebrow}</p>

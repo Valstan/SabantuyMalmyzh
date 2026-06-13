@@ -698,6 +698,20 @@ a.feature-card--cover:hover .feature-cover img {
   background: #fff;
   color: var(--brand-green-dark);
 }
+/* Орнамент-медальон (карточка №3): круглый кроп орнамент-картинки для шапок без фото */
+.page-hero-medallion--ornament {
+  width: 104px;
+  height: 104px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--c-cream);
+}
+.page-hero-medallion--ornament img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 
 /* AI-фото-фон шапки (IMAGE_PIPELINE): фото инлайн-переменными
    --hero-photo / --hero-photo-sm (image-set webp/jpg), сверху вуаль как у
