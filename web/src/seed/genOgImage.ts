@@ -26,9 +26,9 @@ const overlay = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="63
   <defs>
     <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#0c3a24" stop-opacity="0.55"/>
-      <stop offset="0.42" stop-color="#0c3a24" stop-opacity="0.42"/>
-      <stop offset="0.72" stop-color="#3a0f17" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#5a1620" stop-opacity="0.72"/>
+      <stop offset="0.42" stop-color="#0a3221" stop-opacity="0.42"/>
+      <stop offset="0.72" stop-color="#093020" stop-opacity="0.54"/>
+      <stop offset="1" stop-color="#072618" stop-opacity="0.74"/>
     </linearGradient>
     <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#08160d" flood-opacity="0.85"/>
