@@ -1670,3 +1670,14 @@ a.feature-card--cover:hover .feature-cover img {
     padding: 0.85rem 1rem 1rem;
   }
 }
+
+/* Видимый счётчик-бейдж LiveInternet в подвале */
+.li-counter {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  opacity: 0.85;
+}
+.li-counter:hover {
+  opacity: 1;
+}

@@ -8,6 +8,7 @@ import { t } from '../../../lib/i18n'
 import { localeHref, pathLocale } from '../../../lib/localeHref'
 import { getCultureSections } from '../../../lib/cultureSections'
 import { LanguageToggle } from './LanguageToggle'
+import { LiveInternetCounter } from './LiveInternetCounter'
 import { SectionDivider } from './SectionDivider'
 
 // Locale-aware «обвязка» сайта (шапка + подвал + переключатель языка). Клиентский
@@ -69,6 +70,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         <Link href="/admin" prefetch={false}>
           {t(locale, 'footer.admin')}
         </Link>
+        <LiveInternetCounter />
       </footer>
     </>
   )
