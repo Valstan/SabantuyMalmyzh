@@ -371,6 +371,10 @@ export interface QuizQuestion {
    * Меньше — раньше. Пусто — в конце, по дате.
    */
   order?: number | null;
+  /**
+   * Служебный — для идемпотентного сида. Вручную не заполнять.
+   */
+  key?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -741,6 +745,7 @@ export interface QuizQuestionsSelect<T extends boolean = true> {
   source?: T;
   hint?: T;
   order?: T;
+  key?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

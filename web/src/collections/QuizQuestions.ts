@@ -134,6 +134,20 @@ export const QuizQuestions: CollectionConfig<'quiz-questions'> = {
         description: 'Меньше — раньше. Пусто — в конце, по дате.',
       },
     },
+    {
+      // Технический ключ идемпотентного сида (как slug у Pages). У созданных
+      // вручную вопросов остаётся пустым — Postgres допускает несколько NULL
+      // в unique-индексе. У засеянных не менять, иначе повторный сид задвоит.
+      name: 'key',
+      type: 'text',
+      label: 'Ключ сида',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Служебный — для идемпотентного сида. Вручную не заполнять.',
+      },
+    },
   ],
   hooks: {
     beforeValidate: [validateQuizQuestion],
