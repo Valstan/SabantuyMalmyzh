@@ -5,7 +5,7 @@
 
 ---
 
-**Status:** ✅ **Счётчики + SEO/GEO на ПРОДЕ** (PR #111): Яндекс.Метрика + LiveInternet (env-gated, отложенно) + Schema.org JSON-LD (Event/FAQPage/Org/WebSite/Breadcrumb) + `/llms.txt` + robots под ИИ-ботов + canonical/hreflang. ⚠️ Счётчики **спят** до настройки владельцем (GitHub Variables). Ранее: счётчик игроков (PR #109), игра-угадайка (PR #106).
+**Status:** ✅ **Счётчики + SEO/GEO на ПРОДЕ** (PR #111). ✅ **Яндекс.Метрика 109964170 ВКЛЮЧЕНА** (PR #113: владелец дал сниппет → variable `NEXT_PUBLIC_YANDEX_METRICA_ID` + init под его опции ssr/webvisor; на проде рендерится loader+pixel на `/` и `/tt`). ⏳ **LiveInternet — ждёт** регистрации владельцем (`NEXT_PUBLIC_LIVEINTERNET=1`). + Schema.org JSON-LD (Event/FAQPage/Org/WebSite/Breadcrumb) + `/llms.txt` + robots под ИИ-ботов + canonical/hreflang. Ранее: счётчик игроков (PR #109), игра-угадайка (PR #106).
 **Updated:** 2026-06-18
 **Branch:** main
 
