@@ -22,7 +22,7 @@
 - [ ] **I12 per-event OG отдельной строкой бэклога** — вынести из подпункта I9; предложено владельцу, ждёт OK.
   added: 2026-06-07 · snoozed: 0 · last-touch: 2026-06-10 · decay: fresh
 
-- [ ] **Включить счётчики посещаемости** (обвязка на проде, PR #111, спит) — владелец: (1) завести счётчик на metrika.yandex.ru → номер; (2) опц. зарегистрировать сайт на liveinternet.ru; (3) в GitHub → Settings → Variables добавить `NEXT_PUBLIC_YANDEX_METRICA_ID=<номер>` и `NEXT_PUBLIC_LIVEINTERNET=1`; (4) следующий деплой (или `gh workflow run deploy-prod.yml --ref main`) забейкает их → счётчики и плашка включатся. Пусто → не рендерится (так и задумано).
+- [ ] **LiveInternet — включить** (Метрика 109964170 ✅ включена PR #113). Владелец: зарегистрировать сайт на liveinternet.ru → добавить variable `NEXT_PUBLIC_LIVEINTERNET=1` (GitHub → Settings → Variables) → следующий деплой (или `gh workflow run deploy-prod.yml --ref main`) включит. Обвязка уже на проде (PR #111), пусто → не рендерится.
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-18 · decay: fresh
 - [ ] **Опубликовать клаузу веб-аналитики на живой `/privacy`** — в шаблон Политики (`seedFromWp.ts`) добавлен раздел «Веб-аналитика и cookie» (Метрика/LiveInternet, 152-ФЗ). На живой странице появится при пересиде privacy ИЛИ владелец вставляет вручную в `/admin` (страница owner-gated, реквизиты оператора всё равно за владельцем). Плашка-уведомление при этом уже несёт раскрытие.
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-18 · decay: fresh
