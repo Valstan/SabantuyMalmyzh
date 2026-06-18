@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { getQuizRank, quizThemeLabel } from '../../../lib/quiz'
+import { QuizStats, bumpStats, type QuizStatsData } from './QuizStats'
 
 /**
  * Клиентская игра-«угадайка». Сервер (QuizView) отдаёт опубликованные вопросы в
@@ -25,6 +26,10 @@ export type QuizClientQuestion = {
 }
 
 const BEST_KEY = 'sabantuy:quiz-best' // лучший результат, проценты (0–100)
+// Флаг «результат уже отправлен» — один POST на браузер для данного набора
+// вопросов (как «один голос на браузер» у Poll). Ключ включает total: вырастет
+// банк вопросов — игрок сможет дослать результат нового набора.
+const submittedKey = (total: number) => `sabantuy:quiz-sent:${total}`
 
 type Phase = 'intro' | 'playing' | 'done'
 
@@ -42,9 +47,11 @@ const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 export function QuizGame({
   questions,
   locale = 'ru',
+  initialStats = null,
 }: {
   questions: QuizClientQuestion[]
   locale?: Locale
+  initialStats?: QuizStatsData | null
 }) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [deck, setDeck] = useState<QuizClientQuestion[]>([])
@@ -55,6 +62,7 @@ export function QuizGame({
   const [best, setBest] = useState<number | null>(null)
   const [isNewBest, setIsNewBest] = useState(false)
   const [shared, setShared] = useState(false)
+  const [stats, setStats] = useState<QuizStatsData | null>(initialStats)
 
   useEffect(() => {
     try {
@@ -105,7 +113,37 @@ export function QuizGame({
         /* приватный режим — рекорд не сохранится */
       }
     }
+    void submitResult(correctCount, deck.length)
     setPhase('done')
+  }
+
+  // Отправка обезличенного результата в общую статистику (POST /api/quiz-results,
+  // create=anyone). Один раз на браузер для данного набора (флаг в localStorage);
+  // на сервере ещё rate-limit по IP. Витрину обновляем оптимистично, чтобы игрок
+  // сразу увидел себя. Сеть упала — молча: статистика не критична.
+  async function submitResult(score: number, totalQ: number) {
+    if (totalQ <= 0) return
+    try {
+      if (localStorage.getItem(submittedKey(totalQ)) != null) return
+    } catch {
+      /* приватный режим — попробуем отправить, дубль отсечёт rate-limit */
+    }
+    try {
+      const res = await fetch('/api/quiz-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score, total: totalQ }),
+      })
+      if (!res.ok) return
+      try {
+        localStorage.setItem(submittedKey(totalQ), '1')
+      } catch {
+        /* приватный режим — засчитано на сервере */
+      }
+      setStats((s) => bumpStats(s, score, totalQ))
+    } catch {
+      /* офлайн / ошибка сети — молча */
+    }
   }
 
   const rank = useMemo(() => getQuizRank(correctCount, total), [correctCount, total])
@@ -145,6 +183,7 @@ export function QuizGame({
           {t(locale, 'game.start')}
         </button>
         <p className="quiz-note">{t(locale, 'game.savedNote')}</p>
+        <QuizStats stats={stats} locale={locale} />
       </div>
     )
   }
@@ -174,6 +213,7 @@ export function QuizGame({
             {shared ? `✓ ${t(locale, 'game.shared')}` : t(locale, 'game.share')}
           </button>
         </div>
+        <QuizStats stats={stats} locale={locale} youScore={correctCount} />
       </div>
     )
   }

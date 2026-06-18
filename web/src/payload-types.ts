@@ -74,6 +74,7 @@ export interface Config {
     registrations: Registration;
     'poll-votes': PollVote;
     'quiz-questions': QuizQuestion;
+    'quiz-results': QuizResult;
     subscribers: Subscriber;
     raffle: Raffle;
     'raffle-entries': RaffleEntry;
@@ -92,6 +93,7 @@ export interface Config {
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
     'quiz-questions': QuizQuestionsSelect<false> | QuizQuestionsSelect<true>;
+    'quiz-results': QuizResultsSelect<false> | QuizResultsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     raffle: RaffleSelect<false> | RaffleSelect<true>;
     'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
@@ -380,6 +382,19 @@ export interface QuizQuestion {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Обезличенные результаты игры-угадайки. На сайте — агрегат (счётчик игроков, средний балл, распределение).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-results".
+ */
+export interface QuizResult {
+  id: number;
+  score: number;
+  total: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Подписчики на анонс праздника. Содержат email (152-ФЗ) — доступ только у персонала. Рассылку-напоминание орги делают вручную ближе к дате.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -521,6 +536,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'quiz-questions';
         value: number | QuizQuestion;
+      } | null)
+    | ({
+        relationTo: 'quiz-results';
+        value: number | QuizResult;
       } | null)
     | ({
         relationTo: 'subscribers';
@@ -749,6 +768,16 @@ export interface QuizQuestionsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-results_select".
+ */
+export interface QuizResultsSelect<T extends boolean = true> {
+  score?: T;
+  total?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
