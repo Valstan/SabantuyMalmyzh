@@ -14,3 +14,11 @@
 export const DEMO_SCHEDULE = true
 
 // Текст предупреждения для посетителей — i18n-ключ 'festival.demoNotice' (ru/tt) в lib/i18n.ts.
+
+// ─── Официальные факты праздника (единый источник для Schema.org Event + llms.txt) ───
+// Дата объявлена организаторами 2026-06-11. Меняется здесь — подхватывают разметка и
+// карта для нейросетей. ISO-дата (день праздника); место — Малмыж, Кировская область.
+export const FESTIVAL_DATE = '2026-07-04'
+export const FESTIVAL_PLACE = 'Малмыж'
+export const FESTIVAL_REGION = 'Кировская область'
+export const FESTIVAL_COUNTRY = 'Россия'

@@ -1630,3 +1630,43 @@ a.feature-card--cover:hover .feature-cover img {
     transition: none;
   }
 }
+
+/* Уведомление об аналитике/cookie (152-ФЗ) — лента внизу, НЕ блокирует сайт */
+.consent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem 1.2rem;
+  padding: 0.8rem 1.1rem;
+  background: var(--brand-green-dark, #0c4a2a);
+  color: #fff;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.18);
+}
+.consent-text {
+  margin: 0;
+  font-size: 0.92rem;
+  max-width: 60rem;
+  line-height: 1.45;
+}
+.consent-text a {
+  color: var(--c-gold, #e9c46a);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.consent-btn {
+  flex: none;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .consent {
+    flex-direction: column;
+    text-align: center;
+    padding: 0.85rem 1rem 1rem;
+  }
+}

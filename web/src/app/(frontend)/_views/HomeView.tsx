@@ -4,8 +4,10 @@ import { getPayload } from 'payload'
 import type { CSSProperties } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { eventJsonLd, faqJsonLd } from '../../../lib/jsonLd'
 import { localeHref } from '../../../lib/localeHref'
 import { getCultureSections } from '../../../lib/cultureSections'
+import { JsonLd } from '../components/JsonLd'
 import { excerpt } from '../../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../../lib/mapTypes'
 import { POLL_OPTIONS } from '../../../lib/pollOptions'
@@ -226,6 +228,9 @@ export async function HomeView({ locale }: { locale: Locale }) {
 
   return (
     <main>
+      {/* Schema.org: сам праздник (когда/где/что) + выверенные Q&A — для Google-сниппета
+          и цитирования в ответах нейросетей. Ноль веса для браузера (серверный <script>). */}
+      <JsonLd data={[eventJsonLd(locale), faqJsonLd(locale)]} />
       <Hero
         imageUrl={heroUrl}
         imageAlt="Сабантуй в Малмыже"

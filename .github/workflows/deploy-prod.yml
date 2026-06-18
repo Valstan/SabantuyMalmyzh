@@ -100,6 +100,12 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sabantuy_build
           PAYLOAD_SECRET: ci-build-only-secret-not-used-at-runtime
           NEXT_PUBLIC_SERVER_URL: ${{ vars.NEXT_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000' }}
+          # Счётчики посещаемости (бейкаются в бандл при сборке). Пусто → счётчик не
+          # рендерится. Владелец заводит счётчики и кладёт значения в Variables репо:
+          #   NEXT_PUBLIC_YANDEX_METRICA_ID — номер счётчика Метрики (только цифры)
+          #   NEXT_PUBLIC_LIVEINTERNET=1     — включить LiveInternet
+          NEXT_PUBLIC_YANDEX_METRICA_ID: ${{ vars.NEXT_PUBLIC_YANDEX_METRICA_ID }}
+          NEXT_PUBLIC_LIVEINTERNET: ${{ vars.NEXT_PUBLIC_LIVEINTERNET }}
           # Включает output:'standalone' (next.config.js). На локальной машине флаг НЕ
           # ставят → обычная сборка, которая не мутирует node_modules (см. next.config.js).
           STANDALONE_BUILD: '1'
