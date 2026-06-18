@@ -7,8 +7,10 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { breadcrumbJsonLd, faqJsonLd } from '../../../lib/jsonLd'
 import { localeHref } from '../../../lib/localeHref'
 import { getPageDecor } from '../../../lib/pageDecor'
+import { JsonLd } from '../components/JsonLd'
 import { SectionDivider } from '../components/SectionDivider'
 
 // Общее тело статической страницы (Pages по slug). Используют ru-маршрут [slug] и
@@ -36,6 +38,17 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
   if (!page) notFound()
   const decor = getPageDecor(decoded, locale)
 
+  // Разметка: хлебные крошки (Главная → страница) + на /faq — выверенные Q&A
+  // (FAQPage помогает Google-сниппету и цитированию в нейросетях).
+  const selfPath = locale === 'tt' ? `/tt/${decoded}` : `/${decoded}`
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: t(locale, 'crumb.home'), path: locale === 'tt' ? '/tt' : '/' },
+      { name: page.title, path: selfPath },
+    ]),
+  ]
+  if (decoded === 'faq') jsonLd.push(faqJsonLd(locale))
+
   // Гибрид «AI-фото-фон + SVG-эмблема поверх»: image-set webp/jpg, 2 размера через CSS-vars
   const photoStyle = decor.photo
     ? ({
@@ -46,6 +59,7 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
 
   return (
     <main>
+      <JsonLd data={jsonLd} />
       {/* Контент-aware шапка: AI-фото-фон (если есть) + орнамент-слой; без фото —
           мотив-медальон по смыслу страницы. Рисованные SVG-сцены убраны. */}
       <header
@@ -83,6 +97,13 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
 }
 
 export async function pageMeta(slug: string, locale: Locale): Promise<Metadata> {
-  const page = await queryPageBySlug(decodeURIComponent(slug), locale)
-  return { title: page?.title ?? t(locale, 'notFound.title') }
+  const decoded = decodeURIComponent(slug)
+  const page = await queryPageBySlug(decoded, locale)
+  return {
+    title: page?.title ?? t(locale, 'notFound.title'),
+    alternates: {
+      canonical: locale === 'tt' ? `/tt/${decoded}` : `/${decoded}`,
+      languages: { 'ru-RU': `/${decoded}`, 'tt-RU': `/tt/${decoded}` },
+    },
+  }
 }

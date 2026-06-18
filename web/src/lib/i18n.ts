@@ -263,6 +263,14 @@ const UI: Dict = {
   },
   'game.stats.visitorsTt': { ru: 'посетителей', tt: 'кунак' },
   'game.stats.you': { ru: 'вы', tt: 'сез' },
+  'crumb.home': { ru: 'Главная', tt: 'Баш бит' },
+  'consent.aria': { ru: 'Уведомление об аналитике', tt: 'Аналитика турында хәбәр' },
+  'consent.text': {
+    ru: 'Мы используем cookie и сервисы статистики (Яндекс.Метрика, LiveInternet), чтобы понимать посещаемость сайта.',
+    tt: 'Сайтка күпме кеше керүен белү өчен без cookie һәм статистика хезмәтләрен (Яндекс.Метрика, LiveInternet) кулланабыз.',
+  },
+  'consent.more': { ru: 'Подробнее', tt: 'Җентекләбрәк' },
+  'consent.accept': { ru: 'Понятно', tt: 'Аңлашылды' },
 }
 
 export function t(locale: Locale, key: string): string {

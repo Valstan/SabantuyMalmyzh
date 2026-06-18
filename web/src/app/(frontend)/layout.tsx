@@ -3,6 +3,11 @@ import { Manrope, Playfair_Display } from 'next/font/google'
 import React from 'react'
 
 import './globals.css'
+import { websiteJsonLd, organizationJsonLd } from '../../lib/jsonLd'
+import { SITE_DESC, SITE_URL } from '../../lib/site'
+import { Analytics, analyticsEnabled } from './components/Analytics'
+import { ConsentNotice } from './components/ConsentNotice'
+import { JsonLd } from './components/JsonLd'
 import { ServiceWorkerRegister } from './components/ServiceWorkerRegister'
 import { SiteChrome } from './components/SiteChrome'
 
@@ -23,9 +28,7 @@ const body = Manrope({
 })
 
 // metadataBase делает относительный /og.jpg абсолютным URL для соц-скрейперов.
-// Берём боевой URL из env (бейкается при сборке), с разумным фолбэком.
-const SITE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'https://1942c6fc87be.vps.myjino.ru'
-const SITE_DESC = 'Народный праздник Малмыжа — труда, силы и дружбы народов. Программа, галерея, история и традиции Сабантуя.'
+// URL/описание — единый источник lib/site.ts (боевой URL бейкается из env).
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -33,12 +36,18 @@ export const metadata: Metadata = {
   description: SITE_DESC,
   // I9 — OG/Twitter card: при шеринге ссылки в VK/Telegram/соцсетях показывается
   // брендовый баннер /og.jpg + заголовок + описание (генератор: src/seed/genOgImage.ts).
+  // Канонический URL + hreflang (ru ↔ tt) — для корректной индексации двух локалей.
+  alternates: {
+    canonical: '/',
+    languages: { 'ru-RU': '/', 'tt-RU': '/tt' },
+  },
   openGraph: {
     title: 'Сабантуй Малмыж',
     description: SITE_DESC,
     url: '/',
     siteName: 'Сабантуй Малмыж',
     locale: 'ru_RU',
+    alternateLocale: ['tt_RU'],
     type: 'website',
     images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Сабантуй Малмыж — народный праздник' }],
   },
@@ -63,8 +72,13 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
   return (
     <html lang="ru" className={`${display.variable} ${body.variable}`}>
       <body>
+        {/* Глобальная разметка Schema.org (сайт + организатор) — для Google и ИИ-выдачи */}
+        <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
         <ServiceWorkerRegister />
         <SiteChrome>{children}</SiteChrome>
+        {/* Плашку про аналитику показываем только если счётчики реально включены */}
+        {analyticsEnabled && <ConsentNotice />}
+        <Analytics />
       </body>
     </html>
   )
