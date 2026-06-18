@@ -1,14 +1,13 @@
 import Script from 'next/script'
 
 /**
- * Счётчики посещаемости — Яндекс.Метрика + LiveInternet (выбор владельца).
- *
- * Оба грузятся ОТЛОЖЕННО (next/script), вне критического пути → на скорость
- * страницы практически не влияют. Включаются через env (id Метрики / флаг LI):
- * пусто → не рендерится ничего. Так в dev и до настройки прода трафик не пачкается.
+ * Невидимая аналитика — Яндекс.Метрика (грузится ОТЛОЖЕННО, вне критического
+ * пути → на скорость почти не влияет). Включается через env: пусто → не
+ * рендерится ничего (в dev и до настройки прода трафик не пачкается).
  *
  *   NEXT_PUBLIC_YANDEX_METRICA_ID — номер счётчика Метрики (только цифры)
- *   NEXT_PUBLIC_LIVEINTERNET=1     — включить счётчик LiveInternet
+ *   NEXT_PUBLIC_LIVEINTERNET=1     — включить видимый бейдж LiveInternet
+ *                                    (рендерится отдельно — в подвале, LiveInternetCounter)
  *
  * NEXT_PUBLIC_* бейкаются в бандл при сборке → задаются как vars в CI
  * (deploy-prod.yml), владелец заводит счётчики и вставляет id один раз.
@@ -16,6 +15,8 @@ import Script from 'next/script'
 const METRICA_ID = process.env.NEXT_PUBLIC_YANDEX_METRICA_ID
 const LIVEINTERNET = process.env.NEXT_PUBLIC_LIVEINTERNET === '1' || process.env.NEXT_PUBLIC_LIVEINTERNET === 'true'
 
+// Включена ли вообще аналитика (для показа плашки согласия). LiveInternet сам
+// рендерится в подвале (LiveInternetCounter), но на согласие влияет тоже.
 export const analyticsEnabled = (!!METRICA_ID && /^\d+$/.test(METRICA_ID)) || LIVEINTERNET
 
 export function Analytics() {
@@ -43,13 +44,6 @@ ym(${metrica},"init",{ssr:true,webvisor:true,clickmap:true,ecommerce:"dataLayer"
             </div>
           </noscript>
         </>
-      )}
-
-      {LIVEINTERNET && (
-        <Script id="liveinternet" strategy="lazyOnload">
-          {`(function(){try{var u=encodeURIComponent,s=(typeof screen=="undefined")?"":";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth||screen.pixelDepth);
-new Image().src="//counter.yadro.ru/hit?t52.6;r"+u(document.referrer)+s+";u"+u(document.URL)+";h"+u(document.title.substring(0,150))+";"+Math.random();}catch(e){}})();`}
-        </Script>
       )}
     </>
   )
