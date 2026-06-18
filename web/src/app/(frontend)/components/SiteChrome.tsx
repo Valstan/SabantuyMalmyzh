@@ -31,6 +31,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
             <Link href={h('/')}>{t(locale, 'nav.schedule')}</Link>
             <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>
             <Link href={h('/map')}>{t(locale, 'nav.map')}</Link>
+            <Link href={h('/igra')}>{t(locale, 'nav.game')}</Link>
             <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
             <Link href={h('/kontakty')}>{t(locale, 'nav.contacts')}</Link>
           </nav>
@@ -48,6 +49,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
           <Link href={h('/')}>{t(locale, 'nav.schedule')}</Link>
           <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>
           <Link href={h('/map')}>{t(locale, 'nav.map')}</Link>
+          <Link href={h('/igra')}>{t(locale, 'nav.game')}</Link>
           <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
           {getCultureSections(locale).map((s) => (
             <Link key={s.href} href={h(s.href)}>

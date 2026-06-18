@@ -11,6 +11,7 @@ import { Events } from './collections/Events'
 import { Gallery } from './collections/Gallery'
 import { Media } from './collections/Media'
 import { PollVotes } from './collections/PollVotes'
+import { QuizQuestions } from './collections/QuizQuestions'
 import { Raffle } from './collections/Raffle'
 import { RaffleEntry } from './collections/RaffleEntry'
 import { Registrations } from './collections/Registrations'
@@ -40,7 +41,7 @@ export default buildConfig({
     // на этапе деплоя (web/src/migrations/), как у GONBA.
     push: true,
   }),
-  collections: [Pages, Events, Gallery, Media, Registrations, PollVotes, Subscribers, Raffle, RaffleEntry, Users],
+  collections: [Pages, Events, Gallery, Media, Registrations, PollVotes, QuizQuestions, Subscribers, Raffle, RaffleEntry, Users],
   globals: [FestivalMap],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)

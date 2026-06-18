@@ -1299,3 +1299,236 @@ a.feature-card--cover:hover .feature-cover img {
 .lang-toggle-item:not(.is-active):hover {
   background: rgba(232, 181, 58, 0.18);
 }
+
+/* ── Игра-угадайка ─────────────────────────────────────────────────────────── */
+.quiz {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Интро / результат — по центру */
+.quiz--intro,
+.quiz--done {
+  text-align: center;
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+}
+.quiz-lead {
+  font-size: 1.08rem;
+  color: var(--ink);
+  margin: 0;
+  max-width: 36rem;
+}
+.quiz-note,
+.quiz-best {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin: 0;
+}
+.quiz-start {
+  margin-top: 0.3rem;
+}
+
+/* Прогресс */
+.quiz-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.quiz-theme {
+  font-weight: 600;
+  color: var(--brand-green-dark);
+  background: var(--section-tint-a);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+}
+.quiz-bar {
+  height: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 1.3rem;
+}
+.quiz-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--grad-gold);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Вопрос */
+.quiz-prompt {
+  font-size: 1.22rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0 0 1.1rem;
+  color: var(--ink);
+}
+
+/* Варианты */
+.quiz-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.quiz-opt {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--c-gold);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: var(--ink);
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease;
+}
+.quiz-opt:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-left-color: var(--c-crimson);
+}
+.quiz-opt:disabled {
+  cursor: default;
+}
+.quiz-opt.is-correct {
+  border-color: var(--c-green-state);
+  border-left-color: var(--c-green-state);
+  background: rgba(10, 125, 62, 0.1);
+  color: var(--brand-green-dark);
+}
+.quiz-opt.is-wrong {
+  border-color: var(--c-crimson);
+  border-left-color: var(--c-crimson);
+  background: rgba(200, 32, 63, 0.08);
+}
+.quiz-opt.is-dim {
+  opacity: 0.55;
+}
+
+/* Подсказка */
+.quiz-hint {
+  margin-top: 0.9rem;
+}
+.quiz-hint-btn {
+  font-size: 0.92rem;
+  padding: 0.45rem 1rem;
+}
+.quiz-hint p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Фидбэк после ответа */
+.quiz-feedback {
+  margin-top: 1.2rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 12px;
+  background: var(--section-tint-a);
+  border: 1px solid var(--border);
+}
+.quiz-verdict {
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin: 0 0 0.5rem;
+}
+.quiz-verdict.is-correct {
+  color: var(--c-green-state);
+}
+.quiz-verdict.is-wrong {
+  color: var(--c-crimson);
+}
+.quiz-answer {
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+}
+.quiz-explain {
+  margin: 0 0 0.6rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.quiz-source {
+  margin: 0 0 1rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+  word-break: break-word;
+}
+.quiz-source a {
+  color: var(--c-gold-deep);
+}
+.quiz-next {
+  width: 100%;
+}
+
+/* Результат */
+.quiz-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+}
+.quiz-score {
+  font-size: 2.6rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--brand-green-dark);
+  font-variant-numeric: tabular-nums;
+}
+.quiz-score-sub {
+  margin: 0;
+  color: var(--muted);
+}
+.quiz-rank {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.6rem;
+  margin: 0.3rem 0 0;
+  color: var(--c-crimson);
+}
+.quiz-rank-blurb {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--ink);
+}
+.quiz-newbest {
+  font-weight: 700;
+  color: var(--c-gold-deep);
+  margin: 0;
+}
+.quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+/* .btn-outline рассчитан на тёмный фон (белый текст) — здесь фон светлый */
+.quiz-actions .btn-outline {
+  color: var(--brand-green-dark);
+}
+.quiz-actions .btn-outline:hover {
+  background: rgba(10, 125, 62, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-opt,
+  .quiz-bar > span {
+    transition: none;
+  }
+}

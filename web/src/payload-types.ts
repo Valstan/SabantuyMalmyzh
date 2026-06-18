@@ -73,6 +73,7 @@ export interface Config {
     media: Media;
     registrations: Registration;
     'poll-votes': PollVote;
+    'quiz-questions': QuizQuestion;
     subscribers: Subscriber;
     raffle: Raffle;
     'raffle-entries': RaffleEntry;
@@ -90,6 +91,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
+    'quiz-questions': QuizQuestionsSelect<false> | QuizQuestionsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     raffle: RaffleSelect<false> | RaffleSelect<true>;
     'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
@@ -331,6 +333,49 @@ export interface PollVote {
   createdAt: string;
 }
 /**
+ * Вопросы познавательной игры-угадайки. Факт в «Пояснении» должен иметь проверяемый «Источник». Публикуется только после фактчека (черновик не виден на сайте).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-questions".
+ */
+export interface QuizQuestion {
+  id: number;
+  prompt: string;
+  theme?: ('sabantuy' | 'history' | 'geography' | 'people' | 'language' | 'other') | null;
+  /**
+   * Влияет только на оформление/подпись; механика у всех — выбор варианта.
+   */
+  format?: ('choice' | 'trueMyth' | 'translate') | null;
+  difficulty?: ('easy' | 'medium' | 'hard') | null;
+  /**
+   * От 2 до 4 вариантов. Ровно один отметьте как правильный.
+   */
+  options: {
+    text: string;
+    correct?: boolean | null;
+    id?: string | null;
+  }[];
+  /**
+   * Показывается после ответа — ради этого факта игра и затевается.
+   */
+  explanation?: string | null;
+  /**
+   * Проверяемый источник (ссылка или издание). Обязателен для образовательной игры — общий для всех языков.
+   */
+  source?: string | null;
+  /**
+   * Необязательно — короткая подсказка по желанию.
+   */
+  hint?: string | null;
+  /**
+   * Меньше — раньше. Пусто — в конце, по дате.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * Подписчики на анонс праздника. Содержат email (152-ФЗ) — доступ только у персонала. Рассылку-напоминание орги делают вручную ближе к дате.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -468,6 +513,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'poll-votes';
         value: number | PollVote;
+      } | null)
+    | ({
+        relationTo: 'quiz-questions';
+        value: number | QuizQuestion;
       } | null)
     | ({
         relationTo: 'subscribers';
@@ -671,6 +720,30 @@ export interface PollVotesSelect<T extends boolean = true> {
   option?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-questions_select".
+ */
+export interface QuizQuestionsSelect<T extends boolean = true> {
+  prompt?: T;
+  theme?: T;
+  format?: T;
+  difficulty?: T;
+  options?:
+    | T
+    | {
+        text?: T;
+        correct?: T;
+        id?: T;
+      };
+  explanation?: T;
+  source?: T;
+  hint?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
