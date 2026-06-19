@@ -343,6 +343,10 @@ export interface PollVote {
 export interface QuizQuestion {
   id: number;
   prompt: string;
+  /**
+   * К какой игре относится вопрос (см. каталог игр в lib/quizGames.ts).
+   */
+  game: 'sabantuy' | 'kartinki';
   theme?: ('sabantuy' | 'history' | 'geography' | 'people' | 'language' | 'other') | null;
   /**
    * Влияет только на оформление/подпись; механика у всех — выбор варианта.
@@ -365,6 +369,14 @@ export interface QuizQuestion {
    * Проверяемый источник (ссылка или издание). Обязателен для образовательной игры — общий для всех языков.
    */
   source?: string | null;
+  /**
+   * Для игры «Угадай по картинке»: имя файла в /public/quiz без расширения (напр. koresh).
+   */
+  image?: string | null;
+  /**
+   * Ссылка на страницу-источник изображения (атрибуция, напр. Викисклад). Показывается под фото.
+   */
+  imageSource?: string | null;
   /**
    * Необязательно — короткая подсказка по желанию.
    */
@@ -391,6 +403,10 @@ export interface QuizResult {
   id: number;
   score: number;
   total: number;
+  /**
+   * Slug игры. Пусто — ранние результаты (Знаток Сабантуя).
+   */
+  game?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -750,6 +766,7 @@ export interface PollVotesSelect<T extends boolean = true> {
  */
 export interface QuizQuestionsSelect<T extends boolean = true> {
   prompt?: T;
+  game?: T;
   theme?: T;
   format?: T;
   difficulty?: T;
@@ -762,6 +779,8 @@ export interface QuizQuestionsSelect<T extends boolean = true> {
       };
   explanation?: T;
   source?: T;
+  image?: T;
+  imageSource?: T;
   hint?: T;
   order?: T;
   key?: T;
@@ -776,6 +795,7 @@ export interface QuizQuestionsSelect<T extends boolean = true> {
 export interface QuizResultsSelect<T extends boolean = true> {
   score?: T;
   total?: T;
+  game?: T;
   updatedAt?: T;
   createdAt?: T;
 }

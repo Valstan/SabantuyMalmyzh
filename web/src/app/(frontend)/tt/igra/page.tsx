@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 
-import { QuizView, quizMeta } from '../../_views/QuizView'
+import { GamesHubView, gamesHubMeta } from '../../_views/GamesHubView'
 
-// tt-зеркало игры-угадайки (I11).
+// tt-зеркало хаба-выбора игр (I11).
 export const revalidate = 60
 
-export default function TtQuizPage() {
-  return <QuizView locale="tt" />
+export default function TtGamesHubPage() {
+  return <GamesHubView locale="tt" />
 }
 
 export function generateMetadata(): Metadata {
-  return quizMeta('tt')
+  return gamesHubMeta('tt')
 }

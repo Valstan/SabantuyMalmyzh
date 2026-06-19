@@ -3,6 +3,7 @@ import type { CollectionBeforeValidateHook } from 'payload'
 import { APIError } from 'payload'
 
 import { rateLimit } from '../lib/rateLimit'
+import { QUIZ_GAME_VALUES } from '../lib/quizGames'
 
 // Анти-спам + валидация публичной отправки результата игры (POST /api/quiz-results).
 // Результат анонимный, без PII; «один результат на браузер» обеспечивает
@@ -38,6 +39,12 @@ export const rateLimitQuizResult: CollectionBeforeValidateHook = ({ data, operat
     score > total
   ) {
     throw new APIError('Некорректный результат игры.', 400)
+  }
+
+  // game — необязательный slug игры; принимаем только известные значения,
+  // прочее отбрасываем (агрегат не должен пачкаться мусором из публичного POST).
+  if (data && typeof data === 'object') {
+    data.game = QUIZ_GAME_VALUES.includes(data.game) ? data.game : undefined
   }
 
   const ip = clientIp(req.headers)

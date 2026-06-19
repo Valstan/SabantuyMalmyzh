@@ -19,17 +19,19 @@ export type QuizClientQuestion = {
   id: number
   prompt: string
   theme?: string | null
+  image?: string | null
+  imageSource?: string | null
   options: { text: string; correct: boolean }[]
   explanation?: string | null
   source?: string | null
   hint?: string | null
 }
 
-const BEST_KEY = 'sabantuy:quiz-best' // лучший результат, проценты (0–100)
-// Флаг «результат уже отправлен» — один POST на браузер для данного набора
-// вопросов (как «один голос на браузер» у Poll). Ключ включает total: вырастет
-// банк вопросов — игрок сможет дослать результат нового набора.
-const submittedKey = (total: number) => `sabantuy:quiz-sent:${total}`
+// Лучший результат (проценты 0–100) и флаг «результат отправлен» — раздельно по
+// игре (ключ включает game), чтобы рекорд и «один POST на браузер» одной игры не
+// мешали другой. total в ключе отправки: вырастет банк — игрок дошлёт новый набор.
+const bestKey = (game: string) => `sabantuy:quiz-best:${game}`
+const submittedKey = (game: string, total: number) => `sabantuy:quiz-sent:${game}:${total}`
 
 type Phase = 'intro' | 'playing' | 'done'
 
@@ -47,10 +49,12 @@ const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 export function QuizGame({
   questions,
   locale = 'ru',
+  game = 'sabantuy',
   initialStats = null,
 }: {
   questions: QuizClientQuestion[]
   locale?: Locale
+  game?: string
   initialStats?: QuizStatsData | null
 }) {
   const [phase, setPhase] = useState<Phase>('intro')
@@ -66,12 +70,12 @@ export function QuizGame({
 
   useEffect(() => {
     try {
-      const v = localStorage.getItem(BEST_KEY)
+      const v = localStorage.getItem(bestKey(game))
       if (v != null) setBest(Number(v))
     } catch {
       /* приватный режим — без рекорда */
     }
-  }, [])
+  }, [game])
 
   const total = deck.length || questions.length
 
@@ -108,7 +112,7 @@ export function QuizGame({
       setIsNewBest(best != null) // первый прогон рекордом не считаем
       setBest(pct)
       try {
-        localStorage.setItem(BEST_KEY, String(pct))
+        localStorage.setItem(bestKey(game), String(pct))
       } catch {
         /* приватный режим — рекорд не сохранится */
       }
@@ -124,7 +128,7 @@ export function QuizGame({
   async function submitResult(score: number, totalQ: number) {
     if (totalQ <= 0) return
     try {
-      if (localStorage.getItem(submittedKey(totalQ)) != null) return
+      if (localStorage.getItem(submittedKey(game, totalQ)) != null) return
     } catch {
       /* приватный режим — попробуем отправить, дубль отсечёт rate-limit */
     }
@@ -132,11 +136,11 @@ export function QuizGame({
       const res = await fetch('/api/quiz-results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score, total: totalQ }),
+        body: JSON.stringify({ score, total: totalQ, game }),
       })
       if (!res.ok) return
       try {
-        localStorage.setItem(submittedKey(totalQ), '1')
+        localStorage.setItem(submittedKey(game, totalQ), '1')
       } catch {
         /* приватный режим — засчитано на сервере */
       }
@@ -241,6 +245,15 @@ export function QuizGame({
         <span style={{ width: `${((index + 1) / deck.length) * 100}%` }} />
       </div>
 
+      {current.image && (
+        <figure className="quiz-image">
+          <picture>
+            <source srcSet={`/quiz/${current.image}.webp`} type="image/webp" />
+            <img src={`/quiz/${current.image}.jpg`} alt={t(locale, 'game.imageAlt')} loading="lazy" />
+          </picture>
+        </figure>
+      )}
+
       <p className="quiz-prompt">{current.prompt}</p>
 
       <ul className="quiz-options">
@@ -302,6 +315,14 @@ export function QuizGame({
               ) : (
                 <span>{current.source}</span>
               )}
+            </p>
+          )}
+          {current.imageSource && (
+            <p className="quiz-source quiz-source--photo">
+              {t(locale, 'game.photoSource')}:{' '}
+              <a href={current.imageSource} target="_blank" rel="noopener noreferrer">
+                {current.imageSource}
+              </a>
             </p>
           )}
           <button type="button" className="btn-gold quiz-next" onClick={next}>
