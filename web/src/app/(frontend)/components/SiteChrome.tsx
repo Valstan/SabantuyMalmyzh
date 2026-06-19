@@ -21,6 +21,16 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   const locale = pathLocale(pathname)
   const h = (path: string) => localeHref(locale, path)
 
+  // <html lang> делаем локале-зависимым. Корневой layout — единый на оба поддерева
+  // и SSR-ит жёсткий lang="ru"; перенести локаль на сервер можно лишь через
+  // [locale]-рестракт или dynamic headers() (убил бы ISR) — несоразмерно для
+  // low-severity атрибута. Поэтому правим lang под фактическую локаль после
+  // гидрации — стандартный приём для path-based i18n; без hydration-mismatch
+  // (императивная правка <html>, не React-рендер). SEO уже закрыт hreflang (PR #111).
+  React.useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
   return (
     <>
       <header className="site-header">
