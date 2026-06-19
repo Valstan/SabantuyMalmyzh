@@ -11,6 +11,7 @@ import { JsonLd } from '../components/JsonLd'
 import { excerpt } from '../../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../../lib/mapTypes'
 import { POLL_OPTIONS } from '../../../lib/pollOptions'
+import { withRetry } from '../../../lib/withRetry'
 import { Countdown } from '../components/Countdown'
 import { CtaBand } from '../components/CtaBand'
 import { FeatureCard } from '../components/FeatureCard'
@@ -53,16 +54,18 @@ const tulipBg = {
 
 async function getPublishedEvents(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'events',
-      where: { _status: { equals: 'published' } },
-      sort: 'startDate',
-      depth: 0,
-      limit: 100,
-      locale,
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'events',
+        where: { _status: { equals: 'published' } },
+        sort: 'startDate',
+        depth: 0,
+        limit: 100,
+        locale,
+      })
+      return res.docs
     })
-    return res.docs
   } catch {
     return null
   }
@@ -70,16 +73,18 @@ async function getPublishedEvents(locale: Locale) {
 
 async function getRecentAlbums(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'gallery',
-      where: { _status: { equals: 'published' } },
-      sort: '-date',
-      depth: 1,
-      limit: 3,
-      locale,
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'gallery',
+        where: { _status: { equals: 'published' } },
+        sort: '-date',
+        depth: 1,
+        limit: 3,
+        locale,
+      })
+      return res.docs
     })
-    return res.docs
   } catch {
     return null
   }
@@ -87,16 +92,18 @@ async function getRecentAlbums(locale: Locale) {
 
 async function getAboutTeaser(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'pages',
-      where: { and: [{ slug: { equals: 'o-sabantuy' } }, { _status: { equals: 'published' } }] },
-      limit: 1,
-      pagination: false,
-      depth: 0,
-      locale,
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'pages',
+        where: { and: [{ slug: { equals: 'o-sabantuy' } }, { _status: { equals: 'published' } }] },
+        limit: 1,
+        pagination: false,
+        depth: 0,
+        locale,
+      })
+      return res.docs[0] ?? null
     })
-    return res.docs[0] ?? null
   } catch {
     return null
   }
@@ -104,8 +111,10 @@ async function getAboutTeaser(locale: Locale) {
 
 async function getMapTeaser(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    return await payload.findGlobal({ slug: 'festival-map', depth: 1, locale })
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      return await payload.findGlobal({ slug: 'festival-map', depth: 1, locale })
+    })
   } catch {
     return null
   }
@@ -113,18 +122,20 @@ async function getMapTeaser(locale: Locale) {
 
 async function getPollTallies(): Promise<Record<string, number> | null> {
   try {
-    const payload = await getPayload({ config })
-    const entries = await Promise.all(
-      POLL_OPTIONS.map(async (o) => {
-        const r = await payload.count({
-          collection: 'poll-votes',
-          where: { option: { equals: o.value } },
-          overrideAccess: true,
-        })
-        return [o.value, r.totalDocs] as const
-      }),
-    )
-    return Object.fromEntries(entries)
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const entries = await Promise.all(
+        POLL_OPTIONS.map(async (o) => {
+          const r = await payload.count({
+            collection: 'poll-votes',
+            where: { option: { equals: o.value } },
+            overrideAccess: true,
+          })
+          return [o.value, r.totalDocs] as const
+        }),
+      )
+      return Object.fromEntries(entries)
+    })
   } catch {
     return null
   }
@@ -132,16 +143,18 @@ async function getPollTallies(): Promise<Record<string, number> | null> {
 
 async function getOpenRaffle(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'raffle',
-      where: { isOpen: { equals: true } },
-      limit: 1,
-      pagination: false,
-      depth: 0,
-      locale,
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'raffle',
+        where: { isOpen: { equals: true } },
+        limit: 1,
+        pagination: false,
+        depth: 0,
+        locale,
+      })
+      return res.docs[0] ?? null
     })
-    return res.docs[0] ?? null
   } catch {
     return null
   }
