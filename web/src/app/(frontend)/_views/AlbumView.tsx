@@ -7,14 +7,17 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
+import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
 import { AlbumGallery, type AlbumPhoto } from '../gallery/[slug]/AlbumGallery'
 
 // Общее тело альбома (ru: /gallery/[slug], tt: /tt/gallery/[slug]). title/description/caption — с locale.
 type MediaLike = { url?: string | null; alt?: string | null; sizes?: Record<string, { url?: string | null }> }
 
+// Транзиентный сбой БД → throw (после ретраев): ISR не закэширует ложный 404 на
+// реально существующем альбоме, а отдаст прошлый кэш. null = альбома реально нет.
 async function queryAlbum(slug: string, locale: Locale) {
-  try {
+  return withRetry(async () => {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: 'gallery',
@@ -25,9 +28,7 @@ async function queryAlbum(slug: string, locale: Locale) {
       locale,
     })
     return res.docs[0] ?? null
-  } catch {
-    return null
-  }
+  })
 }
 
 const fmtDate = (d?: string | null) =>

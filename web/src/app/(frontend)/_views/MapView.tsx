@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { MAP_TYPE_ORDER, mapTypeMeta } from '../../../lib/mapTypes'
+import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Общее тело карты фестиваля (ru: /map, tt: /tt/map). intro/points — с locale.
@@ -12,8 +13,10 @@ type Point = { label?: string | null; type?: string | null; note?: string | null
 
 async function getMap(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    return await payload.findGlobal({ slug: 'festival-map', depth: 1, locale })
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      return await payload.findGlobal({ slug: 'festival-map', depth: 1, locale })
+    })
   } catch {
     return null
   }

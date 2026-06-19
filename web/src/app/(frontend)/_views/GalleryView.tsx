@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
+import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Общее тело галереи-индекса (ru: /gallery, tt: /tt/gallery). title/description — с locale.
@@ -17,16 +18,18 @@ function thumb(m: unknown): MediaLike | null {
 
 async function getAlbums(locale: Locale) {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'gallery',
-      where: { _status: { equals: 'published' } },
-      sort: '-date',
-      depth: 1,
-      limit: 100,
-      locale,
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'gallery',
+        where: { _status: { equals: 'published' } },
+        sort: '-date',
+        depth: 1,
+        limit: 100,
+        locale,
+      })
+      return res.docs
     })
-    return res.docs
   } catch {
     return null
   }

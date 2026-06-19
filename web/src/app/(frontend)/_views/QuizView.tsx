@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
 import { QuizGame, type QuizClientQuestion } from '../components/QuizGame'
 import type { QuizStatsData } from '../components/QuizStats'
@@ -15,29 +16,31 @@ import type { QuizStatsData } from '../components/QuizStats'
 // Поэтому фильтр `_status: published` ставим явно (фактчек до публикации).
 async function getQuestions(locale: Locale): Promise<QuizClientQuestion[]> {
   try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: 'quiz-questions',
-      locale,
-      depth: 0,
-      limit: 200,
-      sort: ['order', 'createdAt'],
-      where: { _status: { equals: 'published' } },
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'quiz-questions',
+        locale,
+        depth: 0,
+        limit: 200,
+        sort: ['order', 'createdAt'],
+        where: { _status: { equals: 'published' } },
+      })
+      return res.docs
+        .map((d) => ({
+          id: d.id,
+          prompt: d.prompt,
+          theme: d.theme ?? null,
+          options: (Array.isArray(d.options) ? d.options : [])
+            .filter((o) => o && typeof o.text === 'string')
+            .map((o) => ({ text: o.text, correct: o.correct === true })),
+          explanation: d.explanation ?? null,
+          source: d.source ?? null,
+          hint: d.hint ?? null,
+        }))
+        // Защита от битого контента: вопрос годен, если есть ≥2 вариантов и ровно один верный.
+        .filter((q) => q.options.length >= 2 && q.options.filter((o) => o.correct).length === 1)
     })
-    return res.docs
-      .map((d) => ({
-        id: d.id,
-        prompt: d.prompt,
-        theme: d.theme ?? null,
-        options: (Array.isArray(d.options) ? d.options : [])
-          .filter((o) => o && typeof o.text === 'string')
-          .map((o) => ({ text: o.text, correct: o.correct === true })),
-        explanation: d.explanation ?? null,
-        source: d.source ?? null,
-        hint: d.hint ?? null,
-      }))
-      // Защита от битого контента: вопрос годен, если есть ≥2 вариантов и ровно один верный.
-      .filter((q) => q.options.length >= 2 && q.options.filter((o) => o.correct).length === 1)
   } catch {
     return []
   }
@@ -51,23 +54,25 @@ async function getQuestions(locale: Locale): Promise<QuizClientQuestion[]> {
 async function getQuizStats(totalQuestions: number): Promise<QuizStatsData | null> {
   if (totalQuestions <= 0) return null
   try {
-    const payload = await getPayload({ config })
-    const entries = await Promise.all(
-      Array.from({ length: totalQuestions + 1 }, async (_unused, score) => {
-        const r = await payload.count({
-          collection: 'quiz-results',
-          where: { total: { equals: totalQuestions }, score: { equals: score } },
-          overrideAccess: true,
-        })
-        return { score, count: r.totalDocs }
-      }),
-    )
-    const players = entries.reduce((s, e) => s + e.count, 0)
-    if (players === 0) return { players: 0, total: totalQuestions, average: 0, distribution: [] }
-    const sum = entries.reduce((s, e) => s + e.score * e.count, 0)
-    const average = Math.round((sum / players) * 10) / 10
-    const distribution = entries.filter((e) => e.count > 0).sort((a, b) => b.score - a.score)
-    return { players, total: totalQuestions, average, distribution }
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const entries = await Promise.all(
+        Array.from({ length: totalQuestions + 1 }, async (_unused, score) => {
+          const r = await payload.count({
+            collection: 'quiz-results',
+            where: { total: { equals: totalQuestions }, score: { equals: score } },
+            overrideAccess: true,
+          })
+          return { score, count: r.totalDocs }
+        }),
+      )
+      const players = entries.reduce((s, e) => s + e.count, 0)
+      if (players === 0) return { players: 0, total: totalQuestions, average: 0, distribution: [] }
+      const sum = entries.reduce((s, e) => s + e.score * e.count, 0)
+      const average = Math.round((sum / players) * 10) / 10
+      const distribution = entries.filter((e) => e.count > 0).sort((a, b) => b.score - a.score)
+      return { players, total: totalQuestions, average, distribution }
+    })
   } catch {
     return null
   }

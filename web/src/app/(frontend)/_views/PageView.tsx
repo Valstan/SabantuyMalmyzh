@@ -10,13 +10,16 @@ import { t, type Locale } from '../../../lib/i18n'
 import { breadcrumbJsonLd, faqJsonLd } from '../../../lib/jsonLd'
 import { localeHref } from '../../../lib/localeHref'
 import { getPageDecor } from '../../../lib/pageDecor'
+import { withRetry } from '../../../lib/withRetry'
 import { JsonLd } from '../components/JsonLd'
 import { SectionDivider } from '../components/SectionDivider'
 
 // Общее тело статической страницы (Pages по slug). Используют ru-маршрут [slug] и
 // tt-маршрут tt/[slug]. Контент читаем с locale (tt → fallback ru).
+// Транзиентный сбой БД → throw (после ретраев): ISR не закэширует ложный 404 на
+// реально существующей странице, а отдаст прошлый кэш. null = страницы реально нет.
 async function queryPageBySlug(slug: string, locale: Locale) {
-  try {
+  return withRetry(async () => {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: 'pages',
@@ -27,9 +30,7 @@ async function queryPageBySlug(slug: string, locale: Locale) {
       depth: 1,
     })
     return res.docs[0] ?? null
-  } catch {
-    return null
-  }
+  })
 }
 
 export async function PageView({ slug, locale }: { slug: string; locale: Locale }) {

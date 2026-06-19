@@ -8,6 +8,7 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
+import { withRetry } from '../../../lib/withRetry'
 import { categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
 import { FestivalNotice } from '../components/FestivalNotice'
@@ -22,8 +23,10 @@ const dateFmt = new Intl.DateTimeFormat('ru-RU', {
   minute: '2-digit',
 })
 
+// Транзиентный сбой БД → throw (после ретраев): ISR не закэширует ложный 404 на
+// реально существующем событии, а отдаст прошлый кэш. null = события реально нет.
 async function queryEventBySlug(slug: string, locale: Locale) {
-  try {
+  return withRetry(async () => {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: 'events',
@@ -34,9 +37,7 @@ async function queryEventBySlug(slug: string, locale: Locale) {
       locale,
     })
     return res.docs[0] ?? null
-  } catch {
-    return null
-  }
+  })
 }
 
 export async function EventView({ slug, locale }: { slug: string; locale: Locale }) {
