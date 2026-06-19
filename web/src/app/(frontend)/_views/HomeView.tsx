@@ -368,6 +368,28 @@ export async function HomeView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {/* Тизер игры-угадайки: круглогодичный познавательный контент, держит сайт
+          «живым» в межсезонье (идея brain про lifecycle). Зовём на /igra; механика
+          и статистика — там. Без БД-запроса: чистый CTA, легко двигать/убрать. */}
+      <section className="section section--green">
+        <div className="section-inner" style={{ textAlign: 'center' }}>
+          <SectionHeading
+            eyebrow={t(locale, 'home.game.eyebrow')}
+            title={t(locale, 'home.game.title')}
+            align="center"
+            tulip
+          />
+          <p className="section-lead" style={{ margin: '0 auto', maxWidth: 620 }}>
+            {t(locale, 'home.game.lead')}
+          </p>
+          <div style={{ marginTop: '1.75rem' }}>
+            <Link className="btn btn-gold" href={h('/igra')}>
+              {t(locale, 'home.game.cta')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {hasMapTeaser && (
         <section className="section">
           <div className="section-inner">
