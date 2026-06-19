@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { localeHref } from '../lib/localeHref'
+import { getQuizGames } from '../lib/quizGames'
 
 // /sitemap.xml — события, страницы (Pages), альбомы галереи + статические маршруты.
 //
@@ -40,6 +41,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entryFor('/map', { changeFrequency: 'monthly', priority: 0.5 }),
     entryFor('/gallery', { changeFrequency: 'weekly', priority: 0.6 }),
     entryFor('/igra', { changeFrequency: 'monthly', priority: 0.5 }),
+    // Страницы конкретных игр (/igra/<slug>) — набор из конфига lib/quizGames.
+    ...getQuizGames().map((g) =>
+      entryFor(`/igra/${g.slug}`, { changeFrequency: 'monthly', priority: 0.4 }),
+    ),
   ]
 
   // getPayload в metadata-route на prod-standalone может падать (трейсинг

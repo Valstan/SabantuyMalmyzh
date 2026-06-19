@@ -5,6 +5,7 @@ import { authenticatedOrPublished } from '../access/authenticatedOrPublished'
 import { validateQuizQuestion } from '../hooks/validateQuizQuestion'
 import { revalidateQuiz, revalidateQuizDelete } from '../hooks/revalidateQuiz'
 import { QUIZ_DIFFICULTIES, QUIZ_FORMATS, QUIZ_THEMES } from '../lib/quiz'
+import { DEFAULT_QUIZ_GAME, quizGameOptions } from '../lib/quizGames'
 
 // Познавательная игра-«угадайка» (директива brain 2026-06-18): игрок отгадывает
 // факты о Малмыжском крае и празднике Сабантуй. Один гибкий механизм — викторина
@@ -44,6 +45,21 @@ export const QuizQuestions: CollectionConfig<'quiz-questions'> = {
       label: 'Вопрос',
       required: true,
       localized: true,
+    },
+    {
+      // К какой игре относится вопрос. Набор игр — конфиг lib/quizGames.ts;
+      // `value` = enum в Postgres (НЕ менять без миграции). Старые вопросы
+      // backfill'ятся миграцией в 'sabantuy' (игра v1).
+      name: 'game',
+      type: 'select',
+      label: 'Игра',
+      required: true,
+      defaultValue: DEFAULT_QUIZ_GAME,
+      admin: {
+        position: 'sidebar',
+        description: 'К какой игре относится вопрос (см. каталог игр в lib/quizGames.ts).',
+      },
+      options: quizGameOptions,
     },
     {
       name: 'theme',
@@ -116,6 +132,25 @@ export const QuizQuestions: CollectionConfig<'quiz-questions'> = {
       admin: {
         description:
           'Проверяемый источник (ссылка или издание). Обязателен для образовательной игры — общий для всех языков.',
+      },
+    },
+    {
+      // Картинка для игры «Угадай по картинке». Имя файла без расширения в
+      // web/public/quiz/ (статика, как декор) — рендерим /quiz/<image>.jpg.
+      // alt НЕ задаём (не должен выдавать ответ) — нейтральная i18n-строка.
+      name: 'image',
+      type: 'text',
+      label: 'Картинка (имя файла)',
+      admin: {
+        description: 'Для игры «Угадай по картинке»: имя файла в /public/quiz без расширения (напр. koresh).',
+      },
+    },
+    {
+      name: 'imageSource',
+      type: 'text',
+      label: 'Источник картинки',
+      admin: {
+        description: 'Ссылка на страницу-источник изображения (атрибуция, напр. Викисклад). Показывается под фото.',
       },
     },
     {

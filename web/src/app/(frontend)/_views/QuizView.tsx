@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 
 import config from '@payload-config'
-import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
+import { getPayload, type Where } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { DEFAULT_QUIZ_GAME, findQuizGame } from '../../../lib/quizGames'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
 import { QuizGame, type QuizClientQuestion } from '../components/QuizGame'
@@ -14,7 +16,7 @@ import type { QuizStatsData } from '../components/QuizStats'
 //
 // ⚠️ Local API (getPayload) по умолчанию overrideAccess:true → отдал бы и черновики.
 // Поэтому фильтр `_status: published` ставим явно (фактчек до публикации).
-async function getQuestions(locale: Locale): Promise<QuizClientQuestion[]> {
+async function getQuestions(locale: Locale, game: string): Promise<QuizClientQuestion[]> {
   try {
     return await withRetry(async () => {
       const payload = await getPayload({ config })
@@ -24,13 +26,15 @@ async function getQuestions(locale: Locale): Promise<QuizClientQuestion[]> {
         depth: 0,
         limit: 200,
         sort: ['order', 'createdAt'],
-        where: { _status: { equals: 'published' } },
+        where: { and: [{ _status: { equals: 'published' } }, { game: { equals: game } }] },
       })
       return res.docs
         .map((d) => ({
           id: d.id,
           prompt: d.prompt,
           theme: d.theme ?? null,
+          image: d.image ?? null,
+          imageSource: d.imageSource ?? null,
           options: (Array.isArray(d.options) ? d.options : [])
             .filter((o) => o && typeof o.text === 'string')
             .map((o) => ({ text: o.text, correct: o.correct === true })),
@@ -51,8 +55,14 @@ async function getQuestions(locale: Locale): Promise<QuizClientQuestion[]> {
 // read закрыт #015 → overrideAccess. Учитываем только результаты ТЕКУЩЕГО набора
 // (total === число вопросов сейчас): если банк вопросов вырастет, старые
 // результаты с другим total не подмешиваются в распределение «из N».
-async function getQuizStats(totalQuestions: number): Promise<QuizStatsData | null> {
+async function getQuizStats(totalQuestions: number, game: string): Promise<QuizStatsData | null> {
   if (totalQuestions <= 0) return null
+  // Статистика раздельно по игре. Ранние результаты (до разделения) с пустым
+  // game считаем за игру по умолчанию (Знаток Сабантуя).
+  const gameWhere: Where =
+    game === DEFAULT_QUIZ_GAME
+      ? { or: [{ game: { equals: game } }, { game: { exists: false } }] }
+      : { game: { equals: game } }
   try {
     return await withRetry(async () => {
       const payload = await getPayload({ config })
@@ -60,7 +70,7 @@ async function getQuizStats(totalQuestions: number): Promise<QuizStatsData | nul
         Array.from({ length: totalQuestions + 1 }, async (_unused, score) => {
           const r = await payload.count({
             collection: 'quiz-results',
-            where: { total: { equals: totalQuestions }, score: { equals: score } },
+            where: { and: [{ total: { equals: totalQuestions } }, { score: { equals: score } }, gameWhere] },
             overrideAccess: true,
           })
           return { score, count: r.totalDocs }
@@ -78,23 +88,35 @@ async function getQuizStats(totalQuestions: number): Promise<QuizStatsData | nul
   }
 }
 
-export async function QuizView({ locale }: { locale: Locale }) {
-  const questions = await getQuestions(locale)
-  const stats = await getQuizStats(questions.length)
+export async function QuizView({
+  locale,
+  game = DEFAULT_QUIZ_GAME,
+}: {
+  locale: Locale
+  game?: string
+}) {
+  const def = findQuizGame(game, locale)
+  if (!def) notFound()
+  const questions = await getQuestions(locale, def.slug)
+  const stats = await getQuizStats(questions.length, def.slug)
 
   return (
     <main>
       <section className="section">
         <div className="section-inner narrow">
-          <SectionHeading eyebrow={t(locale, 'game.eyebrow')} title={t(locale, 'game.title')} />
-          <QuizGame questions={questions} locale={locale} initialStats={stats} />
+          <SectionHeading eyebrow={t(locale, 'game.eyebrow')} title={def.title} />
+          <QuizGame questions={questions} locale={locale} game={def.slug} initialStats={stats} />
         </div>
       </section>
     </main>
   )
 }
 
-export const quizMeta = (locale: Locale): Metadata => ({
-  title: `${t(locale, 'game.title')} — Сабантуй Малмыж`,
-  description: t(locale, 'game.lead'),
-})
+export const quizMeta = (locale: Locale, game: string = DEFAULT_QUIZ_GAME): Metadata => {
+  const def = findQuizGame(game, locale)
+  const title = def?.title ?? t(locale, 'game.title')
+  return {
+    title: `${title} — Сабантуй Малмыж`,
+    description: def?.description ?? t(locale, 'game.lead'),
+  }
+}

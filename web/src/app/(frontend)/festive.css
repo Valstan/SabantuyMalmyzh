@@ -1364,6 +1364,22 @@ a.feature-card--cover:hover .feature-cover img {
   transition: width 0.4s ease;
 }
 
+/* Картинка вопроса (игра «Угадай по картинке») */
+.quiz-image {
+  margin: 0 0 1.1rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--c-cream, #f4efe4);
+}
+.quiz-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: cover;
+}
+
 /* Вопрос */
 .quiz-prompt {
   font-size: 1.22rem;
@@ -1472,8 +1488,85 @@ a.feature-card--cover:hover .feature-cover img {
 .quiz-source a {
   color: var(--c-gold-deep);
 }
+.quiz-source--photo {
+  margin-top: -0.5rem;
+}
 .quiz-next {
   width: 100%;
+}
+
+/* Хаб-выбор игр (/igra) — карточки игр из каталога lib/quizGames */
+.games-hub {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  .games-hub {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.game-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  height: 100%;
+  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 4px solid var(--c-gold-deep);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+.game-card--green {
+  border-top-color: var(--c-green-state, #155c39);
+}
+.game-card--crimson {
+  border-top-color: var(--c-crimson, #7a1228);
+}
+.game-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.game-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.game-card-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+.game-card-desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.game-card-cta {
+  margin-top: 0.4rem;
+  font-weight: 700;
+  color: var(--c-gold-deep);
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-card {
+    transition: none;
+  }
+  .game-card:hover {
+    transform: none;
+  }
 }
 
 /* Результат */

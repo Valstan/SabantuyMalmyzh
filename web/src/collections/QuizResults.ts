@@ -47,6 +47,14 @@ export const QuizResults: CollectionConfig<'quiz-results'> = {
       required: true,
       min: 1,
     },
+    {
+      // К какой игре относится результат (slug из lib/quizGames). Текст, не enum —
+      // не связываем со схемой игр. Пусто = ранние результаты (игра «Знаток Сабантуя»).
+      name: 'game',
+      type: 'text',
+      label: 'Игра',
+      admin: { description: 'Slug игры. Пусто — ранние результаты (Знаток Сабантуя).' },
+    },
   ],
   hooks: {
     beforeValidate: [rateLimitQuizResult],

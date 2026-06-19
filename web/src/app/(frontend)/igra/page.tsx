@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 
-import { QuizView, quizMeta } from '../_views/QuizView'
+import { GamesHubView, gamesHubMeta } from '../_views/GamesHubView'
 
-// ISR: вопросы меняются редко (revalidateQuiz on-demand при правке). Тело — _views/QuizView.
+// /igra — хаб-выбор игр (список). Конкретная игра играется на /igra/[game].
 export const revalidate = 60
 
-export default function QuizPage() {
-  return <QuizView locale="ru" />
+export default function GamesHubPage() {
+  return <GamesHubView locale="ru" />
 }
 
 export function generateMetadata(): Metadata {
-  return quizMeta('ru')
+  return gamesHubMeta('ru')
 }
