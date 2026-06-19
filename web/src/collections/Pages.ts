@@ -38,6 +38,15 @@ export const Pages: CollectionConfig<'pages'> = {
       localized: true,
     },
     {
+      name: 'heroImage',
+      type: 'upload',
+      label: 'Обложка страницы',
+      relationTo: 'media',
+      admin: {
+        description: 'Фон шапки страницы. Если не задано — используется тематический декор по смыслу страницы.',
+      },
+    },
+    {
       name: 'publishedAt',
       type: 'date',
       label: 'Дата публикации',

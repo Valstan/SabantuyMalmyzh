@@ -160,52 +160,10 @@ export interface Page {
     };
     [k: string]: unknown;
   } | null;
-  publishedAt?: string | null;
   /**
-   * Заполняется автоматически из заголовка. Можно переопределить вручную.
+   * Фон шапки страницы. Если не задано — используется тематический декор по смыслу страницы.
    */
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events".
- */
-export interface Event {
-  id: number;
-  title: string;
-  summary?: string | null;
-  startDate: string;
-  endDate?: string | null;
-  location?: string | null;
-  /**
-   * Например: Главная сцена, Спортивная площадка, Детская поляна. Группирует программу по площадкам.
-   */
-  venue?: string | null;
-  category?: ('concert' | 'sport' | 'food' | 'kids' | 'crafts' | 'ceremony' | 'other') | null;
   heroImage?: (number | null) | Media;
-  content?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  capacity?: number | null;
-  /**
-   * Если включено — на сайте показывается форма заявки (этап M2).
-   */
-  registrationEnabled?: boolean | null;
   publishedAt?: string | null;
   /**
    * Заполняется автоматически из заголовка. Можно переопределить вручную.
@@ -260,6 +218,52 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  summary?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  location?: string | null;
+  /**
+   * Например: Главная сцена, Спортивная площадка, Детская поляна. Группирует программу по площадкам.
+   */
+  venue?: string | null;
+  category?: ('concert' | 'sport' | 'food' | 'kids' | 'crafts' | 'ceremony' | 'other') | null;
+  heroImage?: (number | null) | Media;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  capacity?: number | null;
+  /**
+   * Если включено — на сайте показывается форма заявки (этап M2).
+   */
+  registrationEnabled?: boolean | null;
+  publishedAt?: string | null;
+  /**
+   * Заполняется автоматически из заголовка. Можно переопределить вручную.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -622,6 +626,7 @@ export interface PayloadMigration {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   content?: T;
+  heroImage?: T;
   publishedAt?: T;
   slug?: T;
   updatedAt?: T;

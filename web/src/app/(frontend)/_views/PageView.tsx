@@ -13,6 +13,7 @@ import { getPageDecor } from '../../../lib/pageDecor'
 import { withRetry } from '../../../lib/withRetry'
 import { JsonLd } from '../components/JsonLd'
 import { SectionDivider } from '../components/SectionDivider'
+import { PageEditor } from '../components/edit/PageEditor'
 
 // Общее тело статической страницы (Pages по slug). Используют ru-маршрут [slug] и
 // tt-маршрут tt/[slug]. Контент читаем с locale (tt → fallback ru).
@@ -50,13 +51,24 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
   ]
   if (decoded === 'faq') jsonLd.push(faqJsonLd(locale))
 
-  // Гибрид «AI-фото-фон + SVG-эмблема поверх»: image-set webp/jpg, 2 размера через CSS-vars
-  const photoStyle = decor.photo
-    ? ({
-        '--hero-photo': `image-set(url(/decor/${decor.photo.base}-lg.webp) type("image/webp"), url(/decor/${decor.photo.base}-lg.jpg) type("image/jpeg"))`,
-        '--hero-photo-sm': `image-set(url(/decor/${decor.photo.base}-960.webp) type("image/webp"), url(/decor/${decor.photo.base}-960.jpg) type("image/jpeg"))`,
-      } as React.CSSProperties)
-    : undefined
+  // Обложка из БД (heroImage, правится on-site) перекрывает статический декор.
+  const heroMedia =
+    page.heroImage && typeof page.heroImage === 'object'
+      ? (page.heroImage as { url?: string | null; sizes?: Record<string, { url?: string | null } | undefined> })
+      : null
+  const heroImageUrl = heroMedia ? heroMedia.sizes?.wide?.url || heroMedia.url || null : null
+  const heroImageSm = heroMedia ? heroMedia.sizes?.card?.url || heroImageUrl : null
+  const showPhoto = Boolean(heroImageUrl) || Boolean(decor.photo)
+
+  // Гибрид «фото-фон + SVG-эмблема поверх»: image-set webp/jpg, 2 размера через CSS-vars
+  const photoStyle = heroImageUrl
+    ? ({ '--hero-photo': `url("${heroImageUrl}")`, '--hero-photo-sm': `url("${heroImageSm}")` } as React.CSSProperties)
+    : decor.photo
+      ? ({
+          '--hero-photo': `image-set(url(/decor/${decor.photo.base}-lg.webp) type("image/webp"), url(/decor/${decor.photo.base}-lg.jpg) type("image/jpeg"))`,
+          '--hero-photo-sm': `image-set(url(/decor/${decor.photo.base}-960.webp) type("image/webp"), url(/decor/${decor.photo.base}-960.jpg) type("image/jpeg"))`,
+        } as React.CSSProperties)
+      : undefined
 
   return (
     <main>
@@ -64,14 +76,14 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
       {/* Контент-aware шапка: AI-фото-фон (если есть) + орнамент-слой; без фото —
           мотив-медальон по смыслу страницы. Рисованные SVG-сцены убраны. */}
       <header
-        className={`page-hero page-hero--${decor.accent} pattern-petals${decor.photo ? ' page-hero--photo' : ''}`}
+        className={`page-hero page-hero--${decor.accent} pattern-petals${showPhoto ? ' page-hero--photo' : ''}`}
         style={photoStyle}
       >
         <div className="section-inner narrow">
           <Link className="breadcrumb" href={localeHref(locale, '/')}>
             ← {t(locale, 'notFound.home')}
           </Link>
-          {!decor.photo && (
+          {!showPhoto && (
             <span className="page-hero-medallion page-hero-medallion--ornament" aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/decor/decor-roundel.jpg" alt="" />
@@ -81,6 +93,9 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
           <h1 className="heading-brush">{page.title}</h1>
         </div>
       </header>
+
+      {/* On-site редактор страницы (виден редактору в режиме «Редактирование») */}
+      <PageEditor id={page.id} title={page.title} locale={locale} />
 
       <section className="section">
         <div className="section-inner narrow">

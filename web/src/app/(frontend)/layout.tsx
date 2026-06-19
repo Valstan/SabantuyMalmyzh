@@ -10,6 +10,8 @@ import { ConsentNotice } from './components/ConsentNotice'
 import { JsonLd } from './components/JsonLd'
 import { ServiceWorkerRegister } from './components/ServiceWorkerRegister'
 import { SiteChrome } from './components/SiteChrome'
+import { AdminModeProvider } from './components/edit/AdminMode'
+import { EditToolbar } from './components/edit/EditToolbar'
 
 // Шрифты self-hosted при сборке (кириллица). Переменные вешаем на <html> —
 // читаются в CSS как var(--font-display)/var(--font-body). Админку (payload)
@@ -75,7 +77,12 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         {/* Глобальная разметка Schema.org (сайт + организатор) — для Google и ИИ-выдачи */}
         <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
         <ServiceWorkerRegister />
-        <SiteChrome>{children}</SiteChrome>
+        {/* On-site редактирование: провайдер режима оборачивает шапку (кнопка
+            «Войти»), верхнюю панель редактора и контент (inline-редакторы). */}
+        <AdminModeProvider>
+          <EditToolbar />
+          <SiteChrome>{children}</SiteChrome>
+        </AdminModeProvider>
         {/* Плашку про аналитику показываем только если счётчики реально включены */}
         {analyticsEnabled && <ConsentNotice />}
         <Analytics />
