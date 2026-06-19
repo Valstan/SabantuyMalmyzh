@@ -12,6 +12,7 @@ import { withRetry } from '../../../lib/withRetry'
 import { categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
 import { FestivalNotice } from '../components/FestivalNotice'
+import { EventEditor } from '../components/edit/EventEditor'
 import { RegistrationForm } from '../events/[slug]/RegistrationForm'
 
 // Общее тело страницы события (ru: /events/[slug], tt: /tt/events/[slug]).
@@ -56,6 +57,8 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
               ← {t(locale, 'nav.schedule')}
             </Link>
           </p>
+
+          <EventEditor id={event.id} title={event.title} locale={locale} />
 
           <FestivalNotice locale={locale} />
 

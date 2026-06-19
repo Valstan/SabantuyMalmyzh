@@ -2174,3 +2174,44 @@ a.feature-card--cover:hover .feature-cover img {
     display: none;
   }
 }
+
+/* Редакторы Событий/Галерей/Карты — раскладка полей и строк-массивов */
+.edit-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+@media (max-width: 520px) {
+  .edit-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+.edit-photos {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.edit-photo-row,
+.edit-point-row {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid #ddd3c4;
+  border-radius: 8px;
+  background: #faf7f1;
+}
+.edit-photo-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.edit-photo-row__num {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a4036;
+}
+.edit-photo-row__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
