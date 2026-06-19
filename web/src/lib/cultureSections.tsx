@@ -8,6 +8,7 @@ import type { Locale } from './i18n'
  * src/seed/seedCulture.ts (ru) / seedTatar.ts (tt).
  */
 export type CultureSection = {
+  key: string
   icon: MotifName
   title: string
   text: string
@@ -17,6 +18,7 @@ export type CultureSection = {
 }
 
 type CultureDef = {
+  key: string
   icon: MotifName
   href: string
   cover?: string
@@ -24,8 +26,11 @@ type CultureDef = {
   tt: { title: string; text: string }
 }
 
+// `key` — стабильный ключ для overlay редактируемого текста из глобала `home`
+// (иконка/href/обложка — в коде, текст title/text перекрывается из БД по ключу).
 const SECTIONS: CultureDef[] = [
   {
+    key: 'narody',
     icon: 'peoples',
     href: '/narody',
     cover: 'card-narody',
@@ -33,6 +38,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Төбәк халыклары', text: 'Руслар, татарлар, марилар һәм удмуртлар — халыклар дуслыгы бәйрәме' },
   },
   {
+    key: 'podvorya',
     icon: 'house',
     href: '/podvorya',
     cover: 'card-podvorya',
@@ -40,6 +46,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Милли йортлар', text: 'Төбәк халыкларының милли йортлары һәм һөнәрләр ярминкәсе' },
   },
   {
+    key: 'istoriya',
     icon: 'scroll',
     href: '/istoriya-sabantuya',
     cover: 'card-istoriya',
@@ -47,6 +54,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Сабантуй тарихы', text: 'Борынгы сабан бәйрәменнән халык тантанасына' },
   },
   {
+    key: 'maydan',
     icon: 'koresh',
     href: '/maydan',
     cover: 'card-maydan',
@@ -54,6 +62,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Мәйдан', text: 'Көрәш, ат чабышы, бүләкле багана һәм күңелле ярышлар' },
   },
   {
+    key: 'detskiy',
     icon: 'kids',
     href: '/detskiy-maydan',
     cover: 'card-detskiy',
@@ -61,6 +70,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Балалар мәйданы', text: 'Балалар өчен уеннар, мастер-класслар һәм татлылыклар' },
   },
   {
+    key: 'kuhnya',
     icon: 'cuisine',
     href: '/kuhnya',
     cover: 'card-kuhnya',
@@ -68,6 +78,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Ашлар', text: 'Чәкчәк, өчпочмак, казан пылауы һәм халыкларның уртак табыны' },
   },
   {
+    key: 'doroga',
     icon: 'compass',
     href: '/kak-dobratsya',
     cover: 'card-doroga',
@@ -75,6 +86,7 @@ const SECTIONS: CultureDef[] = [
     tt: { title: 'Ничек килергә', text: 'Малмыжга машинада һәм автобуста юл' },
   },
   {
+    key: 'faq',
     icon: 'question',
     href: '/faq',
     ru: { title: 'Частые вопросы', text: 'Вход, дети, что взять с собой и где припарковаться' },
@@ -83,5 +95,5 @@ const SECTIONS: CultureDef[] = [
 ]
 
 export function getCultureSections(locale: Locale = 'ru'): CultureSection[] {
-  return SECTIONS.map((s) => ({ icon: s.icon, href: s.href, cover: s.cover, ...(locale === 'tt' ? s.tt : s.ru) }))
+  return SECTIONS.map((s) => ({ key: s.key, icon: s.icon, href: s.href, cover: s.cover, ...(locale === 'tt' ? s.tt : s.ru) }))
 }

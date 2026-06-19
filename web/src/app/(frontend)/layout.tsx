@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next'
+import config from '@payload-config'
 import { Manrope, Playfair_Display } from 'next/font/google'
+import { getPayload } from 'payload'
 import React from 'react'
 
 import './globals.css'
 import { websiteJsonLd, organizationJsonLd } from '../../lib/jsonLd'
 import { SITE_DESC, SITE_URL } from '../../lib/site'
+import { withRetry } from '../../lib/withRetry'
+import type { ChromeContent } from './components/SiteChrome'
 import { Analytics, analyticsEnabled } from './components/Analytics'
 import { ConsentNotice } from './components/ConsentNotice'
 import { JsonLd } from './components/JsonLd'
@@ -70,7 +74,34 @@ export const viewport: Viewport = {
   themeColor: '#155c39',
 }
 
-export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+// Редактируемые тексты шапки/подвала (глобалы header/footer, on-site PR3) для ОБЕИХ
+// локалей — layout единый на / и /tt, локаль выбирает SiteChrome из пути. Пусто/сбой
+// (в т.ч. отсутствие таблиц в build-БД) → null → SiteChrome падает на код/i18n. ISR цел
+// (это data-fetch, не headers/cookies).
+async function getChrome(): Promise<ChromeContent> {
+  try {
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const [hRu, hTt, fRu, fTt] = await Promise.all([
+        payload.findGlobal({ slug: 'header', locale: 'ru', depth: 0 }),
+        payload.findGlobal({ slug: 'header', locale: 'tt', depth: 0 }),
+        payload.findGlobal({ slug: 'footer', locale: 'ru', depth: 0 }),
+        payload.findGlobal({ slug: 'footer', locale: 'tt', depth: 0 }),
+      ])
+      const pack = (h: typeof hRu, f: typeof fRu) => ({
+        brand: (h?.brand as string | null) ?? null,
+        nav: (Array.isArray(h?.nav) ? h.nav : []).map((n) => ({ key: String(n.key), label: (n.label as string | null) ?? null })),
+        copyright: (f?.copyright as string | null) ?? null,
+      })
+      return { ru: pack(hRu, fRu), tt: pack(hTt, fTt) }
+    })
+  } catch {
+    return null
+  }
+}
+
+export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
+  const chrome = await getChrome()
   return (
     <html lang="ru" className={`${display.variable} ${body.variable}`}>
       <body>
@@ -81,7 +112,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             «Войти»), верхнюю панель редактора и контент (inline-редакторы). */}
         <AdminModeProvider>
           <EditToolbar />
-          <SiteChrome>{children}</SiteChrome>
+          <SiteChrome chrome={chrome}>{children}</SiteChrome>
         </AdminModeProvider>
         {/* Плашку про аналитику показываем только если счётчики реально включены */}
         {analyticsEnabled && <ConsentNotice />}
