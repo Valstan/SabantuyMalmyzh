@@ -19,6 +19,9 @@ import { Registrations } from './collections/Registrations'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { FestivalMap } from './globals/FestivalMap'
+import { HomeContent } from './globals/HomeContent'
+import { SiteHeader } from './globals/SiteHeader'
+import { SiteFooter } from './globals/SiteFooter'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -43,7 +46,7 @@ export default buildConfig({
     push: true,
   }),
   collections: [Pages, Events, Gallery, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Users],
-  globals: [FestivalMap],
+  globals: [FestivalMap, HomeContent, SiteHeader, SiteFooter],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)
   // задаётся через env. Пока SMTP_HOST не задан, адаптер не подключаем → Payload

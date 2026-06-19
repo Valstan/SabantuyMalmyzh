@@ -109,9 +109,15 @@ export interface Config {
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ru' | 'tt') | ('ru' | 'tt')[];
   globals: {
     'festival-map': FestivalMap;
+    home: Home;
+    header: Header;
+    footer: Footer;
   };
   globalsSelect: {
     'festival-map': FestivalMapSelect<false> | FestivalMapSelect<true>;
+    home: HomeSelect<false> | HomeSelect<true>;
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
   };
   locale: 'ru' | 'tt';
   user: User;
@@ -933,6 +939,81 @@ export interface FestivalMap {
   createdAt?: string | null;
 }
 /**
+ * Тексты главной страницы: герой, заголовки секций, карточки. Картинки/иконки — в коде.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home".
+ */
+export interface Home {
+  id: number;
+  heroEyebrow?: string | null;
+  heroTitleAccent?: string | null;
+  heroTagline?: string | null;
+  featuresEyebrow?: string | null;
+  featuresTitle?: string | null;
+  /**
+   * Текст карточек. Иконка/обложка — в коде; строки сопоставляются по «Ключу».
+   */
+  features?:
+    | {
+        key: string;
+        title?: string | null;
+        text?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  cultureEyebrow?: string | null;
+  cultureTitle?: string | null;
+  cultureLead?: string | null;
+  /**
+   * Текст карточек-разделов. Иконка/ссылка — в коде; строки по «Ключу».
+   */
+  cultureCards?:
+    | {
+        key: string;
+        title?: string | null;
+        text?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Название сайта и подписи пунктов меню. Порядок и адреса ссылок — в коде.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  brand?: string | null;
+  /**
+   * Подписи пунктов меню. Адрес — в коде; строки по «Ключу».
+   */
+  nav?:
+    | {
+        key: string;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Строка копирайта в подвале.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "festival-map_select".
  */
@@ -947,6 +1028,66 @@ export interface FestivalMapSelect<T extends boolean = true> {
         note?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home_select".
+ */
+export interface HomeSelect<T extends boolean = true> {
+  heroEyebrow?: T;
+  heroTitleAccent?: T;
+  heroTagline?: T;
+  featuresEyebrow?: T;
+  featuresTitle?: T;
+  features?:
+    | T
+    | {
+        key?: T;
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  cultureEyebrow?: T;
+  cultureTitle?: T;
+  cultureLead?: T;
+  cultureCards?:
+    | T
+    | {
+        key?: T;
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  brand?: T;
+  nav?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  copyright?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -24,6 +24,7 @@ import { SectionDivider } from '../components/SectionDivider'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from '../components/GalleryPreview'
 import { Hero } from '../components/Hero'
 import { SectionHeading } from '../components/SectionHeading'
+import { HomeEditor } from '../components/edit/HomeEditor'
 import { SubscribeForm } from '../components/SubscribeForm'
 import { ScheduleList, type ScheduleItem } from '../ScheduleList'
 
@@ -109,6 +110,19 @@ async function getAboutTeaser(locale: Locale) {
   }
 }
 
+// Редактируемые тексты главной (глобал home, on-site PR3). Пусто/сбой → фолбэк на
+// код/i18n в рендере (|| t(...)), ISR цел. depth:0 — медиа в глобале нет.
+async function getHome(locale: Locale) {
+  try {
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      return await payload.findGlobal({ slug: 'home', depth: 0, locale })
+    })
+  } catch {
+    return null
+  }
+}
+
 async function getMapTeaser(locale: Locale) {
   try {
     return await withRetry(async () => {
@@ -162,14 +176,24 @@ async function getOpenRaffle(locale: Locale) {
 
 export async function HomeView({ locale }: { locale: Locale }) {
   const h = (path: string) => localeHref(locale, path)
-  const [events, albums, about, map, pollTallies, openRaffle] = await Promise.all([
+  const [events, albums, about, map, pollTallies, openRaffle, home] = await Promise.all([
     getPublishedEvents(locale),
     getRecentAlbums(locale),
     getAboutTeaser(locale),
     getMapTeaser(locale),
     getPollTallies(),
     getOpenRaffle(locale),
+    getHome(locale),
   ])
+
+  // Overlay редактируемого текста из глобала home (по ключу карточки); фолбэк — код.
+  type Ov = { title?: string | null; text?: string | null }
+  const featureOv: Record<string, Ov> = Object.fromEntries(
+    (Array.isArray(home?.features) ? home!.features : []).map((r) => [r.key, { title: r.title, text: r.text }]),
+  )
+  const cultureOv: Record<string, Ov> = Object.fromEntries(
+    (Array.isArray(home?.cultureCards) ? home!.cultureCards : []).map((r) => [r.key, { title: r.title, text: r.text }]),
+  )
 
   const items: ScheduleItem[] = (events ?? []).map((e) => ({
     id: e.id,
@@ -244,16 +268,17 @@ export async function HomeView({ locale }: { locale: Locale }) {
       {/* Schema.org: сам праздник (когда/где/что) + выверенные Q&A — для Google-сниппета
           и цитирования в ответах нейросетей. Ноль веса для браузера (серверный <script>). */}
       <JsonLd data={[eventJsonLd(locale), faqJsonLd(locale)]} />
+      <HomeEditor locale={locale} />
       <Hero
         imageUrl={heroUrl}
         imageAlt="Сабантуй в Малмыже"
-        eyebrow={t(locale, 'hero.eyebrow')}
+        eyebrow={home?.heroEyebrow || t(locale, 'hero.eyebrow')}
         title={
           <>
-            Сабантуй&nbsp;<span className="accent">Малмыж</span>
+            Сабантуй&nbsp;<span className="accent">{home?.heroTitleAccent || 'Малмыж'}</span>
           </>
         }
-        tagline={t(locale, 'hero.tagline')}
+        tagline={home?.heroTagline || t(locale, 'hero.tagline')}
       >
         <Link className="btn btn-gold" href="#program">
           {t(locale, 'home.schedule.eyebrow')}
@@ -286,12 +311,12 @@ export async function HomeView({ locale }: { locale: Locale }) {
       >
         <div className="section-inner">
           <SectionHeading
-            eyebrow={t(locale, 'home.features.eyebrow')}
-            title={t(locale, 'home.features.title')}
+            eyebrow={home?.featuresEyebrow || t(locale, 'home.features.eyebrow')}
+            title={home?.featuresTitle || t(locale, 'home.features.title')}
             align="center"
             tulip
           />
-          <FeatureRow locale={locale} />
+          <FeatureRow locale={locale} overrides={featureOv} />
         </div>
       </section>
 
@@ -320,18 +345,29 @@ export async function HomeView({ locale }: { locale: Locale }) {
       <section className="section section--green">
         <div className="section-inner">
           <SectionHeading
-            eyebrow={t(locale, 'home.culture.eyebrow')}
-            title={t(locale, 'home.culture.title')}
+            eyebrow={home?.cultureEyebrow || t(locale, 'home.culture.eyebrow')}
+            title={home?.cultureTitle || t(locale, 'home.culture.title')}
             align="center"
             tulip
           />
           <p className="section-lead" style={{ margin: '0 auto', textAlign: 'center' }}>
-            {t(locale, 'home.culture.lead')}
+            {home?.cultureLead || t(locale, 'home.culture.lead')}
           </p>
           <div className="feature-row culture-hub">
-            {getCultureSections(locale).map((s) => (
-              <FeatureCard key={s.href} {...s} href={h(s.href)} coverLayout />
-            ))}
+            {getCultureSections(locale).map((s) => {
+              const o = cultureOv[s.key]
+              const { key: _key, ...rest } = s
+              return (
+                <FeatureCard
+                  key={s.href}
+                  {...rest}
+                  href={h(s.href)}
+                  title={o?.title || s.title}
+                  text={o?.text || s.text}
+                  coverLayout
+                />
+              )
+            })}
           </div>
         </div>
       </section>

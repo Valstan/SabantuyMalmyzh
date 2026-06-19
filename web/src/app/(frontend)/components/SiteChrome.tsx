@@ -11,16 +11,42 @@ import { LanguageToggle } from './LanguageToggle'
 import { LiveInternetCounter } from './LiveInternetCounter'
 import { SectionDivider } from './SectionDivider'
 import { LoginControl } from './edit/LoginControl'
+import { HeaderEditor } from './edit/HeaderEditor'
+import { FooterEditor } from './edit/FooterEditor'
+
+// Редактируемые тексты шапки/подвала из глобалов (on-site PR3). Сервер (layout)
+// тянет ОБЕ локали и отдаёт сюда пропсом; локаль выбирается из пути. null/пусто →
+// фолбэк на код/i18n (текущее поведение). Структура (порядок/href) — здесь, в коде.
+type ChromeLocaleData = { brand: string | null; nav: { key: string; label: string | null }[]; copyright: string | null }
+export type ChromeContent = { ru: ChromeLocaleData; tt: ChromeLocaleData } | null
+
+// Пункты меню: ключ (для overlay подписи из БД) + адрес + i18n-фолбэк. Порядок и
+// адреса — в коде; редактор меняет только подписи (по ключу).
+const NAV_LINKS: { key: string; path: string; i18nKey: string }[] = [
+  { key: 'schedule', path: '/', i18nKey: 'nav.schedule' },
+  { key: 'gallery', path: '/gallery', i18nKey: 'nav.gallery' },
+  { key: 'map', path: '/map', i18nKey: 'nav.map' },
+  { key: 'game', path: '/igra', i18nKey: 'nav.game' },
+  { key: 'about', path: '/o-sabantuy', i18nKey: 'nav.about' },
+  { key: 'contacts', path: '/kontakty', i18nKey: 'nav.contacts' },
+]
 
 // Locale-aware «обвязка» сайта (шапка + подвал + переключатель языка). Клиентский
 // компонент: локаль берём из пути (usePathname → pathLocale). usePathname работает и
 // в SSR, и на клиенте → без мерцания; и НЕ делает страницы динамическими (ISR цел,
 // в отличие от чтения cookie/headers на сервере). Рендерится один раз в root-layout,
 // корректно обслуживает и ru (/), и tt (/tt) поддеревья.
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+export function SiteChrome({ children, chrome }: { children: React.ReactNode; chrome?: ChromeContent }) {
   const pathname = usePathname() || '/'
   const locale = pathLocale(pathname)
   const h = (path: string) => localeHref(locale, path)
+
+  // Overlay подписей из БД (по ключу), фолбэк — i18n/код.
+  const data = chrome ? chrome[locale] : null
+  const navOv: Record<string, string | null> = Object.fromEntries((data?.nav || []).map((n) => [n.key, n.label]))
+  const navLabel = (key: string, i18nKey: string) => navOv[key] || t(locale, i18nKey)
+  const brand = data?.brand || 'Сабантуй Малмыж'
+  const copyright = data?.copyright || '© Сабантуй Малмыж'
 
   // <html lang> делаем локале-зависимым. Корневой layout — единый на оба поддерева
   // и SSR-ит жёсткий lang="ru"; перенести локаль на сервер можно лишь через
@@ -37,18 +63,18 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <header className="site-header">
         <div className="container site-nav" style={{ padding: 0 }}>
           <Link className="site-brand" href={h('/')}>
-            Сабантуй&nbsp;Малмыж
+            {brand}
           </Link>
           <nav className="site-nav-links" aria-label={t(locale, 'nav.primary')}>
-            <Link href={h('/')}>{t(locale, 'nav.schedule')}</Link>
-            <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>
-            <Link href={h('/map')}>{t(locale, 'nav.map')}</Link>
-            <Link href={h('/igra')}>{t(locale, 'nav.game')}</Link>
-            <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
-            <Link href={h('/kontakty')}>{t(locale, 'nav.contacts')}</Link>
+            {NAV_LINKS.map((l) => (
+              <Link key={l.key} href={h(l.path)}>
+                {navLabel(l.key, l.i18nKey)}
+              </Link>
+            ))}
           </nav>
           <span className="site-nav-actions">
             <LanguageToggle locale={locale} />
+            <HeaderEditor locale={locale} />
             <LoginControl />
           </span>
         </div>
@@ -61,22 +87,22 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="footer-skyline" src="/decor/footer-skyline.png" alt="" aria-hidden="true" />
         <nav className="footer-nav" aria-label={t(locale, 'footer.sections')}>
-          <Link href={h('/')}>{t(locale, 'nav.schedule')}</Link>
-          <Link href={h('/gallery')}>{t(locale, 'nav.gallery')}</Link>
-          <Link href={h('/map')}>{t(locale, 'nav.map')}</Link>
-          <Link href={h('/igra')}>{t(locale, 'nav.game')}</Link>
-          <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
+          {NAV_LINKS.slice(0, 5).map((l) => (
+            <Link key={l.key} href={h(l.path)}>
+              {navLabel(l.key, l.i18nKey)}
+            </Link>
+          ))}
           {getCultureSections(locale).map((s) => (
             <Link key={s.href} href={h(s.href)}>
               {s.title}
             </Link>
           ))}
-          <Link href={h('/kontakty')}>{t(locale, 'nav.contacts')}</Link>
+          <Link href={h(NAV_LINKS[5].path)}>{navLabel(NAV_LINKS[5].key, NAV_LINKS[5].i18nKey)}</Link>
         </nav>
         <div style={{ maxWidth: 220, margin: '0 auto 0.85rem' }}>
           <SectionDivider variant="vine" />
         </div>
-        © Сабантуй Малмыж ·{' '}
+        {copyright} ·{' '}
         <Link href={h('/privacy')} prefetch={false}>
           {t(locale, 'footer.privacy')}
         </Link>{' '}
@@ -84,6 +110,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         <Link href="/admin" prefetch={false}>
           {t(locale, 'footer.admin')}
         </Link>
+        <FooterEditor locale={locale} />
         <LiveInternetCounter />
       </footer>
     </>

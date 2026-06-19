@@ -1,0 +1,101 @@
+name: Seed site content globals (manual)
+
+# Заливает в ПРОД-БД редактируемые тексты главной/шапки/подвала (глобалы home/header/
+# footer) сидом web/src/seed/seedSiteContent.ts — чтобы on-site редактор сразу показывал
+# строки с текущим текстом (ru + tt-черновик) и ключами.
+#
+# Безопасно для прода:
+#   • Только updateGlobal по существующим (после миграции 20260619_150000) таблицам —
+#     новых таблиц не создаёт. Миграцию накатывать ОТДЕЛЬНО (apply-migration.yml) ДО кода.
+#   • Идемпотентен: строки массивов сопоставляются по `key` (повтор — in-place, без дублей).
+#   • Медиа не качает.
+#
+# Предусловие: миграция 20260619_150000 накачена И deploy-prod выкатил релиз с глобалами.
+# Требует те же доступы, что deploy-prod.yml (SSH_PRIVATE_KEY / DEPLOY_SSH_HOST / _PORT).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git-ref репозитория для seed-кода на боксе'
+        required: true
+        default: 'main'
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Seed on box
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"
+          BASE=/home/valstan/sabantuy
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+
+          echo "Запускаю seedSiteContent на проде ..."
+          NODE_ENV=production DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+            corepack pnpm -C web payload run src/seed/seedSiteContent.ts
+
+          echo "home features: $(psql "$DB" -tAc "SELECT count(*) FROM home_features;")"
+          echo "home culture cards: $(psql "$DB" -tAc "SELECT count(*) FROM home_culture_cards;")"
+          echo "header nav: $(psql "$DB" -tAc "SELECT count(*) FROM header_nav;")"
+          REMOTE
+
+      - name: Smoke — главная ru/tt
+        run: |
+          set -e
+          for p in / /tt; do
+            S=$(ssh sabantuy "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000$p")
+            echo "$p → $S"
+            [ "$S" = "200" ] || { echo "::error::$p вернул $S, ожидался 200"; exit 1; }
+          done
