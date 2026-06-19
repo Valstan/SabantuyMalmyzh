@@ -1774,3 +1774,403 @@ a.feature-card--cover:hover .feature-cover img {
 .li-counter:hover {
   opacity: 1;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   On-site редактирование (вход + режимы + inline-редакторы). Видно только
+   залогиненному редактору; гостю — ноль разметки (компоненты возвращают null).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Кнопка «Войти» в шапке */
+.site-nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.edit-login-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.32rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(21, 92, 57, 0.35);
+  background: #fff;
+  color: var(--c-green-state);
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.edit-login-btn:hover {
+  background: var(--c-cream);
+  border-color: var(--c-green-state);
+}
+
+/* Верхняя панель редактора */
+.edit-bar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: #1d2b22;
+  color: #fff;
+  border-bottom: 2px solid var(--c-gold);
+  font-size: 0.85rem;
+}
+.edit-bar--manage {
+  background: #16321f;
+}
+.edit-bar__inner {
+  max-width: var(--container-w);
+  margin: 0 auto;
+  padding: 0.4rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.edit-bar__brand {
+  font-weight: 700;
+  color: var(--c-gold);
+}
+.edit-bar__modes {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.edit-bar__mode {
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #fff;
+  padding: 0.3rem 0.85rem;
+  transition: background 0.16s ease;
+}
+.edit-bar__mode.is-active {
+  background: var(--c-gold);
+  color: #3a2400;
+  font-weight: 700;
+}
+.edit-bar__actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+.edit-bar__link {
+  font: inherit;
+  font-size: 0.82rem;
+  color: #ffe9b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.edit-bar__link:hover {
+  text-decoration: underline;
+}
+
+/* Кнопка «Редактировать …» над контентом */
+.edit-actionbar {
+  max-width: var(--container-w);
+  margin: 0 auto;
+  padding: 0.6rem 1rem 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.edit-edit-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--c-green-state);
+  background: #fff;
+  color: var(--c-green-state);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+.edit-edit-btn:hover {
+  background: var(--c-cream);
+  transform: translateY(-1px);
+}
+
+/* Модалка */
+.edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(20, 12, 8, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  overflow-y: auto;
+}
+.edit-modal {
+  background: #fff;
+  color: #21160e;
+  width: 100%;
+  max-width: 30rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border-top: 4px solid var(--c-gold);
+}
+.edit-modal--wide {
+  max-width: 46rem;
+}
+.edit-modal__head {
+  position: relative;
+  padding: 1.1rem 1.25rem 0.6rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.edit-modal__title {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--c-green-state);
+}
+.edit-modal__desc {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: #6b6055;
+}
+.edit-modal__close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #8a7d70;
+}
+.edit-modal__close:hover {
+  color: #21160e;
+}
+.edit-modal__body {
+  padding: 1rem 1.25rem;
+}
+.edit-modal__foot {
+  padding: 0.8rem 1.25rem 1.1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Формы редактора */
+.edit-form {
+  display: grid;
+  gap: 1rem;
+}
+.edit-field {
+  display: grid;
+  gap: 0.35rem;
+}
+.edit-field__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a4036;
+}
+.edit-input,
+.edit-textarea {
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbc2b6;
+  border-radius: 8px;
+  background: #fff;
+  color: #21160e;
+  width: 100%;
+}
+.edit-input:focus,
+.edit-textarea:focus {
+  outline: none;
+  border-color: var(--c-green-state);
+  box-shadow: 0 0 0 2px rgba(21, 92, 57, 0.18);
+}
+.edit-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9a1f33;
+  background: #fdeaed;
+  border: 1px solid #f0bcc5;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+.edit-warn {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7a5800;
+  background: #fcf3da;
+  border: 1px solid #ecd79a;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+.edit-muted {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b6055;
+}
+
+/* Нейтральные кнопки редактора (на светлом фоне) */
+.edit-btn {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid #cbc2b6;
+  background: #f4efe7;
+  color: #3a3127;
+  transition: background 0.16s ease;
+}
+.edit-btn:hover {
+  background: #e8e0d3;
+}
+.edit-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.edit-btn--sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+}
+.edit-link-danger {
+  font: inherit;
+  font-size: 0.8rem;
+  color: #9a1f33;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Картинка (обложки/галерея) */
+.edit-image {
+  display: grid;
+  gap: 0.5rem;
+}
+.edit-image__preview {
+  aspect-ratio: 16 / 9;
+  background: #f1ece4;
+  border: 1px dashed #c9bfb1;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.edit-image__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.edit-image__empty {
+  font-size: 0.82rem;
+  color: #9a8d7d;
+}
+.edit-image__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Rich-text редактор */
+.edit-rte-wrap {
+  border: 1px solid #cbc2b6;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.edit-rte-toolbar,
+.edit-rte-imgbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.35rem 0.45rem;
+  background: #f4efe7;
+  border-bottom: 1px solid #ddd3c4;
+}
+.edit-rte-imgbar {
+  background: #eaf3ec;
+}
+.edit-rte-imgbar__label {
+  font-size: 0.8rem;
+  color: #4a4036;
+  margin-right: 0.3rem;
+}
+.edit-rte-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 1.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbc2b6;
+  border-radius: 6px;
+  background: #fff;
+  color: #3a3127;
+}
+.edit-rte-btn:hover {
+  background: #efe8db;
+}
+.edit-rte {
+  min-height: 180px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #21160e;
+}
+.edit-rte:focus {
+  outline: none;
+}
+.edit-rte p {
+  margin: 0 0 0.7rem;
+}
+.edit-rte h2,
+.edit-rte h3 {
+  margin: 0.8rem 0 0.5rem;
+  color: var(--c-green-state);
+}
+.edit-rte a {
+  color: var(--c-crimson);
+  text-decoration: underline;
+}
+.edit-inline-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.6rem 0;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.edit-inline-img:hover {
+  border-color: var(--c-gold);
+}
+.edit-inline-img.align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.edit-inline-img.align-right {
+  margin-left: auto;
+}
+.edit-inline-img.align-left {
+  margin-right: auto;
+}
+
+@media (max-width: 560px) {
+  .edit-bar__inner {
+    gap: 0.5rem;
+  }
+  .edit-bar__brand {
+    display: none;
+  }
+}

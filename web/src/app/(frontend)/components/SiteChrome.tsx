@@ -10,6 +10,7 @@ import { getCultureSections } from '../../../lib/cultureSections'
 import { LanguageToggle } from './LanguageToggle'
 import { LiveInternetCounter } from './LiveInternetCounter'
 import { SectionDivider } from './SectionDivider'
+import { LoginControl } from './edit/LoginControl'
 
 // Locale-aware «обвязка» сайта (шапка + подвал + переключатель языка). Клиентский
 // компонент: локаль берём из пути (usePathname → pathLocale). usePathname работает и
@@ -46,7 +47,10 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
             <Link href={h('/o-sabantuy')}>{t(locale, 'nav.about')}</Link>
             <Link href={h('/kontakty')}>{t(locale, 'nav.contacts')}</Link>
           </nav>
-          <LanguageToggle locale={locale} />
+          <span className="site-nav-actions">
+            <LanguageToggle locale={locale} />
+            <LoginControl />
+          </span>
         </div>
       </header>
 
