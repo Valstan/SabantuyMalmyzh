@@ -7,6 +7,7 @@ import { t, type Locale } from '../../../lib/i18n'
 import { MAP_TYPE_ORDER, mapTypeMeta } from '../../../lib/mapTypes'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
+import { MapEditor } from '../components/edit/MapEditor'
 
 // Общее тело карты фестиваля (ru: /map, tt: /tt/map). intro/points — с locale.
 type Point = { label?: string | null; type?: string | null; note?: string | null }
@@ -41,6 +42,7 @@ export async function MapView({ locale }: { locale: Locale }) {
       <section className="section">
         <div className="section-inner">
           <SectionHeading eyebrow={t(locale, 'home.map.eyebrow')} title={t(locale, 'home.map.title')} />
+          <MapEditor locale={locale} />
           {map?.intro && <p className="section-lead">{map.intro}</p>}
 
           {plan?.url ? (

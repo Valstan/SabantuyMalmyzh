@@ -9,6 +9,7 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
+import { GalleryEditor } from '../components/edit/GalleryEditor'
 import { AlbumGallery, type AlbumPhoto } from '../gallery/[slug]/AlbumGallery'
 
 // Общее тело альбома (ru: /gallery/[slug], tt: /tt/gallery/[slug]). title/description/caption — с locale.
@@ -61,6 +62,8 @@ export async function AlbumView({ slug, locale }: { slug: string; locale: Locale
           <SectionHeading eyebrow={t(locale, 'common.albumFallback')} title={album.title} />
           {album.description && <p className="section-lead">{album.description}</p>}
           {fmtDate(album.date) && <p className="meta">{fmtDate(album.date)}</p>}
+
+          <GalleryEditor id={album.id} title={album.title} locale={locale} />
 
           {photos.length > 0 ? (
             <AlbumGallery photos={photos} />
