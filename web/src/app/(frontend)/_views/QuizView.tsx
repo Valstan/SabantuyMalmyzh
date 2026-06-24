@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload, type Where } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { effectiveDeckSize } from '../../../lib/quiz'
 import { DEFAULT_QUIZ_GAME, findQuizGame } from '../../../lib/quizGames'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
@@ -98,7 +99,9 @@ export async function QuizView({
   const def = findQuizGame(game, locale)
   if (!def) notFound()
   const questions = await getQuestions(locale, def.slug)
-  const stats = await getQuizStats(questions.length, def.slug)
+  // Колода — случайная выборка фиксированного размера (effectiveDeckSize), её и
+  // считает статистика: total === фактическая длина партии у клиента.
+  const stats = await getQuizStats(effectiveDeckSize(questions.length), def.slug)
 
   return (
     <main>

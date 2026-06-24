@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { getQuizRank, quizThemeLabel } from '../../../lib/quiz'
+import { effectiveDeckSize, getQuizRank, QUIZ_DECK_SIZE, quizThemeLabel } from '../../../lib/quiz'
 import { QuizStats, bumpStats, type QuizStatsData } from './QuizStats'
 
 /**
@@ -77,11 +77,17 @@ export function QuizGame({
     }
   }, [game])
 
-  const total = deck.length || questions.length
+  const total = deck.length || effectiveDeckSize(questions.length)
 
   function start() {
-    // Перемешиваем сами вопросы и варианты внутри каждого.
-    setDeck(shuffle(questions).map((q) => ({ ...q, options: shuffle(q.options) })))
+    // Перемешиваем банк и берём случайную выборку фиксированного размера
+    // (QUIZ_DECK_SIZE) — короче и реиграбельнее; затем перемешиваем варианты
+    // внутри каждого вопроса. Меньше банк — берётся целиком (slice не упадёт).
+    setDeck(
+      shuffle(questions)
+        .slice(0, QUIZ_DECK_SIZE)
+        .map((q) => ({ ...q, options: shuffle(q.options) })),
+    )
     setIndex(0)
     setPicked(null)
     setCorrectCount(0)

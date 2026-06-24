@@ -53,6 +53,17 @@ export const QUIZ_DIFFICULTIES: QuizOption[] = [
   { value: 'hard', label: 'Сложный' },
 ]
 
+// ─── Размер колоды за прохождение ────────────────────────────────────────────
+// Сколько вопросов разыгрывается за один заход. Банк может расти неограниченно,
+// но каждая партия — случайная выборка этого размера: короче по времени и
+// реиграбельнее (каждый раз другой набор). Если вопросов в банке меньше — берём
+// все. Сервер (QuizView) и клиент (QuizGame) ОБА опираются на эту константу,
+// чтобы `total` в статистике совпадал с фактической длиной колоды.
+export const QUIZ_DECK_SIZE = 12
+
+export const effectiveDeckSize = (bankSize: number): number =>
+  Math.min(Math.max(bankSize, 0), QUIZ_DECK_SIZE)
+
 const QUIZ_DIFFICULTIES_TT: Record<string, string> = {
   easy: 'Җиңел',
   medium: 'Урта',
