@@ -89,7 +89,7 @@ const DECOR: Record<string, DecorDef> = {
   'sabantuy-2026': {
     icon: 'tulip',
     accent: 'gold',
-    eyebrow: { ru: 'Большой праздник', tt: 'Зур бәйрәм' },
+    eyebrow: { ru: 'Праздник труда, дружбы и единства', tt: 'Хезмәт, дуслык һәм бердәмлек бәйрәме' },
     // Переиспользуем выверенный кадр майдана (панорама праздника) — без нового ассета.
     photo: { base: 'page-maydan', largeWidth: 1920 },
   },
