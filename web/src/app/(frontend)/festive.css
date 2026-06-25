@@ -438,6 +438,20 @@ a.feature-card--cover:hover .feature-cover img {
 .split-body > :first-child {
   margin-top: 0;
 }
+
+/* ── Афиша-постер страницы праздника (вертикальный, показываем целиком) ─────── */
+.page-poster {
+  margin: 0 auto;
+  max-width: 480px;
+}
+.page-poster img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--c-gold);
+  box-shadow: var(--shadow-md);
+}
 .map-teaser-points {
   list-style: none;
   margin: 0 0 1.4rem;

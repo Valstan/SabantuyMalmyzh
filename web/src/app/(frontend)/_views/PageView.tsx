@@ -97,6 +97,20 @@ export async function PageView({ slug, locale }: { slug: string; locale: Locale 
       {/* On-site редактор страницы (виден редактору в режиме «Редактирование») */}
       <PageEditor id={page.id} title={page.title} locale={locale} />
 
+      {/* Официальная афиша (если задана в pageDecor): вертикальный постер целиком. */}
+      {decor.poster && (
+        <section className="section">
+          <div className="section-inner narrow">
+            <figure className="page-poster">
+              <picture>
+                <source srcSet={`/afisha/${decor.poster.base}.webp`} type="image/webp" />
+                <img src={`/afisha/${decor.poster.base}.jpg`} alt={decor.poster.alt[locale]} loading="lazy" />
+              </picture>
+            </figure>
+          </div>
+        </section>
+      )}
+
       <section className="section">
         <div className="section-inner narrow">
           <article className="page">
