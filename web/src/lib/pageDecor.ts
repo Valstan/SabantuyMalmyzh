@@ -22,16 +22,22 @@ export type PageDecor = {
   eyebrow: string
   /** AI-фото-фон шапки: базовое имя в /decor/. null → мотив-медальон. */
   photo: PagePhoto | null
+  /** Афиша-постель: показывается целиком (контейнером) под шапкой. null → нет. */
+  poster: PagePoster | null
 }
 
 /** Базовое имя файлов web/public/decor/<base>-{lg,960}.{webp,jpg} + ширина lg-кадра. */
 export type PagePhoto = { base: string; largeWidth: number }
+
+/** Афиша: web/public/afisha/<base>.{webp,jpg} (вертикальный постер, показываем целиком). */
+export type PagePoster = { base: string; alt: { ru: string; tt: string } }
 
 type DecorDef = {
   icon: MotifName
   accent: DecorAccent
   eyebrow: { ru: string; tt: string }
   photo?: PagePhoto
+  poster?: PagePoster
 }
 
 const DECOR: Record<string, DecorDef> = {
@@ -92,6 +98,14 @@ const DECOR: Record<string, DecorDef> = {
     eyebrow: { ru: 'Праздник труда, дружбы и единства', tt: 'Хезмәт, дуслык һәм бердәмлек бәйрәме' },
     // Переиспользуем выверенный кадр майдана (панорама праздника) — без нового ассета.
     photo: { base: 'page-maydan', largeWidth: 1920 },
+    // Официальная афиша праздника (web/public/afisha/) — показываем целиком под шапкой.
+    poster: {
+      base: 'afisha-sabantuy-2026',
+      alt: {
+        ru: 'Афиша Сабантуй-2026: 4 июля, 10:00, с. Калинино, Малмыжский район',
+        tt: 'Сабантуй-2026 афишасы: 4 июль, 10:00, Калинино авылы, Малмыж районы',
+      },
+    },
   },
 
   // ── Служебные / контентные страницы ───────────────────────────────────────
@@ -128,5 +142,6 @@ export function getPageDecor(slug: string, locale: Locale = 'ru'): PageDecor {
     accent: def.accent,
     eyebrow: def.eyebrow[locale],
     photo: def.photo ?? null,
+    poster: def.poster ?? null,
   }
 }
