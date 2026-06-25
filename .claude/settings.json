@@ -27,6 +27,7 @@
       "Bash(gh workflow run seed-prod.yml:*)",
       "Bash(gh workflow run seed-culture.yml:*)",
       "Bash(gh workflow run seed-program.yml:*)",
+      "Bash(gh workflow run seed-announcement.yml:*)",
       "Bash(corepack pnpm -C web typecheck:*)",
       "Bash(corepack pnpm -C web lint:*)",
       "Bash(corepack pnpm -C web build:*)",

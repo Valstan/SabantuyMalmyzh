@@ -110,6 +110,27 @@ async function getAboutTeaser(locale: Locale) {
   }
 }
 
+// Анонс-страница (slug sabantuy-2026): тизер на главной показываем ТОЛЬКО если она
+// опубликована — иначе кнопка вела бы в 404 (страница засевается отдельным сидом).
+async function getAnnouncement(locale: Locale) {
+  try {
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'pages',
+        where: { and: [{ slug: { equals: 'sabantuy-2026' } }, { _status: { equals: 'published' } }] },
+        limit: 1,
+        pagination: false,
+        depth: 0,
+        locale,
+      })
+      return res.docs[0] ?? null
+    })
+  } catch {
+    return null
+  }
+}
+
 // Редактируемые тексты главной (глобал home, on-site PR3). Пусто/сбой → фолбэк на
 // код/i18n в рендере (|| t(...)), ISR цел. depth:0 — медиа в глобале нет.
 async function getHome(locale: Locale) {
@@ -176,7 +197,7 @@ async function getOpenRaffle(locale: Locale) {
 
 export async function HomeView({ locale }: { locale: Locale }) {
   const h = (path: string) => localeHref(locale, path)
-  const [events, albums, about, map, pollTallies, openRaffle, home] = await Promise.all([
+  const [events, albums, about, map, pollTallies, openRaffle, home, announcement] = await Promise.all([
     getPublishedEvents(locale),
     getRecentAlbums(locale),
     getAboutTeaser(locale),
@@ -184,6 +205,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
     getPollTallies(),
     getOpenRaffle(locale),
     getHome(locale),
+    getAnnouncement(locale),
   ])
 
   // Overlay редактируемого текста из глобала home (по ключу карточки); фолбэк — код.
@@ -301,6 +323,30 @@ export async function HomeView({ locale }: { locale: Locale }) {
             />
             <Countdown targetIso={festivalStartIso} locale={locale} />
             <FestivalNotice locale={locale} />
+          </div>
+        </section>
+      )}
+
+      {/* Анонс-баннер: большой Сабантуй-2026 (масштаб, почётные гости, антураж).
+          Показываем только если страница /sabantuy-2026 опубликована (gate выше) —
+          иначе CTA вёл бы в 404. Фон — выверенный кадр майдана + зелёная вуаль. */}
+      {announcement && (
+        <section className="section section--photo" style={photoBg('/decor/page-maydan-lg.jpg')}>
+          <div className="section-inner" style={{ textAlign: 'center' }}>
+            <SectionHeading
+              eyebrow={t(locale, 'home.anons.eyebrow')}
+              title={t(locale, 'home.anons.title')}
+              align="center"
+              tulip
+            />
+            <p className="section-lead" style={{ margin: '0 auto', maxWidth: 640 }}>
+              {t(locale, 'home.anons.lead')}
+            </p>
+            <div style={{ marginTop: '1.75rem' }}>
+              <Link className="btn btn-gold" href={h('/sabantuy-2026')}>
+                {t(locale, 'home.anons.cta')}
+              </Link>
+            </div>
           </div>
         </section>
       )}
