@@ -254,8 +254,9 @@ const PAGES_TT: PageTt[] = [
       ),
       h3('Малмыжда Сабантуй кайчан һәм кайда үтә?'),
       p(
-        'Малмыжда Сабантуй-2026 2026 елның 4 июлендә узачак. Урынны һәм тәфсилләрне ' +
-          'оештыручылар бәйрәм алдыннан игълан итәр: «Программа» бүлеген һәм афишаны күзәтегез.',
+        'Сабантуй-2026 **2026 елның 4 июлендә, 10:00 дә**, Малмыж районы Калинино авылы ' +
+          'территориясендә (ГИБДД посты артында) узачак. Тулы программа һәм кунаклар исемлеге — ' +
+          'бәйрәм битендә һәм «Программа» бүлегендә.',
       ),
       h3('Керү күпме тора?'),
       p(
@@ -445,6 +446,10 @@ const PAGES_TT: PageTt[] = [
 // ─── Запуск ───────────────────────────────────────────────────────────────────
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
+// SEED_ONLY=slug[,slug] — targeted-режим: обновить только указанные страницы,
+// галерею/карту пропустить (симметрично seedCulture).
+const only = (process.env.SEED_ONLY || '').split(',').map((s) => s.trim()).filter(Boolean)
+const want = (slug: string) => !only.length || only.includes(slug)
 
 async function findPage(slug: string) {
   const r = await payload.find({ collection: 'pages', where: { slug: { equals: slug } }, limit: 1, overrideAccess: true })
@@ -453,6 +458,7 @@ async function findPage(slug: string) {
 
 // 1) Культ-страницы: tt title + body.
 for (const def of PAGES_TT) {
+  if (!want(def.slug)) continue
   const page = await findPage(def.slug)
   if (!page) {
     log(`= /${def.slug} нет в БД — пропуск`)
@@ -482,6 +488,7 @@ const GALLERY_TT: Record<string, { title: string; description: string }> = {
   },
 }
 for (const [slug, tt] of Object.entries(GALLERY_TT)) {
+  if (!want(slug)) continue
   const r = await payload.find({ collection: 'gallery', where: { slug: { equals: slug } }, limit: 1, overrideAccess: true })
   const album = r.docs[0]
   if (!album) {
@@ -498,8 +505,8 @@ for (const [slug, tt] of Object.entries(GALLERY_TT)) {
   log(`✓ tt альбом /${slug} — «${tt.title}»`)
 }
 
-// 3) Карта: tt intro.
-try {
+// 3) Карта: tt intro (пропускается в targeted-режиме SEED_ONLY).
+if (!only.length) try {
   await payload.updateGlobal({
     slug: 'festival-map',
     locale: 'tt',

@@ -274,8 +274,9 @@ const PAGES: PageDef[] = [
       ),
       h3('Когда и где проходит Сабантуй в Малмыже?'),
       p(
-        'Сабантуй-2026 в Малмыже пройдёт 4 июля 2026 года. Место проведения и подробности ' +
-          'организаторы объявят ближе к празднику: следите за разделом «Программа» и афишей.',
+        'Сабантуй-2026 пройдёт **4 июля 2026 года, в 10:00**, на территории села Калинино ' +
+          'Малмыжского района (за постом ГИБДД). Подробная программа и список гостей — на ' +
+          'странице праздника и в разделе «Программа».',
       ),
       h3('Сколько стоит вход?'),
       p(
@@ -378,8 +379,12 @@ const PAGES: PageDef[] = [
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
 const force = process.env.SEED_FORCE === '1'
+// SEED_ONLY=slug[,slug] — обновить только указанные страницы (targeted-режим), не
+// трогая остальные (чтобы force-перезапись одной страницы не задела правки прочих).
+const only = (process.env.SEED_ONLY || '').split(',').map((s) => s.trim()).filter(Boolean)
 
 for (const def of PAGES) {
+  if (only.length && !only.includes(def.slug)) continue
   const existing = await payload.find({
     collection: 'pages',
     where: { slug: { equals: def.slug } },
