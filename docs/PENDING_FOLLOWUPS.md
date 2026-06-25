@@ -17,8 +17,8 @@
   added: 2026-06-05 · snoozed: 0 · last-touch: 2026-06-10 · decay: watch
 - [ ] **Текст «Политики ПДн»** — сейчас шаблон с плейсхолдерами; владелец заполняет реквизиты оператора (152-ФЗ).
   added: 2026-06-03 · snoozed: 0 · last-touch: 2026-06-10 · decay: watch
-- [ ] **Вычитка татарского носителем** — весь tt-контент мой черновик; правки в `seedTatar.ts`/`lib/i18n.ts` или `/admin`, затем `gh workflow run seed-tatar.yml --ref main`. **Сюда же tt игр:** «Знаток Сабантуя» (`seedQuiz.ts` + `lib/quiz.ts` + `game.*`; перезалить `seed-quiz.yml`) **и** «Угадай по картинке» (`seedQuizImages.ts` + `lib/quizGames.ts` + `games.*`; перезалить `seed-quiz-images.yml force=1`). **Сюда же tt главной/шапки/подвала** (глобалы home/header/footer, on-site PR #129): правятся на сайте, в `/admin` или `seedSiteContent.ts` → `seed-site-content.yml`.
-  added: 2026-06-07 · snoozed: 0 · last-touch: 2026-06-19 · decay: fresh
+- [ ] **Вычитка татарского носителем** — весь tt-контент мой черновик; правки в `seedTatar.ts`/`lib/i18n.ts` или `/admin`, затем `gh workflow run seed-tatar.yml --ref main`. **Сюда же tt игр:** «Знаток Сабантуя» (`seedQuiz.ts` + `lib/quiz.ts` + `game.*`; перезалить `seed-quiz.yml`) **и** «Угадай по картинке» (`seedQuizImages.ts` + `lib/quizGames.ts` + `games.*`; перезалить `seed-quiz-images.yml force=1`). **Сюда же tt главной/шапки/подвала** (глобалы home/header/footer, on-site PR #129): правятся на сайте, в `/admin` или `seedSiteContent.ts` → `seed-site-content.yml`. **Сюда же tt анонс-страницы `/sabantuy-2026`** (`seedAnnouncement.ts` + `home.anons.*` в `lib/i18n.ts`; перезалить `seed-announcement.yml force=1`).
+  added: 2026-06-07 · snoozed: 0 · last-touch: 2026-06-25 · decay: fresh
 - [ ] **I12 per-event OG отдельной строкой бэклога** — вынести из подпункта I9; предложено владельцу, ждёт OK.
   added: 2026-06-07 · snoozed: 0 · last-touch: 2026-06-10 · decay: fresh
 
