@@ -13,6 +13,11 @@
  *   • Малмыж (на р. Шошма близ Вятки; Богоявленский собор 1802) — ru.wikipedia.org/wiki/Малмыж
  *   • Вятка (приток Камы) — ru.wikipedia.org/wiki/Вятка_(река)
  *   • Калфак (татарский женский головной убор) — ru.wikipedia.org/wiki/Калфак
+ *   • Тюбетейка (мужской убор), Тальянка (гармонь) — ru.wikipedia (добор 2026-06-24)
+ *
+ * 2026-06-24: калфак переснят крупным планом (старый кадр — мелкий ч/б портрет,
+ * убор не читался; правка по фидбэку владельца) + добавлены тюбетейка и гармонь
+ * (8 → 10 вопросов). Картинки визуально проверены (G44/G82).
  *
  * 🖼️ КАРТИНКИ — свободные (Wikimedia Commons, CC0/CC-BY/CC-BY-SA/PD), скачаны и
  * обработаны web/scripts/process-quiz-images.mjs → web/public/quiz/<slug>.{jpg,webp}.
@@ -31,6 +36,8 @@ const S_ECH = 'https://ru.wikipedia.org/wiki/Эчпочмак'
 const S_MAL = 'https://ru.wikipedia.org/wiki/Малмыж'
 const S_VYAT = 'https://ru.wikipedia.org/wiki/Вятка_(река)'
 const S_KAL = 'https://ru.wikipedia.org/wiki/Калфак'
+const S_TUBET = 'https://ru.wikipedia.org/wiki/Тюбетейка'
+const S_GARMON = 'https://ru.wikipedia.org/wiki/Тальянка'
 
 // ─── Источники картинок (страницы File: на Commons) ───────────────────────────
 const C_KORESH = 'https://commons.wikimedia.org/wiki/File:Kurash_on_Moscow_Sabantuy_of_Moscow_bashkirs.jpg'
@@ -40,7 +47,11 @@ const C_GAME = 'https://commons.wikimedia.org/wiki/File:%D0%98%D0%B3%D1%80%D0%B0
 const C_DANCE = 'https://commons.wikimedia.org/wiki/File:Tatar_dance_at_the_Sabantuy_festival,_Kirov.jpg'
 const C_MAL = 'https://commons.wikimedia.org/wiki/File:Epiphany_Cathedral_in_Malmyzh,_Kirov_Oblast.jpg'
 const C_VYAT = 'https://commons.wikimedia.org/wiki/File:Bridge_over_Vyatka_river._Kirov._Russia._%D0%9C%D0%BE%D1%81%D1%82_%D1%87%D0%B5%D1%80%D0%B5%D0%B7_%D0%92%D1%8F%D1%82%D0%BA%D1%83._%D0%9A%D0%B8%D1%80%D0%BE%D0%B2._%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F_-_panoramio.jpg'
-const C_COST = 'https://commons.wikimedia.org/wiki/File:Nafiga_Arapova_in_tatar_costume.jpg'
+// 2026-06-24: калфак — крупный музейный кадр (старый «костюм» не показывал убор);
+// + тюбетейка (пара к калфаку) и гармонь-тальянка.
+const C_KALFAK = 'https://commons.wikimedia.org/wiki/File:Kalfak_1_(2024-02-06)_01.jpg'
+const C_TUBET = 'https://commons.wikimedia.org/wiki/File:%D0%A2%D1%8E%D0%B1%D0%B5%D1%82%D0%B5%D0%B9%D0%BA%D0%B0_-_%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9_%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BD%D0%BE%D0%B9_%D1%83%D0%B1%D0%BE%D1%80_-_%D1%82%D0%B0%D1%82%D0%B0%D1%80%D1%8B_-_%D0%BD%D0%B0%D1%87_20_%D0%B2.jpg'
+const C_GARMON = 'https://commons.wikimedia.org/wiki/File:Garmon_Talianka_6.jpg'
 
 type QDef = {
   key: string
@@ -232,23 +243,67 @@ const QUESTIONS: QDef[] = [
   {
     key: 'img-tatar-kalfak',
     theme: 'people',
-    difficulty: 'hard',
+    difficulty: 'medium',
     source: S_KAL,
-    image: 'tatar-costume',
-    imageSource: C_COST,
+    image: 'kalfak',
+    imageSource: C_KALFAK,
     order: 8,
     ru: {
       prompt: 'Как называется этот традиционный татарский женский головной убор?',
       options: ['Калфак', 'Кокошник', 'Тюбетейка', 'Папаха'],
       correct: 0,
       explanation:
-        'Калфак — нарядный татарский женский головной убор, который надевают с национальным костюмом. (Мужской головной убор у татар — тюбетейка.)',
+        'Калфак — нарядный татарский женский головной убор, часто бархатный, расшитый золотыми нитями. Его надевают с национальным костюмом. (Мужской головной убор у татар — тюбетейка.)',
     },
     tt: {
       prompt: 'Бу татар хатын-кызларының милли баш киеме ничек атала?',
       options: ['Калфак', 'Кокошник', 'Түбәтәй', 'Папаха'],
       explanation:
-        'Калфак — милли костюм белән кия торган татар хатын-кызларының бизәкле баш киеме. (Татар ир-атларының баш киеме — түбәтәй.)',
+        'Калфак — татар хатын-кызларының бизәкле баш киеме, еш кына бәрхеттән, алтын җепләр белән чигелгән. Аны милли костюм белән кияләр. (Татар ир-атларының баш киеме — түбәтәй.)',
+    },
+  },
+  {
+    key: 'img-tubeteika',
+    theme: 'people',
+    difficulty: 'medium',
+    source: S_TUBET,
+    image: 'tubeteika',
+    imageSource: C_TUBET,
+    order: 9,
+    ru: {
+      prompt: 'Как называется этот традиционный татарский мужской головной убор?',
+      options: ['Тюбетейка', 'Калфак', 'Папаха', 'Цилиндр'],
+      correct: 0,
+      explanation:
+        'Тюбетейка (тат. түбәтәй) — традиционный мужской головной убор татар: круглая расшитая шапочка. Парный женский убор — калфак.',
+    },
+    tt: {
+      prompt: 'Бу татар ир-атларының милли баш киеме ничек атала?',
+      options: ['Түбәтәй', 'Калфак', 'Папаха', 'Цилиндр'],
+      explanation:
+        'Түбәтәй — татар ир-атларының традицион баш киеме: түгәрәк, чигүле бүрек. Парлы хатын-кыз киеме — калфак.',
+    },
+  },
+  {
+    key: 'img-garmon',
+    theme: 'people',
+    difficulty: 'easy',
+    source: S_GARMON,
+    image: 'garmon',
+    imageSource: C_GARMON,
+    order: 10,
+    ru: {
+      prompt: 'Какой народный музыкальный инструмент изображён на фотографии?',
+      options: ['Гармонь (тальян)', 'Балалайка', 'Скрипка', 'Барабан'],
+      correct: 0,
+      explanation:
+        'Это гармонь — язычковый клавишный инструмент с мехами. Татарская разновидность — «тальян гармун»; под неё поют и пляшут на праздниках, в том числе на Сабантуе.',
+    },
+    tt: {
+      prompt: 'Фоторәсемдә нинди халык музыка коралы сурәтләнгән?',
+      options: ['Гармун (тальян)', 'Балалайка', 'Скрипка', 'Барабан'],
+      explanation:
+        'Бу — гармун, телчекле клавишлы корал. Татар төре — «тальян гармун»; аның астында бәйрәмнәрдә, шул исәптән Сабантуйда, җырлыйлар һәм бииләр.',
     },
   },
 ]
