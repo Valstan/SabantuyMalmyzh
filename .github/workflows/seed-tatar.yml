@@ -22,6 +22,10 @@ on:
         description: 'git-ref репозитория для seed-кода на боксе'
         required: true
         default: 'main'
+      only:
+        description: 'SEED_ONLY: обновить только эти slug через запятую (пусто = все)'
+        required: false
+        default: ''
 
 concurrency:
   group: prod-db
@@ -62,9 +66,10 @@ jobs:
       - name: Seed on box
         run: |
           set -e
-          ssh sabantuy 'bash -s' "${{ inputs.ref }}" <<'REMOTE'
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" "${{ inputs.only }}" <<'REMOTE'
           set -euo pipefail
           REF="$1"
+          ONLY="${2:-}"
           BASE=/home/valstan/sabantuy
           REPO="$BASE/repo"
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
@@ -84,8 +89,8 @@ jobs:
           SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
           if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
 
-          echo "Запускаю seedTatar на проде ..."
-          NODE_ENV=production DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+          echo "Запускаю seedTatar на проде (only='${ONLY:-все}') ..."
+          NODE_ENV=production SEED_ONLY="$ONLY" DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
             corepack pnpm -C web payload run src/seed/seedTatar.ts
           REMOTE
 
