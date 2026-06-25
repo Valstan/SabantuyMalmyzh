@@ -48,6 +48,21 @@ const block = (type: string, extra: LexNode, children: LexNode[]): LexNode => ({
 const p = (text: string): LexNode => block('paragraph', { textFormat: 0, textStyle: '' }, inline(text))
 const h2 = (text: string): LexNode => block('heading', { tag: 'h2' }, inline(text))
 const quote = (text: string): LexNode => block('quote', {}, inline(text))
+// Inline-ссылка (custom-link Payload Lexical, форма как в lib/lexical-lite.ts; внешняя → newTab).
+const link = (text: string, url: string): LexNode => ({
+  type: 'link',
+  version: 2,
+  fields: { linkType: 'custom', newTab: true, url },
+  format: '',
+  indent: 0,
+  direction: 'ltr',
+  children: inline(text),
+})
+// Абзац-источник: текст-префикс + кликабельная ссылка.
+const sourceLine = (prefix: string, linkText: string, url: string): LexNode =>
+  block('paragraph', { textFormat: 0, textStyle: '' }, [...inline(prefix), link(linkText, url)])
+
+const VK_GROUP = 'https://vk.com/malm4317sabantuikazanskaya'
 const ul = (items: string[]): LexNode =>
   block(
     'list',
@@ -105,7 +120,7 @@ const BODY_RU = doc(
     'Приходите всей семьёй — на майдане найдётся место каждому: от батыров-борцов до самых ' +
       'маленьких гостей детского Сабантуя. До встречи 4 июля на территории села Калинино!',
   ),
-  p('_По официальному анонсу оргкомитета праздника._'),
+  sourceLine('Источник: ', 'официальная группа праздника во ВКонтакте', VK_GROUP),
 )
 
 // ─── Татарский черновик (tt) ─────────────────────────────────────────────────
@@ -153,7 +168,7 @@ const BODY_TT = doc(
       'балалар Сабантуеның иң кечкенә кунакларына кадәр. 4 июльдә Калинино авылы территориясендә ' +
       'очрашканга кадәр!',
   ),
-  p('_Бәйрәмнең рәсми анонсы буенча._'),
+  sourceLine('Чыганак: ', 'бәйрәмнең ВКонтактедагы рәсми төркеме', VK_GROUP),
 )
 
 // ─── Запуск ───────────────────────────────────────────────────────────────────
