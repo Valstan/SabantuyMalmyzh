@@ -34,6 +34,9 @@ const nextConfig = {
       // Внешнее хранилище медиа (план: фото/видео не отдаём с маленького VPS).
       { protocol: 'https', hostname: 'downloader.disk.yandex.ru' },
       { protocol: 'https', hostname: 'disk.yandex.ru' },
+      // «Народная лента» (UGC) → Yandex Object Storage: path-style и virtual-host.
+      { protocol: 'https', hostname: 'storage.yandexcloud.net' },
+      { protocol: 'https', hostname: '**.storage.yandexcloud.net' },
     ],
   },
   // /public-статика (афиша, декор-фоны, картинки игр, PWA-иконки) — контент-стабильные
