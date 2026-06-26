@@ -36,6 +36,22 @@ const nextConfig = {
       { protocol: 'https', hostname: 'disk.yandex.ru' },
     ],
   },
+  // /public-статика (афиша, декор-фоны, картинки игр, PWA-иконки) — контент-стабильные
+  // именованные ассеты. Next по умолчанию отдаёт их с `Cache-Control: max-age=0` (нет
+  // фингерпринта в имени → консервативная ревалидация на каждый просмотр), что под
+  // фестивальным пиком грузит единственный vCPU бокса (probe 2026-06-26: горло — CPU,
+  // не RAM; афиша ~405 КБ шла через Node на каждый заход). Длинный кэш снимает повторную
+  // загрузку постера/декора. НЕ `immutable`: проект иногда заменяет файл под тем же
+  // именем (напр. калфак в /quiz) → 7-дневный max-age самозалечивается после деплоя.
+  // /media (загрузки), /sw.js (service worker обязан обновляться) и /og.jpg
+  // (перегенерится) сознательно НЕ трогаем — у них кэш короткий по делу.
+  async headers() {
+    const STATIC = 'public, max-age=604800, stale-while-revalidate=86400'
+    return ['/afisha', '/decor', '/quiz', '/icons'].map((dir) => ({
+      source: `${dir}/:path*`,
+      headers: [{ key: 'Cache-Control', value: STATIC }],
+    }))
+  },
   reactStrictMode: true,
 }
 
