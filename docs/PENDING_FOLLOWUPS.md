@@ -38,6 +38,8 @@
 
 ## Инженерное (наше, при касании темы)
 
+- [ ] **Gallery revalidate-хук** — после ISR-фикса (PR #145, force-static) `gallery/[slug]` кэшируется (ISR-60), но у коллекции `Gallery` нет `afterChange`-хука ревалидации (в отличие от Pages/Events/Quiz). On-site правка альбома применяется на публичной странице за ≤60с, не мгновенно. Добавить `hooks/revalidateGallery.ts` (`/gallery/[slug]` + `/tt/gallery/[slug]` + `/gallery` + `/tt/gallery`) если правки альбомов участятся. Не срочно (галерея правится редко).
+  added: 2026-06-26 · snoozed: 0 · last-touch: 2026-06-26 · decay: fresh
 - [ ] **#035 tiered search** — при появлении первого реального поля текстового поиска (фронт или кастом-admin): substring→subsequence→fuzzy, многотокен AND, RU↔EN раскладка, татарские буквы в нормализации. Спек: pool #035. Сейчас полей текстового поиска нет (только чипы-фильтры + штатные Payload-пикеры) — не строить заранее (#020).
   added: 2026-06-10 · snoozed: 0 · last-touch: 2026-06-10 · decay: fresh
 - [ ] **Демо-Events на tt** (titles/summaries сидом) — опционально, низкий приоритет: демо-данные заменит владелец реальными.
