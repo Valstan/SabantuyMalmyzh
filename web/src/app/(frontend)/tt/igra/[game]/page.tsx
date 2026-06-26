@@ -4,6 +4,8 @@ import { QuizView, quizMeta } from '../../../_views/QuizView'
 
 // tt-зеркало конкретной игры /tt/igra/[game]. Неизвестный slug → notFound().
 export const revalidate = 60
+// probe 2026-06-26: force-static → ISR-кэш (см. ru-зеркало).
+export const dynamic = 'force-static'
 
 type Args = { params: Promise<{ game: string }> }
 

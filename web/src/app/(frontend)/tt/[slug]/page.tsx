@@ -4,6 +4,9 @@ import { PageView, pageMeta } from '../../_views/PageView'
 
 // tt-зеркало статической страницы (I11).
 export const revalidate = 60
+// probe 2026-06-26: force-static → ISR-кэш (иначе [slug] рендерится на каждый хит,
+// no-store; CI билд против пустой БД делает generateStaticParams бесполезным).
+export const dynamic = 'force-static'
 
 type Args = { params: Promise<{ slug: string }> }
 

@@ -5,6 +5,10 @@ import { PageView, pageMeta } from '../_views/PageView'
 // Статические страницы (Pages по slug). Тело — в _views/PageView (общий для ru/tt).
 // Сосуществует с /admin и /events/[slug]: статические сегменты приоритетнее.
 export const revalidate = 60
+// probe 2026-06-26: без этого динамический [slug] рендерился на каждый хит (no-store) —
+// CPU-расход на горячих страницах в пик. CI собирает против пустой БД → пререндер
+// слугов (generateStaticParams) невозможен. force-static кэширует рендер по ISR.
+export const dynamic = 'force-static'
 
 type Args = { params: Promise<{ slug: string }> }
 
