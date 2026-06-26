@@ -4,6 +4,8 @@ import { AlbumView, albumMeta } from '../../../_views/AlbumView'
 
 // tt-зеркало альбома (I11).
 export const revalidate = 60
+// probe 2026-06-26: force-static → ISR-кэш (см. ru-зеркало).
+export const dynamic = 'force-static'
 
 type Args = { params: Promise<{ slug: string }> }
 

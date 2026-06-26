@@ -4,6 +4,8 @@ import { EventView, eventMeta } from '../../../_views/EventView'
 
 // tt-зеркало страницы события (I11).
 export const revalidate = 60
+// probe 2026-06-26: force-static → ISR-кэш (регистрация гейтится сервером на POST).
+export const dynamic = 'force-static'
 
 type Args = { params: Promise<{ slug: string }> }
 
