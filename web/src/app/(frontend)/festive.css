@@ -2697,3 +2697,43 @@ a.feature-card--cover:hover .feature-cover img {
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* ── Прямой эфир (/efir) ────────────────────────────────────────────────────── */
+.efir-live {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.efir-badge {
+  align-self: flex-start;
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  background: var(--c-crimson);
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+}
+.efir-note {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--brand-green-dark);
+}
+.efir-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.efir-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.efir-offline {
+  text-align: center;
+}
