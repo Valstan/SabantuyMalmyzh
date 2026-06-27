@@ -7,6 +7,7 @@ import React from 'react'
 import { t } from '../../../lib/i18n'
 import { localeHref, pathLocale } from '../../../lib/localeHref'
 import { getCultureSections } from '../../../lib/cultureSections'
+import { InstallAppButton } from './InstallAppButton'
 import { LanguageToggle } from './LanguageToggle'
 import { LiveInternetCounter } from './LiveInternetCounter'
 import { SectionDivider } from './SectionDivider'
@@ -107,6 +108,9 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
             </Link>
           ))}
         </nav>
+        {/* «Установить приложение» — заметная точка входа к PWA-установке на телефон.
+            Сам компонент решает, показываться ли (есть нативный промпт / iOS / уже стоит). */}
+        <InstallAppButton locale={locale} />
         <div style={{ maxWidth: 220, margin: '0 auto 0.85rem' }}>
           <SectionDivider variant="vine" />
         </div>
