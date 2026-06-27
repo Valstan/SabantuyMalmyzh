@@ -24,6 +24,7 @@ import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { FestivalMap } from './globals/FestivalMap'
 import { HomeContent } from './globals/HomeContent'
+import { LiveStream } from './globals/LiveStream'
 import { SiteHeader } from './globals/SiteHeader'
 import { SiteFooter } from './globals/SiteFooter'
 
@@ -50,7 +51,7 @@ export default buildConfig({
     push: true,
   }),
   collections: [Pages, Events, Gallery, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionComments, ContentReports, Users],
-  globals: [FestivalMap, HomeContent, SiteHeader, SiteFooter],
+  globals: [FestivalMap, HomeContent, LiveStream, SiteHeader, SiteFooter],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)
   // задаётся через env. Пока SMTP_HOST не задан, адаптер не подключаем → Payload

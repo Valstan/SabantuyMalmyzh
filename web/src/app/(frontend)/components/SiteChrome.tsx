@@ -28,6 +28,7 @@ const NAV_LINKS: { key: string; path: string; i18nKey: string }[] = [
   { key: 'map', path: '/map', i18nKey: 'nav.map' },
   { key: 'game', path: '/igra', i18nKey: 'nav.game' },
   { key: 'lenta', path: '/lenta', i18nKey: 'nav.lenta' },
+  { key: 'efir', path: '/efir', i18nKey: 'nav.efir' },
   { key: 'about', path: '/o-sabantuy', i18nKey: 'nav.about' },
   { key: 'contacts', path: '/kontakty', i18nKey: 'nav.contacts' },
 ]

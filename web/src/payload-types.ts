@@ -118,12 +118,14 @@ export interface Config {
   globals: {
     'festival-map': FestivalMap;
     home: Home;
+    'live-stream': LiveStream;
     header: Header;
     footer: Footer;
   };
   globalsSelect: {
     'festival-map': FestivalMapSelect<false> | FestivalMapSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
+    'live-stream': LiveStreamSelect<false> | LiveStreamSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
   };
@@ -1155,6 +1157,26 @@ export interface Home {
   createdAt?: string | null;
 }
 /**
+ * Прямой эфир через VK. Включите трансляцию в приложении ВКонтакте, вставьте ссылку на видео/эфир и поставьте «Эфир идёт». На /efir появится плеер.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-stream".
+ */
+export interface LiveStream {
+  id: number;
+  isLive?: boolean | null;
+  /**
+   * Ссылка вида https://vk.com/video-123456_789012 (или код «video_ext»). Поддерживается только VK.
+   */
+  vkUrl?: string | null;
+  /**
+   * Напр.: «Прямой эфир открытия с майдана».
+   */
+  note?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Название сайта и подписи пунктов меню. Порядок и адреса ссылок — в коде.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1236,6 +1258,18 @@ export interface HomeSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-stream_select".
+ */
+export interface LiveStreamSelect<T extends boolean = true> {
+  isLive?: T;
+  vkUrl?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
