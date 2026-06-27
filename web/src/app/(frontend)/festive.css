@@ -2565,3 +2565,135 @@ a.feature-card--cover:hover .feature-cover img {
   padding: 1.5rem 0.5rem;
   color: var(--brand-green-dark);
 }
+
+/* ── Лента: выбор источника (камера / файл) ────────────────────────────────── */
+.lenta-upload-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.lenta-upload-filebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  cursor: pointer;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--brand-green-dark);
+}
+.lenta-upload-filebtn:hover {
+  border-color: var(--c-gold);
+}
+.lenta-upload-filebtn input[type='file'] {
+  display: none;
+}
+
+/* ── Лента: встроенная камера ──────────────────────────────────────────────── */
+.lenta-cam {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.lenta-cam--msg {
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 1rem 0.5rem;
+}
+.lenta-cam-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 60vh;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lenta-cam-stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lenta-cam-timer {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(200, 32, 63, 0.85);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+.lenta-cam-flip {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.lenta-cam-modes {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.lenta-cam-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  position: relative;
+}
+.lenta-cam-shutter {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  border: 4px solid var(--c-gold);
+  background: #fff;
+  color: var(--brand-green-dark);
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+.lenta-cam-shutter:active {
+  transform: scale(0.92);
+}
+.lenta-cam-shutter:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.lenta-cam-shutter.is-video {
+  color: var(--c-crimson);
+}
+.lenta-cam-shutter.is-rec {
+  background: var(--c-crimson);
+  color: #fff;
+  border-color: var(--c-crimson);
+}
+.lenta-cam-cancel {
+  position: absolute;
+  right: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
