@@ -2737,3 +2737,16 @@ a.feature-card--cover:hover .feature-cover img {
 .efir-offline {
   text-align: center;
 }
+.efir-vk {
+  margin-top: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+.efir-vk p {
+  margin: 0;
+  max-width: 560px;
+  color: var(--muted);
+}
