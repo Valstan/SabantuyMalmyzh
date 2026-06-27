@@ -27,6 +27,7 @@ const NAV_LINKS: { key: string; path: string; i18nKey: string }[] = [
   { key: 'gallery', path: '/gallery', i18nKey: 'nav.gallery' },
   { key: 'map', path: '/map', i18nKey: 'nav.map' },
   { key: 'game', path: '/igra', i18nKey: 'nav.game' },
+  { key: 'lenta', path: '/lenta', i18nKey: 'nav.lenta' },
   { key: 'about', path: '/o-sabantuy', i18nKey: 'nav.about' },
   { key: 'contacts', path: '/kontakty', i18nKey: 'nav.contacts' },
 ]
@@ -87,7 +88,9 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="footer-skyline" src="/decor/footer-skyline.png" alt="" aria-hidden="true" />
         <nav className="footer-nav" aria-label={t(locale, 'footer.sections')}>
-          {NAV_LINKS.slice(0, 5).map((l) => (
+          {/* Основные пункты (кроме «Контакты»), затем культ-разделы, затем «Контакты»
+              последним — устойчиво к числу пунктов меню. */}
+          {NAV_LINKS.filter((l) => l.key !== 'contacts').map((l) => (
             <Link key={l.key} href={h(l.path)}>
               {navLabel(l.key, l.i18nKey)}
             </Link>
@@ -97,7 +100,11 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
               {s.title}
             </Link>
           ))}
-          <Link href={h(NAV_LINKS[5].path)}>{navLabel(NAV_LINKS[5].key, NAV_LINKS[5].i18nKey)}</Link>
+          {NAV_LINKS.filter((l) => l.key === 'contacts').map((l) => (
+            <Link key={l.key} href={h(l.path)}>
+              {navLabel(l.key, l.i18nKey)}
+            </Link>
+          ))}
         </nav>
         <div style={{ maxWidth: 220, margin: '0 auto 0.85rem' }}>
           <SectionDivider variant="vine" />

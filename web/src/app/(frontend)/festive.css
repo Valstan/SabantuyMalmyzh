@@ -2229,3 +2229,153 @@ a.feature-card--cover:hover .feature-cover img {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* ── «Народная лента» (UGC, /lenta) ────────────────────────────────────────── */
+.lenta-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.25rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.4rem;
+}
+.lenta-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.lenta-chip {
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+  padding: 0.34rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--brand-green-dark);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lenta-chip:hover {
+  border-color: var(--c-gold);
+}
+.lenta-chip.is-active {
+  background: var(--brand-green-dark);
+  border-color: var(--brand-green-dark);
+  color: var(--c-cream);
+}
+
+.lenta-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+.lenta-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.lenta-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.lenta-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--grad-green, #0a5c34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.lenta-media > img,
+.lenta-video,
+.lenta-videobtn > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lenta-videobtn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: var(--grad-green, #0a5c34);
+}
+.lenta-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 1.2rem;
+  padding-left: 0.18rem;
+}
+.lenta-fallback {
+  font-size: 2.6rem;
+  opacity: 0.85;
+}
+.lenta-badge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  color: var(--c-cream);
+  background: var(--brand-green-dark);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.lenta-badge--festival {
+  background: var(--c-crimson);
+}
+.lenta-card-body {
+  padding: 0.75rem 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.lenta-caption {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.lenta-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.lenta-author {
+  font-weight: 600;
+  color: var(--brand-green-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lenta-stats {
+  display: inline-flex;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
