@@ -472,6 +472,27 @@ export async function HomeView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {/* Тизер «Народной ленты» (UGC): зовём гостей выкладывать фото/видео праздника.
+          Discoverability к сезону; чистый CTA без БД-запроса (лента — на /lenta). */}
+      <section className="section section--tint">
+        <div className="section-inner" style={{ textAlign: 'center' }}>
+          <SectionHeading
+            eyebrow={t(locale, 'home.lenta.eyebrow')}
+            title={t(locale, 'home.lenta.title')}
+            align="center"
+            tulip
+          />
+          <p className="section-lead" style={{ margin: '0 auto', maxWidth: 620 }}>
+            {t(locale, 'home.lenta.lead')}
+          </p>
+          <div style={{ marginTop: '1.75rem' }}>
+            <Link className="btn btn-gold" href={h('/lenta')}>
+              {t(locale, 'home.lenta.cta')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {hasMapTeaser && (
         <section className="section">
           <div className="section-inner">
