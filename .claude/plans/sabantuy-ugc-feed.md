@@ -100,7 +100,9 @@
 - ✅ **PR3 (#151 на проде):** `submission-reactions` (лайки+дедуп→409, recount likeCount) + `submission-comments` (постмодерация, recount commentCount) + `content-reports` (дедуп→409, авто-скрытие на пороге 3) + хуки (`rateLimit*`/`recount*`/`applyContentReport`/`ugcHelpers`/`stampIpHash`) + миграция `20260627_140000`. ⚠️ Payload: `count/update/findByID` в хуках обязаны получать `req` (транзакция), иначе счётчики off-by-one. verify down→up diff 1:1; e2e-смоук + прод-смоук зелёные.
 - ✅ **PR4 (#153 на проде):** лента `/lenta`+`/tt/lenta` (`_views/LentaView` сервер force-static+revalidate 30 + `components/LentaFeed` клиент: сортировка/фильтр-фаз, медиа с S3, видео click-to-play) + nav + sitemap + i18n + CSS. Без миграции → авто-деплой напрямую. Прод: `x-nextjs-cache: HIT`, `s-maxage=30` (ISR-кэш). _Реальные медиа — после ключей S3._
 - ✅ **PR5 (#155 на проде):** UI загрузки (`lib/ugcClient.ts`: presign→PUT с прогрессом→submit, даунскейл фото canvas, видео-длительность; `components/LentaUpload`) + взаимодействие (`LentaCard`/`LentaComments`: лайк оптимистик+дедуп localStorage, комменты-тред, жалоба, Web Share). Без миграции. e2e preview зелёный (лайк/коммент/жалоба/модалка). _Живой PUT в S3 — после ключей._
-- **PR6 (последний):** полировка + письмо brain (их идея #4/I8; переносимый паттерн presigned-direct-S3-UGC на слабом боксе) + после ключей владельца — e2e-смоук живой загрузки на проде.
+- ✅ **PR6 (#157 на проде):** полировка — тизер «Народной ленты» на главной (CTA `/lenta`, образец тизера игры, discoverability) + письмо brain (`mailbox/to-brain/2026-06-27-ugc-feed-shipped-presigned-direct-s3-pattern.md`: переносимый паттерн + закрытие идеи #4/I8). Гейты+preview зелёные. **Остаётся только e2e живой загрузки после ключей S3 владельца.**
+
+**ИТОГ: «Народная лента» PR1–PR6 на проде. Блокер живой загрузки — ключи S3 владельца (sign-upload→503 без них).**
 
 ## Риски / зависимости
 
