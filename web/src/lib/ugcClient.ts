@@ -25,6 +25,33 @@ export class UploadError extends Error {
 const PHOTO_MIME = /^image\/(jpeg|png|webp|heic|heif)$/
 const VIDEO_MIME = /^video\/(mp4|quicktime|webm)$/
 
+/** Базовый MIME без `;codecs=…` (MediaRecorder отдаёт полную строку). */
+export function baseMime(type: string): string {
+  return (type || '').split(';')[0].trim().toLowerCase()
+}
+
+/** Лучший поддерживаемый MIME для MediaRecorder. mp4/h264 — первым ради совместимости
+ *  с iOS (vp8/vp9 webm Safari не проигрывает). undefined → встроенный дефолт. */
+export function pickRecorderMime(): string | undefined {
+  if (typeof MediaRecorder === 'undefined') return undefined
+  const candidates = [
+    'video/mp4',
+    'video/mp4;codecs=avc1',
+    'video/webm;codecs=h264,opus',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ]
+  for (const c of candidates) {
+    try {
+      if (MediaRecorder.isTypeSupported(c)) return c
+    } catch {
+      /* ignore */
+    }
+  }
+  return undefined
+}
+
 /** Тип файла → kind, либо null если не поддерживается. */
 export function kindOf(file: File): UgcKind | null {
   if (PHOTO_MIME.test(file.type)) return 'photo'

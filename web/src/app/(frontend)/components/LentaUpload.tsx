@@ -13,6 +13,7 @@ import {
   type Prepared,
 } from '../../../lib/ugcClient'
 import { Modal } from './edit/Modal'
+import { LentaCamera } from './LentaCamera'
 import type { LentaItem } from './lentaTypes'
 
 type Status = 'idle' | 'ready' | 'uploading' | 'success' | 'error'
@@ -31,6 +32,7 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
   const [caption, setCaption] = useState('')
   const [author, setAuthor] = useState('')
   const [consent, setConsent] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function reset() {
@@ -43,6 +45,7 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
     setCaption('')
     setAuthor('')
     setConsent(false)
+    setCameraOpen(false)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -51,9 +54,9 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
     reset()
   }
 
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Общий путь для файла из камеры (LentaCamera) и из выбора файла: валидация/подготовка.
+  async function handleFile(file: File) {
+    setCameraOpen(false)
     setErrCode(null)
     try {
       const p = await measureAndPrepare(file)
@@ -66,6 +69,11 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
       setStatus('error')
       setErrCode(err instanceof UploadError ? err.code : 'failed')
     }
+  }
+
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) void handleFile(file)
   }
 
   async function submit() {
@@ -122,17 +130,31 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
       <Modal open={open} onClose={close} title={t(locale, 'lenta.upload.title')}>
         {status === 'success' ? (
           <p className="lenta-upload-success">{t(locale, 'lenta.upload.success')}</p>
+        ) : cameraOpen ? (
+          <LentaCamera locale={locale} onCaptured={handleFile} onCancel={() => setCameraOpen(false)} />
         ) : (
           <div className="lenta-upload-form">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,video/*"
-              // capture: на телефоне предложит камеру (но и галерея доступна).
-              onChange={onPick}
-              disabled={status === 'uploading'}
-              aria-label={t(locale, 'lenta.upload.pick')}
-            />
+            <div className="lenta-upload-sources">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setCameraOpen(true)}
+                disabled={status === 'uploading'}
+              >
+                📷 {t(locale, 'lenta.cam.open')}
+              </button>
+              <label className="lenta-upload-filebtn">
+                {t(locale, 'lenta.upload.pick')}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={onPick}
+                  disabled={status === 'uploading'}
+                  aria-label={t(locale, 'lenta.upload.pick')}
+                />
+              </label>
+            </div>
             <p className="lenta-upload-hint">{t(locale, 'lenta.upload.hint')}</p>
 
             {previewUrl && prepared && (
