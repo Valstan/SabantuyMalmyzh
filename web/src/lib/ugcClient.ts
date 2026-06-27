@@ -208,7 +208,7 @@ export async function uploadSubmission(prepared: Prepared, opts: UploadOpts): Pr
 
   const subRes = await fetch('/api/submissions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: ugcHeaders(), // + X-UGC-Owner → сервер стампит ownerHash (владение)
     body: JSON.stringify({
       kind: prepared.kind,
       objectKey,
@@ -225,5 +225,120 @@ export async function uploadSubmission(prepared: Prepared, opts: UploadOpts): Pr
   })
   if (!subRes.ok) throw new UploadError('failed')
   const json = (await subRes.json()) as { doc?: { id?: number } }
-  return { publicUrl, id: Number(json.doc?.id) || 0 }
+  const id = Number(json.doc?.id) || 0
+  if (id) markMine('submission', id) // помним «моё» → покажем кнопку удаления
+  return { publicUrl, id }
+}
+
+// --- Владение контентом в браузере (PR3/PR4 «удалить/править своё») ---
+// Секрет ownerToken генерится один раз на браузер (localStorage) и шлётся в заголовке
+// X-UGC-Owner при создании/мутациях. Сервер хранит лишь его хеш (ownerHash) и по
+// совпадению разрешает автору удалять/править своё. «Моё» помним тоже локально
+// (ugc-mine:*) — лента статическая (ISR), сервер без токена не знает, что именно твоё.
+const OWNER_KEY = 'ugc-owner'
+const MINE_PREFIX = 'ugc-mine'
+
+function randomToken(): string {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return `o-${crypto.randomUUID()}`
+  } catch {
+    /* ignore */
+  }
+  return `o-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+}
+
+/** Токен владельца этого браузера (создаётся при первом обращении). '' на сервере. */
+export function getOwnerToken(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    let tok = localStorage.getItem(OWNER_KEY)
+    if (!tok || tok.length < 16) {
+      tok = randomToken()
+      localStorage.setItem(OWNER_KEY, tok)
+    }
+    return tok
+  } catch {
+    return ''
+  }
+}
+
+/** Заголовки UGC-запроса: JSON + X-UGC-Owner (если токен доступен). */
+export function ugcHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  const tok = getOwnerToken()
+  if (tok) h['X-UGC-Owner'] = tok
+  return h
+}
+
+type MineKind = 'submission' | 'comment'
+const mineKey = (kind: MineKind, id: number) => `${MINE_PREFIX}:${kind}:${id}`
+
+/** Пометить контент «моим» (создан в этом браузере) — для показа кнопок удалить/править. */
+export function markMine(kind: MineKind, id: number): void {
+  try {
+    localStorage.setItem(mineKey(kind, id), '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Мой ли это контент (создан в этом браузере). Только клиент. */
+export function isMine(kind: MineKind, id: number): boolean {
+  try {
+    return localStorage.getItem(mineKey(kind, id)) === '1'
+  } catch {
+    return false
+  }
+}
+
+function clearMine(kind: MineKind, id: number): void {
+  try {
+    localStorage.removeItem(mineKey(kind, id))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Удалить свою (по токену) ИЛИ любую (персонал) публикацию. true — успех. */
+export async function deleteSubmission(id: number): Promise<boolean> {
+  const res = await fetch('/api/ugc/delete-submission', {
+    method: 'POST',
+    headers: ugcHeaders(),
+    body: JSON.stringify({ id }),
+  })
+  if (res.ok) clearMine('submission', id)
+  return res.ok
+}
+
+/** Удалить свой/любой (персонал) комментарий. */
+export async function deleteComment(id: number): Promise<boolean> {
+  const res = await fetch('/api/ugc/delete-comment', {
+    method: 'POST',
+    headers: ugcHeaders(),
+    body: JSON.stringify({ id }),
+  })
+  if (res.ok) clearMine('comment', id)
+  return res.ok
+}
+
+/** Править свой/любой (персонал) комментарий. Возвращает новый текст или null. */
+export async function editComment(id: number, body: string): Promise<string | null> {
+  const res = await fetch('/api/ugc/edit-comment', {
+    method: 'POST',
+    headers: ugcHeaders(),
+    body: JSON.stringify({ id, body }),
+  })
+  if (!res.ok) return null
+  const j = (await res.json()) as { body?: string }
+  return typeof j.body === 'string' ? j.body : null
+}
+
+/** Отменить свой лайк. true — лайк был и удалён (или его уже не было). */
+export async function unlikeSubmission(id: number): Promise<boolean> {
+  const res = await fetch('/api/ugc/unlike', {
+    method: 'POST',
+    headers: ugcHeaders(),
+    body: JSON.stringify({ submissionId: id }),
+  })
+  return res.ok
 }

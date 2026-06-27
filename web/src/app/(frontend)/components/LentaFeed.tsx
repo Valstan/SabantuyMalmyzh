@@ -75,7 +75,12 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
       {view.length > 0 ? (
         <ul className="lenta-grid">
           {view.map((item) => (
-            <LentaCard key={item.id} item={item} locale={locale} />
+            <LentaCard
+              key={item.id}
+              item={item}
+              locale={locale}
+              onRemoved={(id) => setItems((prev) => prev.filter((i) => i.id !== id))}
+            />
           ))}
         </ul>
       ) : (
