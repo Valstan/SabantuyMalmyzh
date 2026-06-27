@@ -1,0 +1,19 @@
+import type { CollectionBeforeChangeHook } from 'payload'
+
+import { clientIp, hashIp } from '../lib/ugc'
+
+// Проставляет служебные поля заявки в ленту на создании: необратимый хеш IP (для
+// дедупа лайков/жалоб в PR3 и трассировки абьюза) и user-agent. Запускается в
+// beforeChange — ПОСЛЕ field-access (которое отбрасывает любые присланные анонимом
+// значения этих полей), поэтому значение, выставленное здесь, доходит до БД.
+// status/счётчики не трогаем — их даёт defaultValue полей (постмодерация: 'visible').
+export const stampSubmissionMeta: CollectionBeforeChangeHook = ({ data, operation, req }) => {
+  if (operation !== 'create') return data
+
+  const ip = clientIp(req.headers)
+  data.ipHash = hashIp(ip)
+  const ua = req.headers.get('user-agent')
+  data.userAgent = ua ? ua.slice(0, 512) : undefined
+
+  return data
+}
