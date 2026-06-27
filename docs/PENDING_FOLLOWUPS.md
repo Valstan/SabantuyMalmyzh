@@ -16,8 +16,8 @@
   added: 2026-06-04 · snoozed: 0 · last-touch: 2026-06-10 · decay: watch
 - [ ] **Реальная программа** — ✅ официальные детали подтверждены афишей оргкомитета (2026-06-25, на странице `/sabantuy-2026`): **4 июля 2026, 10:00, с. Калинино (за постом ГИБДД)**, программа-активности, гости — дуэт Рамазановы. ⚠️ Осталось: **таймлайн событий по времени** (сейчас Events = demo, `DEMO_SCHEDULE=true`). Орги дают расписание → `DEMO_SCHEDULE=false` в `web/src/lib/festival.ts` + удалить события `demo-*`.
   added: 2026-06-06 · snoozed: 0 · last-touch: 2026-06-25 · decay: watch
-- [ ] **SMTP-секреты в прод-env** — владелец регистрирует relay, дописывает `SMTP_*` + `ORGANIZER_EMAIL` в `/etc/sabantuy/sabantuy.env`, `systemctl restart sabantuy`. Без этого письма I6/заявок только в консоль.
-  added: 2026-06-05 · snoozed: 0 · last-touch: 2026-06-10 · decay: watch
+- [ ] **SMTP-отправка с `valstan@valstan.ru`** (заявка владельца 2026-06-28, в очереди на след. сессию) — настроить SMTP **по образцу проекта «Тренер футбольный»** (найти его репо/конфиг SMTP — relay, `SMTP_*`-переменные, способ доставки секретов в прод-env). Цель: письма заявок (`Registrations.notifyOrganizer`)/подписки (I6) уходят реально, отправитель/получатель `valstan@valstan.ru`. Доставка пароля в прод-env — через GitHub Secret + разовый воркфлоу (как `apply-s3-keys.yml`, секрет не в чат/репо #008), затем `SMTP_*`+`ORGANIZER_EMAIL` в `/etc/sabantuy/sabantuy.env` + рестарт. Адаптер `nodemailerAdapter` уже в `payload.config.ts` под гейтом `SMTP_HOST` (без ключей — console-fallback).
+  added: 2026-06-05 · snoozed: 0 · last-touch: 2026-06-28 · decay: fresh
 - [ ] **Текст «Политики ПДн»** — сейчас шаблон с плейсхолдерами; владелец заполняет реквизиты оператора (152-ФЗ).
   added: 2026-06-03 · snoozed: 0 · last-touch: 2026-06-10 · decay: watch
 - [ ] **Вычитка татарского носителем** — весь tt-контент мой черновик; правки в `seedTatar.ts`/`lib/i18n.ts` или `/admin`, затем `gh workflow run seed-tatar.yml --ref main`. **Сюда же tt игр:** «Знаток Сабантуя» (`seedQuiz.ts` + `lib/quiz.ts` + `game.*`; перезалить `seed-quiz.yml`) **и** «Угадай по картинке» (`seedQuizImages.ts` + `lib/quizGames.ts` + `games.*`; перезалить `seed-quiz-images.yml force=1`). **Сюда же tt главной/шапки/подвала** (глобалы home/header/footer, on-site PR #129): правятся на сайте, в `/admin` или `seedSiteContent.ts` → `seed-site-content.yml`. **Сюда же tt анонс-страницы `/sabantuy-2026`** (`seedAnnouncement.ts` + `home.anons.*` в `lib/i18n.ts`; перезалить `seed-announcement.yml force=1`).
@@ -42,6 +42,9 @@
   added: 2026-06-06 · snoozed: 0 · last-touch: 2026-06-10 · decay: fresh
 
 ## Инженерное (наше, при касании темы)
+
+- [ ] **Лайтбокс «Народной ленты» (I16)** (заявка владельца 2026-06-28, в очереди на след. сессию) — клик по фото/видео в `/lenta` → полноэкранная галерея с пролистыванием всех медиа ленты: «Закрыть» (×/фон/Esc), кнопки ←/→, **клавиши-стрелки** (десктоп), **свайп пальцем** (телефон), видео играет в оверлее. Образец — `AlbumGallery.tsx` (лайтбокс альбома: Esc/←/→/клик-фон/lock-scroll) + touch-свайп и поддержка видео. Спек — [`docs/ideas/site-enhancements.md` I16](ideas/site-enhancements.md). Чистый фронт, без схемы/PII, ISR ленты не трогаем.
+  added: 2026-06-28 · snoozed: 0 · last-touch: 2026-06-28 · decay: fresh
 
 - [ ] **Gallery revalidate-хук** — после ISR-фикса (PR #145, force-static) `gallery/[slug]` кэшируется (ISR-60), но у коллекции `Gallery` нет `afterChange`-хука ревалидации (в отличие от Pages/Events/Quiz). On-site правка альбома применяется на публичной странице за ≤60с, не мгновенно. Добавить `hooks/revalidateGallery.ts` (`/gallery/[slug]` + `/tt/gallery/[slug]` + `/gallery` + `/tt/gallery`) если правки альбомов участятся. Не срочно (галерея правится редко).
   added: 2026-06-26 · snoozed: 0 · last-touch: 2026-06-26 · decay: fresh
