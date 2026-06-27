@@ -7,7 +7,8 @@ import { t, type Locale } from '../../../lib/i18n'
 import { publicUrl } from '../../../lib/s3'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
-import { LentaFeed, type LentaItem } from '../components/LentaFeed'
+import { LentaFeed } from '../components/LentaFeed'
+import type { LentaItem } from '../components/lentaTypes'
 
 // «Народная лента» (UGC, /lenta + /tt/lenta). Сервер тянет видимые публикации (ISR,
 // force-static — медиа лежит в Object Storage, браузер грузит напрямую, наш бокс
@@ -65,11 +66,8 @@ export async function LentaView({ locale }: { locale: Locale }) {
 
       <section className="section">
         <div className="section-inner">
-          {items && items.length > 0 ? (
-            <LentaFeed items={items} locale={locale} />
-          ) : (
-            <div className="placeholder">{t(locale, 'lenta.empty')}</div>
-          )}
+          {/* Контейнер всегда: кнопка загрузки доступна и при пустой ленте. */}
+          <LentaFeed initialItems={items ?? []} locale={locale} />
         </div>
       </section>
     </main>
