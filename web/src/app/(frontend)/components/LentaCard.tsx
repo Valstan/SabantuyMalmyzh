@@ -3,13 +3,25 @@
 import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { deleteSubmission, isMine, ugcHeaders, unlikeSubmission } from '../../../lib/ugcClient'
 import { LentaComments } from './LentaComments'
+import { useAdminMode } from './edit/AdminMode'
 import type { LentaItem } from './lentaTypes'
 
-// Карточка ленты с медиа и взаимодействием (PR5): лайк (оптимистично, дедуп localStorage
-// + серверный 409), поделиться (Web Share), пожаловаться (POST content-report),
-// комментарии (раскрываемый тред). Медиа грузится напрямую с Object Storage.
-export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale }) {
+// Карточка ленты с медиа и взаимодействием (PR5): лайк/отмена (оптимистично, дедуп
+// localStorage + серверный 409), поделиться (Web Share), пожаловаться, комментарии
+// (раскрываемый тред). Управление своим (PR4): удалить свою публикацию (по токену) —
+// и персонал в режиме «Редактирование» удаляет любую. Медиа — напрямую с Object Storage.
+export function LentaCard({
+  item,
+  locale,
+  onRemoved,
+}: {
+  item: LentaItem
+  locale: Locale
+  onRemoved?: (id: number) => void
+}) {
+  const { isAdmin, mode } = useAdminMode()
   const [playing, setPlaying] = useState(false)
   const [broken, setBroken] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -17,9 +29,11 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
   const [reported, setReported] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [commentCount, setCommentCount] = useState(item.commentCount)
+  const [mine, setMine] = useState(false)
+  const [actErr, setActErr] = useState(false)
   const phaseLabel = t(locale, `lenta.phase.${item.phase}`)
 
-  // localStorage — после гидрации (иначе SSR/CSR расходятся).
+  // «Моё»/лайк/жалоба — из localStorage после гидрации (иначе SSR/CSR расходятся).
   useEffect(() => {
     try {
       if (localStorage.getItem(`ugc-liked:${item.id}`)) setLiked(true)
@@ -27,7 +41,11 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
     } catch {
       /* приватный режим — игнор */
     }
+    setMine(isMine('submission', item.id))
   }, [item.id])
+
+  // Удалять можно своё (по токену) ИЛИ любое, если ты персонал в режиме «Редактирование».
+  const canDelete = mine || (isAdmin && mode === 'manage')
 
   async function like() {
     if (liked) return
@@ -41,7 +59,7 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
     try {
       const res = await fetch('/api/submission-reactions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: ugcHeaders(), // + X-UGC-Owner → лайк привязан к браузеру (для отмены)
         body: JSON.stringify({ submission: item.id }),
       })
       // 409 = уже лайкнули с этого IP → оставляем как есть. Иные ошибки — откат.
@@ -55,6 +73,41 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
     }
   }
 
+  async function unlike() {
+    if (!liked) return
+    setLiked(false)
+    setLikeCount((c) => Math.max(0, c - 1))
+    try {
+      localStorage.removeItem(`ugc-liked:${item.id}`)
+    } catch {
+      /* игнор */
+    }
+    const ok = await unlikeSubmission(item.id)
+    if (!ok) {
+      // откат: сервер не снял (напр. лайк ставился до входа/из другого браузера)
+      setLiked(true)
+      setLikeCount((c) => c + 1)
+      try {
+        localStorage.setItem(`ugc-liked:${item.id}`, '1')
+      } catch {
+        /* игнор */
+      }
+    }
+  }
+
+  function toggleLike() {
+    if (liked) void unlike()
+    else void like()
+  }
+
+  async function del() {
+    if (typeof window !== 'undefined' && !window.confirm(t(locale, 'lenta.confirmDelete'))) return
+    setActErr(false)
+    const ok = await deleteSubmission(item.id)
+    if (ok) onRemoved?.(item.id)
+    else setActErr(true)
+  }
+
   async function report() {
     if (reported) return
     setReported(true)
@@ -66,7 +119,7 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
     try {
       await fetch('/api/content-reports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: ugcHeaders(),
         body: JSON.stringify({ targetType: 'submission', targetId: item.id }),
       })
     } catch {
@@ -144,15 +197,18 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
 
       <div className="lenta-card-body">
         {item.caption && <p className="lenta-caption">{item.caption}</p>}
-        {item.authorName && <span className="lenta-author">{item.authorName}</span>}
+        <span className="lenta-byline">
+          {item.authorName && <span className="lenta-author">{item.authorName}</span>}
+          {mine && <span className="lenta-mine">{t(locale, 'lenta.mineBadge')}</span>}
+        </span>
 
         <div className="lenta-actions">
           <button
             type="button"
             className={`lenta-act${liked ? ' is-on' : ''}`}
-            onClick={like}
+            onClick={toggleLike}
             aria-pressed={liked}
-            aria-label={t(locale, 'lenta.like')}
+            aria-label={t(locale, liked ? 'lenta.unlike' : 'lenta.like')}
           >
             {liked ? '❤' : '🤍'} {likeCount}
           </button>
@@ -178,13 +234,30 @@ export function LentaCard({ item, locale }: { item: LentaItem; locale: Locale })
           >
             {reported ? '✓' : '⚑'}
           </button>
+          {canDelete && (
+            <button
+              type="button"
+              className="lenta-act lenta-act--danger"
+              onClick={del}
+              title={t(locale, 'lenta.delete')}
+              aria-label={t(locale, 'lenta.delete')}
+            >
+              🗑
+            </button>
+          )}
         </div>
+        {actErr && (
+          <p className="lenta-act-err" role="alert">
+            {t(locale, 'lenta.actionError')}
+          </p>
+        )}
 
         {commentsOpen && (
           <LentaComments
             submissionId={item.id}
             locale={locale}
             onAdded={() => setCommentCount((c) => c + 1)}
+            onRemoved={() => setCommentCount((c) => Math.max(0, c - 1))}
           />
         )}
       </div>

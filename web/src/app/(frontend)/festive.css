@@ -2444,6 +2444,33 @@ a.feature-card--cover:hover .feature-cover img {
   cursor: default;
   opacity: 0.7;
 }
+.lenta-act--danger {
+  color: #a3242f;
+}
+.lenta-act--danger:hover:not(:disabled) {
+  border-color: #a3242f;
+  background: #fdeced;
+}
+.lenta-act-err {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #a3242f;
+}
+.lenta-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.lenta-mine {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--brand-green-dark);
+  background: #fff7e6;
+  border: 1px solid var(--c-gold);
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+}
 
 /* ── Лента: комментарии ────────────────────────────────────────────────────── */
 .lenta-comments {
@@ -2468,6 +2495,48 @@ a.feature-card--cover:hover .feature-cover img {
 .lenta-comment-author {
   font-weight: 600;
   color: var(--brand-green-dark);
+}
+.lenta-comment-actions {
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+.lenta-link-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  background: none;
+  border: none;
+  padding: 0 0.25rem;
+  cursor: pointer;
+  color: var(--brand-green-dark);
+  text-decoration: underline;
+}
+.lenta-link-btn:hover:not(:disabled) {
+  color: #9a6b00;
+}
+.lenta-link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.lenta-link-btn--danger {
+  color: #a3242f;
+}
+.lenta-comment-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.lenta-comment-edit textarea {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lenta-comment-edit-actions {
+  display: flex;
+  gap: 0.6rem;
 }
 .lenta-comments-empty,
 .lenta-comments-loading {
