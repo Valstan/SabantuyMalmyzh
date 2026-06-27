@@ -79,6 +79,9 @@ export interface Config {
     raffle: Raffle;
     'raffle-entries': RaffleEntry;
     submissions: Submission;
+    'submission-reactions': SubmissionReaction;
+    'submission-comments': SubmissionComment;
+    'content-reports': ContentReport;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -99,6 +102,9 @@ export interface Config {
     raffle: RaffleSelect<false> | RaffleSelect<true>;
     'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
+    'submission-reactions': SubmissionReactionsSelect<false> | SubmissionReactionsSelect<true>;
+    'submission-comments': SubmissionCommentsSelect<false> | SubmissionCommentsSelect<true>;
+    'content-reports': ContentReportsSelect<false> | ContentReportsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -526,6 +532,53 @@ export interface Submission {
   createdAt: string;
 }
 /**
+ * Лайки публикаций ленты. Агрегат likeCount — на самой публикации.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-reactions".
+ */
+export interface SubmissionReaction {
+  id: number;
+  submission: number | Submission;
+  ipHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Комментарии к публикациям ленты. Постмодерация: видно сразу, скрывайте при жалобах.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-comments".
+ */
+export interface SubmissionComment {
+  id: number;
+  submission: number | Submission;
+  authorName?: string | null;
+  body: string;
+  status?: ('visible' | 'hidden' | 'removed') | null;
+  hiddenReason?: string | null;
+  reportCount?: number | null;
+  ipHash?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Жалобы посетителей на публикации/комментарии. На пороге цель скрывается авто.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content-reports".
+ */
+export interface ContentReport {
+  id: number;
+  targetType: 'submission' | 'comment';
+  targetId: number;
+  reason?: string | null;
+  ipHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -623,6 +676,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'submissions';
         value: number | Submission;
+      } | null)
+    | ({
+        relationTo: 'submission-reactions';
+        value: number | SubmissionReaction;
+      } | null)
+    | ({
+        relationTo: 'submission-comments';
+        value: number | SubmissionComment;
+      } | null)
+    | ({
+        relationTo: 'content-reports';
+        value: number | ContentReport;
       } | null)
     | ({
         relationTo: 'users';
@@ -919,6 +984,44 @@ export interface SubmissionsSelect<T extends boolean = true> {
   reportCount?: T;
   ipHash?: T;
   userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-reactions_select".
+ */
+export interface SubmissionReactionsSelect<T extends boolean = true> {
+  submission?: T;
+  ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-comments_select".
+ */
+export interface SubmissionCommentsSelect<T extends boolean = true> {
+  submission?: T;
+  authorName?: T;
+  body?: T;
+  status?: T;
+  hiddenReason?: T;
+  reportCount?: T;
+  ipHash?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content-reports_select".
+ */
+export interface ContentReportsSelect<T extends boolean = true> {
+  targetType?: T;
+  targetId?: T;
+  reason?: T;
+  ipHash?: T;
   updatedAt?: T;
   createdAt?: T;
 }

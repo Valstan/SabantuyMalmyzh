@@ -47,3 +47,33 @@ const IP_SALT = process.env.UGC_IP_SALT || process.env.PAYLOAD_SECRET || 'sabant
 export function hashIp(ip: string): string {
   return createHash('sha256').update(`${IP_SALT}:${ip}`).digest('hex').slice(0, 32)
 }
+
+// Цели жалоб (content-reports): на что можно пожаловаться.
+export const UGC_REPORT_TARGETS = ['submission', 'comment'] as const
+export type UgcReportTarget = (typeof UGC_REPORT_TARGETS)[number]
+
+// Управляющие символы (кроме \t=09, \n=0A) — вырезаем из пользовательского текста.
+// Строка-форма RegExp с \u-escape (не литеральные control-символы в исходнике).
+const CONTROL_CHARS = new RegExp("[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]", "g")
+
+/** Санитайз пользовательского текста: убрать управляющие символы, схлопнуть пробелы/
+ *  переводы строк, trim, ограничить длину. Пусто → undefined. */
+export function clampText(v: unknown, max: number): string | undefined {
+  if (typeof v !== 'string') return undefined
+  const cleaned = v
+    .replace(CONTROL_CHARS, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return cleaned ? cleaned.slice(0, max) : undefined
+}
+
+/** id из значения relationship-поля Payload (число-id или populated-объект). */
+export function relId(v: unknown): number | undefined {
+  if (typeof v === 'number') return v
+  if (v && typeof v === 'object' && 'id' in v) {
+    const id = (v as { id: unknown }).id
+    return typeof id === 'number' ? id : undefined
+  }
+  return undefined
+}
