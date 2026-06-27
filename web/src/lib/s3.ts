@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // Yandex Object Storage (S3-совместимое) для «Народной ленты» (UGC фото/видео).
@@ -85,4 +85,15 @@ export function buildObjectKey(args: { kind: 'photo' | 'video'; phase: string; m
 export async function presignUpload(objectKey: string, contentType: string): Promise<string> {
   const cmd = new PutObjectCommand({ Bucket: BUCKET, Key: objectKey, ContentType: contentType })
   return getSignedUrl(client(), cmd, { expiresIn: PRESIGN_EXPIRES_SEC })
+}
+
+/** Удалить объект из бакета (при удалении публикации автором/персоналом). Без ключей —
+ *  no-op; ошибку (нет объекта и т.п.) глушим — удаление записи в БД важнее файла. */
+export async function deleteObject(objectKey: string): Promise<void> {
+  if (!isS3Configured() || !objectKey) return
+  try {
+    await client().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: objectKey.replace(/^\/+/, '') }))
+  } catch {
+    /* best-effort: запись уже помечена removed, объект подчистится при ротации */
+  }
 }

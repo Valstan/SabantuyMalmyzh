@@ -213,6 +213,20 @@ export const Submissions: CollectionConfig<'submissions'> = {
       admin: { hidden: true },
     },
     {
+      name: 'ownerHash',
+      type: 'text',
+      label: 'Владелец (хеш токена браузера)',
+      // Хеш браузерного ownerToken — по нему автор удаляет/правит «своё» (PR3 /api/ugc/*).
+      // Не PII, публично не отдаём; ставит хук на создании (анонимом не задаётся).
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
+    {
       name: 'userAgent',
       type: 'text',
       label: 'User-Agent',
