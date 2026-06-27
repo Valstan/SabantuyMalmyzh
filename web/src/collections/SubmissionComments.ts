@@ -108,6 +108,19 @@ export const SubmissionComments: CollectionConfig<'submission-comments'> = {
       admin: { hidden: true },
     },
     {
+      name: 'ownerHash',
+      type: 'text',
+      label: 'Владелец (хеш токена браузера)',
+      // Автор правит/удаляет «свой» коммент по совпадению хеша токена (PR3 /api/ugc/*).
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
+    {
       name: 'userAgent',
       type: 'text',
       label: 'User-Agent',

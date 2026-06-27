@@ -48,6 +48,36 @@ export function hashIp(ip: string): string {
   return createHash('sha256').update(`${IP_SALT}:${ip}`).digest('hex').slice(0, 32)
 }
 
+// --- Владение контентом анонимом (PR3 «удалить/править своё») ---
+// Браузер генерит секрет ownerToken (localStorage) и шлёт его в заголовке X-UGC-Owner
+// при создании. Сервер хранит лишь необратимый ownerHash (как ipHash) → по нему хук
+// стампит запись, а эндпоинты /api/ugc/* подтверждают «это моё» (хеш токена совпал).
+// Не PII: сам токен в БД не пишем, только хеш. Соль — отдельная или PAYLOAD_SECRET.
+const OWNER_SALT = process.env.UGC_OWNER_SALT || process.env.PAYLOAD_SECRET || 'sabantuy-ugc-owner'
+
+/** Заголовок с браузерным токеном владельца (строчными — Headers.get регистр-независим). */
+export const OWNER_TOKEN_HEADER = 'x-ugc-owner'
+
+/** Необратимый хеш токена владельца (привязка контента к браузеру/аккаунту, не PII). */
+export function hashOwner(token: string): string {
+  return createHash('sha256').update(`owner:${OWNER_SALT}:${token}`).digest('hex').slice(0, 32)
+}
+
+/** Токен владельца из заголовка (минимальная валидация: UUID-подобная длина). */
+export function ownerTokenFromHeaders(headers: Headers): string | null {
+  const raw = headers.get(OWNER_TOKEN_HEADER)
+  if (!raw) return null
+  const token = raw.trim()
+  if (token.length < 16 || token.length > 200) return null
+  return token
+}
+
+/** ownerHash из запроса (null, если токена нет/он невалиден). */
+export function ownerHashFromHeaders(headers: Headers): string | null {
+  const token = ownerTokenFromHeaders(headers)
+  return token ? hashOwner(token) : null
+}
+
 // Цели жалоб (content-reports): на что можно пожаловаться.
 export const UGC_REPORT_TARGETS = ['submission', 'comment'] as const
 export type UgcReportTarget = (typeof UGC_REPORT_TARGETS)[number]

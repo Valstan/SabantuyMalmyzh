@@ -50,6 +50,20 @@ export const SubmissionReactions: CollectionConfig<'submission-reactions'> = {
       },
       admin: { hidden: true },
     },
+    {
+      name: 'ownerHash',
+      type: 'text',
+      label: 'Владелец (хеш токена браузера)',
+      // По нему автор отменяет «свой» лайк (PR3 /api/ugc/unlike): ищем реакцию по
+      // (submission, ownerHash) и удаляем → recount likeCount.
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
   ],
   hooks: {
     beforeValidate: [rateLimitReaction],

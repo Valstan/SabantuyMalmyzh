@@ -529,6 +529,7 @@ export interface Submission {
   commentCount?: number | null;
   reportCount?: number | null;
   ipHash?: string | null;
+  ownerHash?: string | null;
   userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -543,6 +544,7 @@ export interface SubmissionReaction {
   id: number;
   submission: number | Submission;
   ipHash?: string | null;
+  ownerHash?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -561,6 +563,7 @@ export interface SubmissionComment {
   hiddenReason?: string | null;
   reportCount?: number | null;
   ipHash?: string | null;
+  ownerHash?: string | null;
   userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -985,6 +988,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   commentCount?: T;
   reportCount?: T;
   ipHash?: T;
+  ownerHash?: T;
   userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -996,6 +1000,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
 export interface SubmissionReactionsSelect<T extends boolean = true> {
   submission?: T;
   ipHash?: T;
+  ownerHash?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1011,6 +1016,7 @@ export interface SubmissionCommentsSelect<T extends boolean = true> {
   hiddenReason?: T;
   reportCount?: T;
   ipHash?: T;
+  ownerHash?: T;
   userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
