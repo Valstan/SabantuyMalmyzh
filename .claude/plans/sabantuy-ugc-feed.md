@@ -97,6 +97,7 @@
 - ✅ **PR1 (foundation, #147 на проде):** deps `@aws-sdk/*` + `lib/s3.ts` (клиент+presign) + `POST /api/ugc/sign-upload` +
   `.env.example` + `next.config` remotePattern. _Без ключей → 503 degraded._
 - ✅ **PR2 (#149 на проде):** коллекция `submissions` + миграция `20260627_090000` + хуки (rate-limit/sanitize/consent/стоп-мат + stampSubmissionMeta=ipHash/UA) + `lib/ugc.ts`/`lib/profanity.ts`/`access/publicVisibleOrStaff.ts` + регистрация в конфиге. verify down→up diff 1:1; прод-смоук зелёный.
+- ✅ **PR3 (#151 на проде):** `submission-reactions` (лайки+дедуп→409, recount likeCount) + `submission-comments` (постмодерация, recount commentCount) + `content-reports` (дедуп→409, авто-скрытие на пороге 3) + хуки (`rateLimit*`/`recount*`/`applyContentReport`/`ugcHelpers`/`stampIpHash`) + миграция `20260627_140000`. ⚠️ Payload: `count/update/findByID` в хуках обязаны получать `req` (транзакция), иначе счётчики off-by-one. verify down→up diff 1:1; e2e-смоук + прод-смоук зелёные.
 - **PR3:** `submission-reactions` + `submission-comments` + `content-reports` + хуки (дедуп/счётчики/авто-скрытие) + миграция.
 - **PR4:** лента `/lenta`(+tt) ISR force-static + рендер медиа с S3 + сортировки/фильтр-фаз + nav + i18n.
 - **PR5:** UI загрузки (presign→PUT→submit, согласие, клиент-валидация, camera) + лайк/коммент/жалоба UI + Web Share.
