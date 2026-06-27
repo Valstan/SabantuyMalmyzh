@@ -6,6 +6,7 @@ import { rateLimit } from '../lib/rateLimit'
 import { isAllowedMime } from '../lib/s3'
 import { containsProfanity } from '../lib/profanity'
 import {
+  clampText,
   clientIp,
   OBJECT_KEY_RE,
   UGC_MAX_AUTHOR,
@@ -26,20 +27,6 @@ import {
 
 const MAX = 15 // отправок
 const WINDOW_MS = 15 * 60 * 1000 // за 15 минут на IP
-
-// Управляющие символы (кроме \t=09 и \n=0A) — вырезаем из пользовательского текста.
-const CONTROL_CHARS = new RegExp("[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]", "g")
-
-function clampText(v: unknown, max: number): string | undefined {
-  if (typeof v !== 'string') return undefined
-  // Убираем управляющие символы, схлопываем пробелы/переводы строк, trim, режем длину.
-  const cleaned = v
-    .replace(CONTROL_CHARS, '')
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-  return cleaned ? cleaned.slice(0, max) : undefined
-}
 
 export const rateLimitSubmission: CollectionBeforeValidateHook = ({ data, operation, req }) => {
   if (operation !== 'create') return data
