@@ -78,6 +78,7 @@ export interface Config {
     subscribers: Subscriber;
     raffle: Raffle;
     'raffle-entries': RaffleEntry;
+    submissions: Submission;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -97,6 +98,7 @@ export interface Config {
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     raffle: RaffleSelect<false> | RaffleSelect<true>;
     'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
+    submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -485,6 +487,45 @@ export interface RaffleEntry {
   createdAt: string;
 }
 /**
+ * Фото/видео от посетителей. Постмодерация: видно сразу, скрывайте/удаляйте здесь при жалобах. Медиа хранится в Object Storage (objectKey), не на боксе.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions".
+ */
+export interface Submission {
+  id: number;
+  kind: 'photo' | 'video';
+  /**
+   * media/<phase>/<yyyymm>/<uuid>.<ext> — путь файла в бакете.
+   */
+  objectKey: string;
+  /**
+   * Опц. кадр-обложка для видео.
+   */
+  posterKey?: string | null;
+  mime: string;
+  bytes?: number | null;
+  width?: number | null;
+  height?: number | null;
+  durationSec?: number | null;
+  authorName?: string | null;
+  caption?: string | null;
+  phase: 'preparation' | 'festival';
+  /**
+   * Обязательно. Посетитель подтверждает при загрузке.
+   */
+  consent: boolean;
+  status?: ('visible' | 'hidden' | 'removed') | null;
+  hiddenReason?: string | null;
+  likeCount?: number | null;
+  commentCount?: number | null;
+  reportCount?: number | null;
+  ipHash?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -578,6 +619,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'raffle-entries';
         value: number | RaffleEntry;
+      } | null)
+    | ({
+        relationTo: 'submissions';
+        value: number | Submission;
       } | null)
     | ({
         relationTo: 'users';
@@ -847,6 +892,33 @@ export interface RaffleEntriesSelect<T extends boolean = true> {
   raffle?: T;
   consent?: T;
   source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_select".
+ */
+export interface SubmissionsSelect<T extends boolean = true> {
+  kind?: T;
+  objectKey?: T;
+  posterKey?: T;
+  mime?: T;
+  bytes?: T;
+  width?: T;
+  height?: T;
+  durationSec?: T;
+  authorName?: T;
+  caption?: T;
+  phase?: T;
+  consent?: T;
+  status?: T;
+  hiddenReason?: T;
+  likeCount?: T;
+  commentCount?: T;
+  reportCount?: T;
+  ipHash?: T;
+  userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
 }
