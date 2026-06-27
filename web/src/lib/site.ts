@@ -8,6 +8,10 @@ export const SITE_URL = (
 
 export const SITE_NAME = 'Сабантуй Малмыж'
 
+// Сообщество ВКонтакте праздника — там идут официальные прямые эфиры (и куда ведёт
+// кнопка «эфир в VK» со страницы /efir; на телефоне открывается приложение VK).
+export const VK_COMMUNITY_URL = 'https://vk.com/malm4317sabantuikazanskaya'
+
 export const SITE_DESC =
   'Народный праздник Малмыжа — труда, силы и дружбы народов. Программа, галерея, история и традиции Сабантуя.'
 

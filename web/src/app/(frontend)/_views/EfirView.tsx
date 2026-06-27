@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { VK_COMMUNITY_URL } from '../../../lib/site'
 import { vkEmbedSrc } from '../../../lib/vkEmbed'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
@@ -55,6 +56,15 @@ export async function EfirView({ locale }: { locale: Locale }) {
           ) : (
             <div className="placeholder efir-offline">{t(locale, 'efir.offline')}</div>
           )}
+
+          {/* Лёгкий путь к эфиру через VK: открывает сообщество (на телефоне —
+              приложение VK), где идут официальные трансляции и можно вещать самим. */}
+          <div className="efir-vk">
+            <p>{t(locale, 'efir.vk.note')}</p>
+            <a className="btn-primary" href={VK_COMMUNITY_URL} target="_blank" rel="noopener noreferrer">
+              {t(locale, 'efir.vk.cta')}
+            </a>
+          </div>
         </div>
       </section>
     </main>
