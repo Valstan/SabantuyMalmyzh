@@ -6,19 +6,30 @@ import { t, type Locale } from '../../../lib/i18n'
 import { viewSubmission } from '../../../lib/ugcClient'
 import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
+import { LentaRatings } from './LentaRatings'
 import { LentaUpload } from './LentaUpload'
 import { OwnedProvider } from './OwnedContext'
-import type { LentaItem } from './lentaTypes'
+import type { LentaItem, LentaRatings as Ratings } from './lentaTypes'
 
 type Sort = 'new' | 'likes' | 'views'
 type PhaseFilter = 'all' | 'preparation' | 'festival'
+type Tab = 'feed' | 'ratings'
 
 // Клиентский контейнер ленты (PR4 + PR5): держит снимок публикаций (initialItems из
 // ISR-сервера) + локально добавленные после загрузки; сортировка (Новое / Народный
 // выбор) и фильтр фаз — в браузере. Так роут остаётся статически кэшируемым (без
 // searchParams). Кнопка загрузки и карточки с взаимодействием — клиентские (PR5).
-export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[]; locale: Locale }) {
+export function LentaFeed({
+  initialItems,
+  ratings,
+  locale,
+}: {
+  initialItems: LentaItem[]
+  ratings: Ratings
+  locale: Locale
+}) {
   const [items, setItems] = useState<LentaItem[]>(initialItems)
+  const [tab, setTab] = useState<Tab>('feed')
   const [sort, setSort] = useState<Sort>('new')
   const [phase, setPhase] = useState<PhaseFilter>('all')
   // Индекс открытого в лайтбоксе медиа в текущем `view` (null — закрыт).
@@ -43,9 +54,33 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
     { key: 'festival', label: t(locale, 'lenta.phase.festival') },
   ]
 
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'feed', label: t(locale, 'lenta.tab.feed') },
+    { key: 'ratings', label: t(locale, 'lenta.tab.ratings') },
+  ]
+
   return (
     <OwnedProvider>
     <div className="lenta">
+      <div className="lenta-tabs" role="tablist" aria-label={t(locale, 'lenta.title')}>
+        {tabs.map((tb) => (
+          <button
+            key={tb.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === tb.key}
+            className={`lenta-tab${tab === tb.key ? ' is-active' : ''}`}
+            onClick={() => setTab(tb.key)}
+          >
+            {tb.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'ratings' ? (
+        <LentaRatings ratings={ratings} locale={locale} />
+      ) : (
+      <>
       <div className="lenta-top">
         <LentaUpload locale={locale} onUploaded={(item) => setItems((prev) => [item, ...prev])} />
         {items.length > 0 && (
@@ -109,6 +144,8 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
             if (it) void viewSubmission(it.id)
           }}
         />
+      )}
+      </>
       )}
     </div>
     </OwnedProvider>
