@@ -634,7 +634,12 @@ export interface ContentReport {
 export interface PhotoBattle {
   id: number;
   winner: number | Submission;
+  /**
+   * Какой кадр поста победил (0 = обложка). Мульти-файловые посты.
+   */
+  winnerIndex?: number | null;
   loser: number | Submission;
+  loserIndex?: number | null;
   ipHash?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1155,7 +1160,9 @@ export interface ContentReportsSelect<T extends boolean = true> {
  */
 export interface PhotoBattlesSelect<T extends boolean = true> {
   winner?: T;
+  winnerIndex?: T;
   loser?: T;
+  loserIndex?: T;
   ipHash?: T;
   updatedAt?: T;
   createdAt?: T;

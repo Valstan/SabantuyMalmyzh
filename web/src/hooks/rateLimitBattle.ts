@@ -4,13 +4,19 @@ import { APIError } from 'payload'
 
 import { rateLimit } from '../lib/rateLimit'
 import { clientIp, relId } from '../lib/ugc'
-import { assertVisiblePhoto } from './ugcHelpers'
+import { assertVisiblePhotoAt } from './ugcHelpers'
 
-// Раунд игры «Фотобитва» (POST /api/photo-battles). Аноним выбирает одно из двух фото.
-// Без дедупа — повторные раунды это и есть игра; грубый флуд отсекает rate-limit по IP.
-// Оба участника обязаны быть РАЗНЫМИ видимыми фото (анти-накрутка чужого/скрытого/видео).
+// Раунд игры «Фотобитва» (POST /api/photo-battles). Аноним выбирает одно из двух ФОТО.
+// Фото = публикация + индекс кадра (мульти-файловые посты дают в битву каждый кадр).
+// Без дедупа на сервере — повторные раунды это и есть игра (дедуп пар — на клиенте, за
+// сессию); грубый флуд отсекает rate-limit по IP. Оба участника — РАЗНЫЕ видимые фото.
 const MAX = 150 // раундов
 const WINDOW_MS = 10 * 60 * 1000 // за 10 минут на IP
+
+const idx = (v: unknown): number => {
+  const n = Number(v)
+  return Number.isInteger(n) && n >= 0 ? n : 0
+}
 
 export const rateLimitBattle: CollectionBeforeValidateHook = async ({ data, operation, req }) => {
   if (operation !== 'create') return data
@@ -27,10 +33,17 @@ export const rateLimitBattle: CollectionBeforeValidateHook = async ({ data, oper
   const winnerId = relId(data.winner)
   const loserId = relId(data.loser)
   if (!winnerId || !loserId) throw new APIError('Не указаны участники.', 400)
-  if (winnerId === loserId) throw new APIError('Участники должны различаться.', 400)
+  const winnerIndex = idx(data.winnerIndex)
+  const loserIndex = idx(data.loserIndex)
+  data.winnerIndex = winnerIndex
+  data.loserIndex = loserIndex
+  // Фото различаются = различается пара (пост, индекс). Один пост, разные кадры — ОК.
+  if (winnerId === loserId && winnerIndex === loserIndex) {
+    throw new APIError('Участники должны различаться.', 400)
+  }
 
-  await assertVisiblePhoto(req, winnerId)
-  await assertVisiblePhoto(req, loserId)
+  await assertVisiblePhotoAt(req, winnerId, winnerIndex)
+  await assertVisiblePhotoAt(req, loserId, loserIndex)
 
   return data
 }

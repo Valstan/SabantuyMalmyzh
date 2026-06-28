@@ -34,16 +34,31 @@ export const PhotoBattles: CollectionConfig<'photo-battles'> = {
     {
       name: 'winner',
       type: 'relationship',
-      label: 'Победитель',
+      label: 'Победитель (публикация)',
       relationTo: 'submissions',
       required: true,
     },
     {
+      name: 'winnerIndex',
+      type: 'number',
+      label: 'Индекс кадра-победителя',
+      defaultValue: 0,
+      min: 0,
+      admin: { description: 'Какой кадр поста победил (0 = обложка). Мульти-файловые посты.' },
+    },
+    {
       name: 'loser',
       type: 'relationship',
-      label: 'Проигравший',
+      label: 'Проигравший (публикация)',
       relationTo: 'submissions',
       required: true,
+    },
+    {
+      name: 'loserIndex',
+      type: 'number',
+      label: 'Индекс проигравшего кадра',
+      defaultValue: 0,
+      min: 0,
     },
     {
       name: 'ipHash',
