@@ -297,7 +297,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
         eyebrow={home?.heroEyebrow || t(locale, 'hero.eyebrow')}
         title={
           <>
-            Сабантуй&nbsp;<span className="accent">{home?.heroTitleAccent || 'Малмыж'}</span>
+            Сабантуй в&nbsp;<span className="accent">{home?.heroTitleAccent || 'Малмыже'}</span>
           </>
         }
         tagline={home?.heroTagline || t(locale, 'hero.tagline')}
