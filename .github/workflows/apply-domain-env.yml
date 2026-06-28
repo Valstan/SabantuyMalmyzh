@@ -1,0 +1,113 @@
+name: Apply domain env (manual)
+
+# Перевод рантайм-env бокса на основной домен сабантуй.вмалмыже.рф. Динамические роуты
+# (VK-вход) читают домен из process.env в РАНТАЙМЕ, а не из build-Variable: redirect_uri
+# берётся из VK_REDIRECT_URI (его пишет apply-vk-secrets), пост-логин-база — из
+# NEXT_PUBLIC_SERVER_URL. Их и переставляем в /etc/sabantuy/sabantuy.env + рестарт.
+#
+# Build-Variable NEXT_PUBLIC_SERVER_URL уже переключён (canonical/sitemap/OG — на новый
+# домен). Этот workflow закрывает рантайм-часть. Оба VK redirect URI (старый+новый)
+# зарегистрированы в кабинете VK → переключение не ломает вход.
+#
+#   mode=inspect — показать текущие домен-строки env (домен не секрет).
+#   mode=apply   — переставить на новый домен + рестарт + verify redirect_uri.
+#
+# Требует: secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'inspect | apply'
+        required: true
+        default: 'inspect'
+        type: choice
+        options: [inspect, apply]
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: false
+
+env:
+  NEW_URL: https://xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # https://сабантуй.вмалмыже.рф
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Inspect (read-only)
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set -e
+          ENV=/etc/sabantuy/sabantuy.env
+          echo "== текущие домен-строки env =="
+          sudo grep -E '^(NEXT_PUBLIC_SERVER_URL|VK_REDIRECT_URI)=' "$ENV" || echo "(не заданы)"
+          echo "== redirect_uri, который шлёт приложение сейчас =="
+          curl -s -D - -o /dev/null -m 15 http://127.0.0.1:3000/api/auth/vk/login | grep -i '^location:' | grep -oiE 'redirect_uri=[^&]*' || echo "(нет location/redirect_uri)"
+          REMOTE
+
+      - name: Apply (переставить домен + рестарт)
+        if: ${{ inputs.mode == 'apply' }}
+        run: |
+          set -e
+          ssh sabantuy 'sudo bash -s' "$NEW_URL" <<'REMOTE'
+          set -e
+          NEW="$1"
+          ENV=/etc/sabantuy/sabantuy.env
+          # идемпотентно: убрать прежние строки, дописать новые
+          sed -i '/^NEXT_PUBLIC_SERVER_URL=/d; /^VK_REDIRECT_URI=/d' "$ENV"
+          {
+            echo "NEXT_PUBLIC_SERVER_URL=$NEW"
+            echo "VK_REDIRECT_URI=$NEW/api/auth/vk/callback"
+          } >> "$ENV"
+          chown root:valstan "$ENV"
+          chmod 640 "$ENV"
+          systemctl restart sabantuy
+          echo "новые строки:"; grep -E '^(NEXT_PUBLIC_SERVER_URL|VK_REDIRECT_URI)=' "$ENV"
+          REMOTE
+
+      - name: Verify (redirect_uri = новый домен)
+        if: ${{ inputs.mode == 'apply' }}
+        run: |
+          set -e
+          for i in 1 2 3 4 5 6 7 8; do
+            sleep 6
+            ru=$(ssh sabantuy "curl -s -D - -o /dev/null -m 15 http://127.0.0.1:3000/api/auth/vk/login | grep -i '^location:' | grep -oiE 'redirect_uri=[^&]*'" || true)
+            echo "attempt $i — $ru"
+            case "$ru" in
+              *xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai*) echo "✅ redirect_uri теперь на новом домене."; exit 0 ;;
+            esac
+          done
+          echo "::error::redirect_uri не переключился на новый домен за ~48с — проверь env/логи."
+          exit 1
