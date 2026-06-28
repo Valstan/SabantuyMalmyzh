@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { deleteSubmission, isMine, ugcHeaders, unlikeSubmission } from '../../../lib/ugcClient'
+import {
+  deleteSubmission,
+  hasViewed,
+  isMine,
+  ugcHeaders,
+  unlikeSubmission,
+  viewSubmission,
+} from '../../../lib/ugcClient'
 import { LentaComments } from './LentaComments'
 import { useOwned } from './OwnedContext'
 import { useAdminMode } from './edit/AdminMode'
@@ -29,6 +36,8 @@ export function LentaCard({
   const [broken, setBroken] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(item.likeCount)
+  const [viewCount, setViewCount] = useState(item.viewCount)
+  const [viewed, setViewed] = useState(false)
   const [reported, setReported] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [commentCount, setCommentCount] = useState(item.commentCount)
@@ -44,8 +53,22 @@ export function LentaCard({
     } catch {
       /* приватный режим — игнор */
     }
+    if (hasViewed(item.id)) setViewed(true)
     setMineLocal(isMine('submission', item.id))
   }, [item.id])
+
+  // Открытие медиа (лайтбокс/видео) = просмотр. Засчитываем один раз на браузер,
+  // оптимистично инкрементим счётчик; если сервер не засчитал (уже было) — откат.
+  function openMedia() {
+    if (!viewed) {
+      setViewed(true)
+      setViewCount((c) => c + 1)
+      void viewSubmission(item.id).then((counted) => {
+        if (!counted) setViewCount((c) => Math.max(item.viewCount, c - 1))
+      })
+    }
+    onOpenMedia?.()
+  }
 
   // «Моё» = по браузерному токену (localStorage) ИЛИ по VK-аккаунту (PR5B, с любого устройства).
   const mine = mineLocal || owned.subs.has(item.id)
@@ -153,7 +176,7 @@ export function LentaCard({
           <button
             type="button"
             className="lenta-videobtn"
-            onClick={() => onOpenMedia?.()}
+            onClick={openMedia}
             aria-label={t(locale, 'lenta.playVideo')}
           >
             {item.posterUrl && !broken ? (
@@ -177,7 +200,7 @@ export function LentaCard({
           <button
             type="button"
             className="lenta-mediabtn"
-            onClick={() => onOpenMedia?.()}
+            onClick={openMedia}
             aria-label={t(locale, 'lenta.openPhoto')}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -222,6 +245,9 @@ export function LentaCard({
           >
             💬 {commentCount}
           </button>
+          <span className="lenta-stat" title={t(locale, 'lenta.views')} aria-label={t(locale, 'lenta.views')}>
+            👁 {viewCount}
+          </span>
           <button type="button" className="lenta-act" onClick={share} aria-label={t(locale, 'lenta.share')}>
             ↗
           </button>

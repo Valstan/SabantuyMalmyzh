@@ -38,6 +38,7 @@ async function getItems(): Promise<LentaItem[] | null> {
           phase: d.phase === 'festival' ? 'festival' : 'preparation',
           likeCount: Number(d.likeCount) || 0,
           commentCount: Number(d.commentCount) || 0,
+          viewCount: Number(d.viewCount) || 0,
           width: d.width != null ? Number(d.width) : null,
           height: d.height != null ? Number(d.height) : null,
         }

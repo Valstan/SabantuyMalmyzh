@@ -2537,6 +2537,13 @@ a.feature-card--cover:hover .feature-cover img {
   border-color: var(--c-gold);
   background: #fff7e6;
 }
+.lenta-stat {
+  font-size: 0.9rem;
+  padding: 0.28rem 0.4rem;
+  line-height: 1;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .lenta-act--report {
   margin-left: auto;
   color: var(--muted);

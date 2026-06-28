@@ -80,6 +80,7 @@ export interface Config {
     'raffle-entries': RaffleEntry;
     submissions: Submission;
     'submission-reactions': SubmissionReaction;
+    'submission-views': SubmissionView;
     'submission-comments': SubmissionComment;
     'content-reports': ContentReport;
     visitors: Visitor;
@@ -104,6 +105,7 @@ export interface Config {
     'raffle-entries': RaffleEntriesSelect<false> | RaffleEntriesSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     'submission-reactions': SubmissionReactionsSelect<false> | SubmissionReactionsSelect<true>;
+    'submission-views': SubmissionViewsSelect<false> | SubmissionViewsSelect<true>;
     'submission-comments': SubmissionCommentsSelect<false> | SubmissionCommentsSelect<true>;
     'content-reports': ContentReportsSelect<false> | ContentReportsSelect<true>;
     visitors: VisitorsSelect<false> | VisitorsSelect<true>;
@@ -529,6 +531,7 @@ export interface Submission {
   hiddenReason?: string | null;
   likeCount?: number | null;
   commentCount?: number | null;
+  viewCount?: number | null;
   reportCount?: number | null;
   ipHash?: string | null;
   ownerHash?: string | null;
@@ -549,6 +552,20 @@ export interface SubmissionReaction {
   ipHash?: string | null;
   ownerHash?: string | null;
   ownerVisitor?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Просмотры публикаций ленты. Агрегат viewCount — на самой публикации.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-views".
+ */
+export interface SubmissionView {
+  id: number;
+  submission: number | Submission;
+  ipHash?: string | null;
+  ownerHash?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -708,6 +725,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'submission-reactions';
         value: number | SubmissionReaction;
+      } | null)
+    | ({
+        relationTo: 'submission-views';
+        value: number | SubmissionView;
       } | null)
     | ({
         relationTo: 'submission-comments';
@@ -1013,6 +1034,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   hiddenReason?: T;
   likeCount?: T;
   commentCount?: T;
+  viewCount?: T;
   reportCount?: T;
   ipHash?: T;
   ownerHash?: T;
@@ -1030,6 +1052,17 @@ export interface SubmissionReactionsSelect<T extends boolean = true> {
   ipHash?: T;
   ownerHash?: T;
   ownerVisitor?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-views_select".
+ */
+export interface SubmissionViewsSelect<T extends boolean = true> {
+  submission?: T;
+  ipHash?: T;
+  ownerHash?: T;
   updatedAt?: T;
   createdAt?: T;
 }

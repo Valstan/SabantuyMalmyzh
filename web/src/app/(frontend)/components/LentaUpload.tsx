@@ -104,6 +104,7 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
         phase,
         likeCount: 0,
         commentCount: 0,
+        viewCount: 0,
         width: prepared.width,
         height: prepared.height,
       })
