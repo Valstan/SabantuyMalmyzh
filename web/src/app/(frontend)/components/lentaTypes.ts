@@ -53,7 +53,8 @@ export type LentaAuthorStat = {
   totalViews: number
 }
 
-// Ролик в ТОП-рейтинге (по лайкам/просмотрам/победам в Фотобитве в системе).
+// Ролик в ТОП-рейтинге (по лайкам/просмотрам). Победы Фотобитвы — теперь per-фото на
+// отдельной странице статистики (/lenta/fotobitva), здесь не дублируем.
 export type LentaTopItem = {
   id: number
   kind: 'photo' | 'video'
@@ -62,12 +63,10 @@ export type LentaTopItem = {
   authorName: string | null
   likeCount: number
   viewCount: number
-  battleWins: number
 }
 
 export type LentaRatings = {
   authors: LentaAuthorStat[]
   topByLikes: LentaTopItem[]
   topByViews: LentaTopItem[]
-  topByBattle: LentaTopItem[]
 }

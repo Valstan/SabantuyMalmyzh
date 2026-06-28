@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeHref } from '../../../lib/localeHref'
 import type { LentaAuthorStat, LentaRatings as Ratings, LentaTopItem } from './lentaTypes'
 
 type AuthorSort = 'likes' | 'views' | 'posts'
@@ -82,13 +84,13 @@ export function LentaRatings({ ratings, locale }: { ratings: Ratings; locale: Lo
         locale={locale}
       />
 
-      {/* ── ТОП Фотобитвы (по победам в игре, отдельно от лайков) ────────── */}
-      <TopList
-        title={t(locale, 'rating.topBattle')}
-        items={ratings.topByBattle}
-        metric="battle"
-        locale={locale}
-      />
+      {/* ── Фотобитва: рейтинг per-фото и месячный — на отдельной странице ── */}
+      <section className="rating-block rating-fb">
+        <h3 className="rating-title">{t(locale, 'rating.topBattle')}</h3>
+        <Link className="btn-primary rating-fb-link" href={localeHref(locale, '/lenta/fotobitva')}>
+          {t(locale, 'fotobitva.statsLink')}
+        </Link>
+      </section>
     </div>
   )
 }
@@ -130,7 +132,7 @@ function AuthorRow({ rank, author, locale }: { rank: number; author: LentaAuthor
   )
 }
 
-type TopMetric = 'likes' | 'views' | 'battle'
+type TopMetric = 'likes' | 'views'
 
 function TopList({
   title,
@@ -172,9 +174,8 @@ function TopRow({
 }) {
   const [broken, setBroken] = useState(false)
   const thumb = item.kind === 'video' ? item.posterUrl : item.mediaUrl
-  const value =
-    metric === 'likes' ? item.likeCount : metric === 'views' ? item.viewCount : item.battleWins
-  const icon = metric === 'likes' ? '❤' : metric === 'views' ? '👁' : '⚔️'
+  const value = metric === 'likes' ? item.likeCount : item.viewCount
+  const icon = metric === 'likes' ? '❤' : '👁'
   return (
     <li className="rating-top-item">
       <span className="rating-rank" aria-hidden="true">

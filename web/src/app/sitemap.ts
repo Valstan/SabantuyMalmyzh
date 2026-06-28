@@ -41,6 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entryFor('/map', { changeFrequency: 'monthly', priority: 0.5 }),
     entryFor('/gallery', { changeFrequency: 'weekly', priority: 0.6 }),
     entryFor('/lenta', { changeFrequency: 'daily', priority: 0.6 }),
+    entryFor('/lenta/fotobitva', { changeFrequency: 'weekly', priority: 0.4 }),
     entryFor('/efir', { changeFrequency: 'daily', priority: 0.5 }),
     entryFor('/igra', { changeFrequency: 'monthly', priority: 0.5 }),
     // Страницы конкретных игр (/igra/<slug>) — набор из конфига lib/quizGames.
