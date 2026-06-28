@@ -76,20 +76,19 @@ jobs:
           echo "== host =="; hostname; hostname -I 2>/dev/null | awk '{print "ip(s): "$0}'
           echo "== app :3000 =="; curl -s -o /dev/null -w 'localhost:3000 → %{http_code}\n' --max-time 10 http://127.0.0.1:3000/ || echo "app не ответил"
           echo "== nginx =="; nginx -v 2>&1 || echo "нет nginx в PATH"
-          echo "== sites-enabled =="; ls -1 /etc/nginx/sites-enabled/ 2>/dev/null || echo "нет sites-enabled"
-          echo "== vhost с OLD-доменом =="
-          OLDFILE=$(grep -rl "$OLD" /etc/nginx/sites-available/ /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null | head -1 || true)
-          echo "файл эталона: ${OLDFILE:-не найден}"
-          if [ -n "$OLDFILE" ]; then echo "----- $OLDFILE -----"; sudo -n cat "$OLDFILE" 2>/dev/null || cat "$OLDFILE" 2>/dev/null || echo "(нет прав читать без sudo)"; fi
-          echo "== уже есть vhost для NEW? =="; grep -rl "$NEW" /etc/nginx/ 2>/dev/null || echo "нет (ожидаемо)"
+          echo "== где определён OLD-домен (nginx -T) =="
+          sudo nginx -T 2>/dev/null | grep -nE "configuration file|server_name|listen |proxy_pass|ssl_certificate|client_max_body_size|root " | grep -iE "$OLD|configuration file .*(conf|nginx)|listen |proxy_pass|ssl_certificate|server_name|client_max_body_size" | head -80
+          echo "== файлы конфига с OLD =="; sudo grep -rl "$OLD" /etc/nginx/ 2>/dev/null || echo "не найдено в /etc/nginx"
+          echo "== include-директивы http{} =="; sudo grep -rnE "include\s" /etc/nginx/nginx.conf 2>/dev/null || true
+          echo "== каталоги конфигов =="; for d in /etc/nginx/sites-available /etc/nginx/sites-enabled /etc/nginx/conf.d; do echo -n "$d: "; ls -1 "$d" 2>/dev/null | tr '\n' ' '; echo; done
+          echo "== live-сертификаты certbot =="; sudo certbot certificates 2>/dev/null | grep -E "Certificate Name:|Domains:|Expiry" || echo "нет/недоступно"
+          echo "== уже есть vhost для NEW? =="; sudo grep -rl "$NEW" /etc/nginx/ 2>/dev/null || echo "нет (ожидаемо)"
           echo "== certbot =="; certbot --version 2>&1 || echo "нет certbot"
           echo "== sudo scope =="
           sudo -n true 2>/dev/null && echo "sudo -n: БЕЗ пароля (полный)" || echo "sudo -n: нужен пароль/ограничен"
-          for c in "nginx -t" "systemctl reload nginx" "certbot --version" "tee /etc/nginx/sites-available/_probe"; do
-            sudo -n $c >/dev/null 2>&1 && echo "  sudo OK: $c" || echo "  sudo NET: $c"
-          done
-          sudo -n rm -f /etc/nginx/sites-available/_probe 2>/dev/null || true
-          echo "== DNS NEW с бокса =="; getent hosts "$NEW" || echo "$NEW пока не резолвится отсюда"
+          echo "== DNS: OLD и NEW (резолв с публичных) =="
+          echo "OLD $OLD → $(getent hosts "$OLD" | awk '{print $1}' | head -1)"
+          echo "NEW $NEW → $(getent hosts "$NEW" | awk '{print $1}' | head -1 || echo '<не резолвится>')"
           REMOTE
 
       - name: Apply (nginx vhost + certbot)
@@ -101,12 +100,13 @@ jobs:
           set -e
           NEW="$1"; OLD="$2"
 
-          # 0) гейт: новый домен должен резолвиться в IP этого бокса (иначе certbot не пройдёт)
-          MYIP=$(curl -s --max-time 10 https://api.ipify.org || hostname -I | awk '{print $1}')
-          DNSIP=$(getent hosts "$NEW" | awk '{print $1}' | head -1)
-          echo "IP бокса: $MYIP ; DNS $NEW → ${DNSIP:-<пусто>}"
-          if [ -z "$DNSIP" ] || [ "$DNSIP" != "$MYIP" ]; then
-            echo "::error::DNS $NEW не указывает на этот бокс ($MYIP). Сначала пропишите A-запись/CNAME и дождитесь распространения."
+          # 0) гейт: новый домен должен резолвиться туда же, куда старый (этот бокс за NAT —
+          #    локальный IP внутренний, поэтому сверяем DNS NEW == DNS OLD, а не с hostname -I).
+          OLDIP=$(getent hosts "$OLD" | awk '{print $1}' | head -1)
+          NEWIP=$(getent hosts "$NEW" | awk '{print $1}' | head -1)
+          echo "DNS $OLD → ${OLDIP:-<пусто>} ; DNS $NEW → ${NEWIP:-<пусто>}"
+          if [ -z "$NEWIP" ] || [ "$NEWIP" != "$OLDIP" ]; then
+            echo "::error::DNS $NEW (${NEWIP:-<пусто>}) не совпадает с DNS работающего сайта $OLD ($OLDIP). Сначала пропишите A/CNAME на тот же бокс и дождитесь распространения."
             exit 1
           fi
 
