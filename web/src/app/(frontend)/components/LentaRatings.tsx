@@ -81,6 +81,14 @@ export function LentaRatings({ ratings, locale }: { ratings: Ratings; locale: Lo
         metric="views"
         locale={locale}
       />
+
+      {/* ── ТОП Фотобитвы (по победам в игре, отдельно от лайков) ────────── */}
+      <TopList
+        title={t(locale, 'rating.topBattle')}
+        items={ratings.topByBattle}
+        metric="battle"
+        locale={locale}
+      />
     </div>
   )
 }
@@ -122,6 +130,8 @@ function AuthorRow({ rank, author, locale }: { rank: number; author: LentaAuthor
   )
 }
 
+type TopMetric = 'likes' | 'views' | 'battle'
+
 function TopList({
   title,
   items,
@@ -130,7 +140,7 @@ function TopList({
 }: {
   title: string
   items: LentaTopItem[]
-  metric: 'likes' | 'views'
+  metric: TopMetric
   locale: Locale
 }) {
   return (
@@ -157,12 +167,14 @@ function TopRow({
 }: {
   rank: number
   item: LentaTopItem
-  metric: 'likes' | 'views'
+  metric: TopMetric
   locale: Locale
 }) {
   const [broken, setBroken] = useState(false)
   const thumb = item.kind === 'video' ? item.posterUrl : item.mediaUrl
-  const value = metric === 'likes' ? item.likeCount : item.viewCount
+  const value =
+    metric === 'likes' ? item.likeCount : metric === 'views' ? item.viewCount : item.battleWins
+  const icon = metric === 'likes' ? '❤' : metric === 'views' ? '👁' : '⚔️'
   return (
     <li className="rating-top-item">
       <span className="rating-rank" aria-hidden="true">
@@ -180,7 +192,7 @@ function TopRow({
       </span>
       <span className="rating-top-author">{item.authorName || t(locale, 'rating.anon')}</span>
       <span className="rating-top-metric">
-        {metric === 'likes' ? '❤' : '👁'} {value}
+        {icon} {value}
       </span>
     </li>
   )

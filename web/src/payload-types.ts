@@ -83,6 +83,7 @@ export interface Config {
     'submission-views': SubmissionView;
     'submission-comments': SubmissionComment;
     'content-reports': ContentReport;
+    'photo-battles': PhotoBattle;
     visitors: Visitor;
     users: User;
     'payload-kv': PayloadKv;
@@ -108,6 +109,7 @@ export interface Config {
     'submission-views': SubmissionViewsSelect<false> | SubmissionViewsSelect<true>;
     'submission-comments': SubmissionCommentsSelect<false> | SubmissionCommentsSelect<true>;
     'content-reports': ContentReportsSelect<false> | ContentReportsSelect<true>;
+    'photo-battles': PhotoBattlesSelect<false> | PhotoBattlesSelect<true>;
     visitors: VisitorsSelect<false> | VisitorsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -532,6 +534,8 @@ export interface Submission {
   likeCount?: number | null;
   commentCount?: number | null;
   viewCount?: number | null;
+  battleWins?: number | null;
+  battleShows?: number | null;
   reportCount?: number | null;
   ipHash?: string | null;
   ownerHash?: string | null;
@@ -601,6 +605,20 @@ export interface ContentReport {
   targetType: 'submission' | 'comment';
   targetId: number;
   reason?: string | null;
+  ipHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Раунды игры «Фотобитва». Счёт побед/показов — на самих публикациях (battleWins/battleShows), отдельно от лайков ленты.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-battles".
+ */
+export interface PhotoBattle {
+  id: number;
+  winner: number | Submission;
+  loser: number | Submission;
   ipHash?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -737,6 +755,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'content-reports';
         value: number | ContentReport;
+      } | null)
+    | ({
+        relationTo: 'photo-battles';
+        value: number | PhotoBattle;
       } | null)
     | ({
         relationTo: 'visitors';
@@ -1035,6 +1057,8 @@ export interface SubmissionsSelect<T extends boolean = true> {
   likeCount?: T;
   commentCount?: T;
   viewCount?: T;
+  battleWins?: T;
+  battleShows?: T;
   reportCount?: T;
   ipHash?: T;
   ownerHash?: T;
@@ -1092,6 +1116,17 @@ export interface ContentReportsSelect<T extends boolean = true> {
   targetType?: T;
   targetId?: T;
   reason?: T;
+  ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-battles_select".
+ */
+export interface PhotoBattlesSelect<T extends boolean = true> {
+  winner?: T;
+  loser?: T;
   ipHash?: T;
   updatedAt?: T;
   createdAt?: T;

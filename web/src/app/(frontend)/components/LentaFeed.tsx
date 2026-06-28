@@ -8,6 +8,7 @@ import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaRatings } from './LentaRatings'
 import { LentaUpload } from './LentaUpload'
+import { PhotoBattle } from './PhotoBattle'
 import { OwnedProvider } from './OwnedContext'
 import type { LentaItem, LentaRatings as Ratings } from './lentaTypes'
 
@@ -34,6 +35,9 @@ export function LentaFeed({
   const [phase, setPhase] = useState<PhaseFilter>('all')
   // Индекс открытого в лайтбоксе медиа в текущем `view` (null — закрыт).
   const [open, setOpen] = useState<number | null>(null)
+  // Игра «Фотобитва» (PR3): открыта ли, и пул фото для пар.
+  const [battleOpen, setBattleOpen] = useState(false)
+  const photos = useMemo(() => items.filter((i) => i.kind === 'photo'), [items])
 
   const view = useMemo(() => {
     // items в порядке «Новое» (сервер отдал по -createdAt; новые загрузки prepend'ятся).
@@ -146,6 +150,21 @@ export function LentaFeed({
         />
       )}
       </>
+      )}
+
+      {/* Плавающая кнопка «Фотобитвы» — всегда на виду (fixed), даже при прокрутке. */}
+      {photos.length >= 2 && !battleOpen && (
+        <button
+          type="button"
+          className="lenta-battle-fab"
+          onClick={() => setBattleOpen(true)}
+          aria-label={t(locale, 'battle.start')}
+        >
+          ⚔️ {t(locale, 'battle.start')}
+        </button>
+      )}
+      {battleOpen && (
+        <PhotoBattle photos={photos} locale={locale} onClose={() => setBattleOpen(false)} />
       )}
     </div>
     </OwnedProvider>

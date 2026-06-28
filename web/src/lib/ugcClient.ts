@@ -385,6 +385,21 @@ export async function viewSubmission(id: number): Promise<boolean> {
   }
 }
 
+/** Записать раунд «Фотобитвы»: winner победил loser. Fire-and-forget; true — учтено
+ *  сервером (счёт battleWins/battleShows пересчитается хуком, отдельно от лайков ленты). */
+export async function recordBattle(winnerId: number, loserId: number): Promise<boolean> {
+  try {
+    const res = await fetch('/api/photo-battles', {
+      method: 'POST',
+      headers: ugcHeaders(),
+      body: JSON.stringify({ winner: winnerId, loser: loserId }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /** Отменить свой лайк. true — лайк был и удалён (или его уже не было). */
 export async function unlikeSubmission(id: number): Promise<boolean> {
   const res = await fetch('/api/ugc/unlike', {

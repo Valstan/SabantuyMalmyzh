@@ -32,3 +32,16 @@ export async function assertVisibleTarget(
   if (status === null) throw new APIError('Публикация не найдена.', 404)
   if (status !== 'visible') throw new APIError('Действие недоступно для этой публикации.', 409)
 }
+
+/** Публикация должна быть видимым ФОТО (для «Фотобитвы»), иначе APIError. */
+export async function assertVisiblePhoto(req: PayloadRequest, id: number): Promise<void> {
+  let doc: { status?: unknown; kind?: unknown } | null = null
+  try {
+    doc = await req.payload.findByID({ collection: 'submissions', id, depth: 0, overrideAccess: true, req })
+  } catch {
+    doc = null
+  }
+  if (!doc) throw new APIError('Публикация не найдена.', 404)
+  if (doc.status !== 'visible') throw new APIError('Действие недоступно для этой публикации.', 409)
+  if (doc.kind !== 'photo') throw new APIError('Фотобитва доступна только для фото.', 400)
+}

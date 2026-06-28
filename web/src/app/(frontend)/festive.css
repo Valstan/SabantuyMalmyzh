@@ -2651,6 +2651,152 @@ a.feature-card--cover:hover .feature-cover img {
   white-space: nowrap;
 }
 
+/* ── Игра «Фотобитва»: плавающая кнопка ─────────────────────────────────────── */
+.lenta-battle-fab {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 60;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--c-gold);
+  background: var(--brand-green-dark);
+  color: #fff7e6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.lenta-battle-fab:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+}
+
+/* ── Игра «Фотобитва»: оверлей ──────────────────────────────────────────────── */
+.battle {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 20, 14, 0.96);
+  color: #fff7e6;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem clamp(0.8rem, 4vw, 2.5rem) calc(1.2rem + env(safe-area-inset-bottom, 0px));
+}
+.battle-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.battle-logo {
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+.battle-rounds {
+  color: var(--c-gold);
+  font-weight: 600;
+}
+.battle-exit {
+  margin-left: auto;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 247, 230, 0.5);
+  background: transparent;
+  color: #fff7e6;
+}
+.battle-exit:hover {
+  border-color: var(--c-gold);
+  color: var(--c-gold);
+}
+.battle-q {
+  text-align: center;
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  font-weight: 700;
+  margin: 0.6rem 0 1rem;
+}
+.battle-arena {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.6rem, 3vw, 1.6rem);
+}
+.battle-card {
+  position: relative;
+  flex: 1 1 0;
+  max-width: 48%;
+  height: 100%;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #000;
+  transition: border-color 0.15s, transform 0.15s, opacity 0.25s;
+}
+.battle-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.battle-card:hover {
+  border-color: var(--c-gold);
+}
+.battle-card.is-picked {
+  border-color: var(--c-gold);
+  transform: scale(1.02);
+}
+.battle-card.is-dim {
+  opacity: 0.4;
+}
+.battle-author {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.4rem 0.6rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+}
+.battle-vs {
+  flex: 0 0 auto;
+  font-weight: 900;
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  color: var(--c-gold);
+}
+.battle-empty {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1.05rem;
+  padding: 2rem;
+}
+@media (max-width: 640px) {
+  .battle-arena {
+    flex-direction: column;
+  }
+  .battle-card {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    flex: 0 1 auto;
+    max-height: 40vh;
+  }
+}
+
 /* ── Лента: действия на карточке ───────────────────────────────────────────── */
 .lenta-actions {
   display: flex;
