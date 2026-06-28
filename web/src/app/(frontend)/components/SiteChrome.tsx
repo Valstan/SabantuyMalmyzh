@@ -65,10 +65,20 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
   return (
     <>
       <header className="site-header">
-        <div className="container site-nav" style={{ padding: 0 }}>
-          <Link className="site-brand" href={h('/')}>
-            {brand}
-          </Link>
+        <div className="container site-nav">
+          {/* Ряд 1: бренд слева + блок входа справа (язык / VK / редактор) */}
+          <div className="site-nav-top">
+            <Link className="site-brand" href={h('/')}>
+              {brand}
+            </Link>
+            <span className="site-nav-actions">
+              <LanguageToggle locale={locale} />
+              <VisitorAuth locale={locale} />
+              <HeaderEditor locale={locale} />
+              <LoginControl />
+            </span>
+          </div>
+          {/* Ряд 2: меню-ссылки (переносятся аккуратно) */}
           <nav className="site-nav-links" aria-label={t(locale, 'nav.primary')}>
             {NAV_LINKS.map((l) => (
               <Link key={l.key} href={h(l.path)}>
@@ -76,12 +86,6 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
               </Link>
             ))}
           </nav>
-          <span className="site-nav-actions">
-            <LanguageToggle locale={locale} />
-            <VisitorAuth locale={locale} />
-            <HeaderEditor locale={locale} />
-            <LoginControl />
-          </span>
         </div>
       </header>
 

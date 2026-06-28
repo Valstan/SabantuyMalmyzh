@@ -564,8 +564,25 @@ a.feature-card--cover:hover .feature-cover img {
   background: var(--motif-tulip) no-repeat center / contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
+/* Шапка в два ряда: ряд 1 — бренд + блок входа, ряд 2 — меню-ссылки */
+.site-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+}
+.site-nav-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1rem;
+  flex-wrap: wrap;
+}
 .site-nav-links {
-  gap: 1.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.2rem;
 }
 .site-nav-links a {
   position: relative;
@@ -1824,7 +1841,9 @@ a.feature-card--cover:hover .feature-cover img {
 .site-nav-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .edit-login-btn {
   font: inherit;
@@ -1877,11 +1896,11 @@ a.feature-card--cover:hover .feature-cover img {
 }
 .vk-name {
   font-weight: 600;
-  color: var(--c-green-state);
+  color: var(--c-cream); /* шапка зелёная → имя кремовым, иначе сливается */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 110px;
+  max-width: 140px;
 }
 .vk-logout {
   font: inherit;
