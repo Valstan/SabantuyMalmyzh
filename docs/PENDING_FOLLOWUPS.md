@@ -6,9 +6,6 @@
 
 ## Ждёт владельца (owner-gated — мы не двигаем, но не даём сгнить)
 
-- [ ] **VK ID вход (задача #3/#4) — регистрация VK-приложения** — владелец по гайду [`docs/ops/vk-id-setup.md`](ops/vk-id-setup.md) создаёт VK-приложение (тип «Веб», базовый домен `xn--80aaac1aqpgcf4bqn1j.xn--p1ai`, redirect `https://xn--80aaac1aqpgcf4bqn1j.xn--p1ai/api/auth/vk/callback`) → **App ID в чат** + **Защищённый ключ в GitHub Secret `VK_CLIENT_SECRET`**. После этого PR #5: коллекция `visitors` + сессия-cookie + OAuth-callback (PKCE/state) + кнопка «Войти через VK» + закрепление UGC за аккаунтом + имя/аватар. Гибрид: аноним-владение в браузере уже работает (PR #167/#168), VK добавит durable-владение с любого устройства. Реальный OAuth-раунд проверяется только с боевым приложением → код после ключей (как S3).
-  added: 2026-06-27 · snoozed: 0 · last-touch: 2026-06-27 · decay: fresh
-
 - [ ] **Резерв декор-кадров (spare)** — карточка №3 встроена (PR #96 фото-шапки+медальон, PR #98 орнамент-полоса+тюльпаны). В `design/accepted/spare/` осталось ~17 кадров (городки на реке, фестиваль-сцены, ~11 орнамент-панелей) — резерв на будущие слоты/обновления шапок/новые разделы. Не срочно; доставать по запросу владельца.
   added: 2026-06-13 · snoozed: 0 · last-touch: 2026-06-13 · decay: fresh
 
@@ -56,6 +53,8 @@
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-25 · decay: fresh
 
 ## Закрыто (исход + дата)
+
+- [x] **VK ID вход (задача #3/#4)** — ✅ 2026-06-28, на проде, владелец вошёл (OAuth-раунд работает). Владелец зарегистрировал VK-приложение (App ID `54656174`) + `VK_CLIENT_SECRET` в GitHub Secret. **PR5A** (#177): коллекция `visitors` + миграция `20260628_100000` + `lib/vk` (OAuth 2.1 PKCE, без client_secret) + `lib/visitorSession` (HMAC-cookie на PAYLOAD_SECRET, отдельно от стафф-входа) + роуты `/api/auth/vk/{login,callback,me,logout}` + кнопка/чип в шапке + воркфлоу `apply-vk-secrets.yml`. **Полировка шапки** по фидбэку (#179/#180/#181): два ряда, имя→видимое→убрано (только аватар), вход редактора → в подвал. **PR5B** (#182): поле `ownerVisitor` + миграция `20260628_120000` + штамп из сессии + `isOwnerOf` (токен ИЛИ аккаунт) в 4 эндпоинтах + `/api/ugc/mine` (claim аноним-контента + «моё» по аккаунту) + `OwnedContext` → бейдж «Ваше»/управление **с любого устройства**. Проверено dev (curl+UI) + прод-смоук. ПДн: только vkId+имя+аватар (без email). _Желательное: реальный e2e владельца — войти с телефона → выложить фото → увидеть «Ваше» с другого устройства._
 
 - [x] **SMTP-отправка с `valstan@valstan.ru`** (заявка владельца 2026-06-28) — ✅ 2026-06-28, **проверено e2e**: владелец завёл пароль приложения Яндекса → GitHub Secret `SMTP_PASS`; воркфлоу [`apply-smtp-secrets.yml`](../.github/workflows/apply-smtp-secrets.yml) записал `SMTP_*`+`ORGANIZER_EMAIL` в `/etc/sabantuy/sabantuy.env` + рестарт (verify зелёный); тестовая подписка (`valstan+smtp@valstan.ru`) → письмо реально пришло в ящик. Адаптер `nodemailerAdapter`/`smtp.yandex.ru:465 SSL`; заявки (`notifyOrganizer`) и подписки (I6) теперь уходят реально. Runbook — [`docs/ops/smtp-setup.md`](ops/smtp-setup.md). PR #172. _Хвост: удалить 2 тестовых подписчика в /admin (`valstan@valstan.ru`, `valstan+smtp@valstan.ru`)._
 - [x] **Лайтбокс «Народной ленты» (I16)** (заявка владельца 2026-06-28) — ✅ 2026-06-28 (PR #174, на проде): клик по фото/видео в `/lenta` → полноэкранный оверлей `LentaLightbox` с пролистыванием всех медиа ленты (×/фон/Esc, кнопки ‹/›, клавиши ←/→, свайп на телефоне, видео в оверлее, a11y focus-trap+scroll-lock, wrap-around). ISR `/lenta` не тронут (○ Static, +3kB). Preview-проверка зелёная, deploy-prod smoke зелёный.
