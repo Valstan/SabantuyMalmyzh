@@ -91,5 +91,5 @@ export async function GalleryView({ locale }: { locale: Locale }) {
 }
 
 export const galleryMeta = (locale: Locale): Metadata => ({
-  title: `${t(locale, 'nav.gallery')} — Сабантуй Малмыж`,
+  title: `${t(locale, 'nav.gallery')} — Сабантуй в Малмыже`,
 })

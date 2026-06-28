@@ -119,7 +119,7 @@ export const quizMeta = (locale: Locale, game: string = DEFAULT_QUIZ_GAME): Meta
   const def = findQuizGame(game, locale)
   const title = def?.title ?? t(locale, 'game.title')
   return {
-    title: `${title} — Сабантуй Малмыж`,
+    title: `${title} — Сабантуй в Малмыже`,
     description: def?.description ?? t(locale, 'game.lead'),
   }
 }

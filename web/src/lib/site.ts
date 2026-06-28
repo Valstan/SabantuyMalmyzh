@@ -6,7 +6,7 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SERVER_URL || 'https://xn--80aaac1aqpgcf4bqn1j.xn--p1ai'
 ).replace(/\/$/, '')
 
-export const SITE_NAME = 'Сабантуй Малмыж'
+export const SITE_NAME = 'Сабантуй в Малмыже'
 
 // Сообщество ВКонтакте праздника — там идут официальные прямые эфиры (и куда ведёт
 // кнопка «эфир в VK» со страницы /efir; на телефоне открывается приложение VK).

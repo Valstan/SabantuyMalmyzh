@@ -28,7 +28,7 @@ const NAV = [
 ]
 
 const BRAND = 'Сабантуй Малмыж'
-const COPYRIGHT = '© Сабантуй Малмыж'
+const COPYRIGHT = '© Сабантуй в Малмыже'
 
 const payload = await getPayload({ config })
 

@@ -131,7 +131,7 @@ const DECOR: Record<string, DecorDef> = {
 const FALLBACK: DecorDef = {
   icon: 'tulip',
   accent: 'tint',
-  eyebrow: { ru: 'Сабантуй Малмыж', tt: 'Сабантуй Малмыж' },
+  eyebrow: { ru: 'Сабантуй в Малмыже', tt: 'Сабантуй в Малмыже' },
 }
 
 /** Декор для страницы по slug. Неизвестный slug → нейтральный fallback. */

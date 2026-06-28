@@ -50,7 +50,7 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
   const navOv: Record<string, string | null> = Object.fromEntries((data?.nav || []).map((n) => [n.key, n.label]))
   const navLabel = (key: string, i18nKey: string) => navOv[key] || t(locale, i18nKey)
   const brand = data?.brand || 'Сабантуй Малмыж'
-  const copyright = data?.copyright || '© Сабантуй Малмыж'
+  const copyright = data?.copyright || '© Сабантуй в Малмыже'
 
   // <html lang> делаем локале-зависимым. Корневой layout — единый на оба поддерева
   // и SSR-ит жёсткий lang="ru"; перенести локаль на сервер можно лишь через

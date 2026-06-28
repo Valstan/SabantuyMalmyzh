@@ -220,7 +220,7 @@ export async function LentaView({ locale }: { locale: Locale }) {
 }
 
 export const lentaMeta = (locale: Locale): Metadata => ({
-  title: `${t(locale, 'lenta.title')} — Сабантуй Малмыж`,
+  title: `${t(locale, 'lenta.title')} — Сабантуй в Малмыже`,
   description: t(locale, 'lenta.lead'),
   alternates: {
     canonical: locale === 'tt' ? '/tt/lenta' : '/lenta',

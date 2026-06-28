@@ -38,7 +38,7 @@ const body = Manrope({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Сабантуй Малмыж',
+  title: 'Сабантуй в Малмыже',
   description: SITE_DESC,
   // I9 — OG/Twitter card: при шеринге ссылки в VK/Telegram/соцсетях показывается
   // брендовый баннер /og.jpg + заголовок + описание (генератор: src/seed/genOgImage.ts).
@@ -48,18 +48,18 @@ export const metadata: Metadata = {
     languages: { 'ru-RU': '/', 'tt-RU': '/tt' },
   },
   openGraph: {
-    title: 'Сабантуй Малмыж',
+    title: 'Сабантуй в Малмыже',
     description: SITE_DESC,
     url: '/',
-    siteName: 'Сабантуй Малмыж',
+    siteName: 'Сабантуй в Малмыже',
     locale: 'ru_RU',
     alternateLocale: ['tt_RU'],
     type: 'website',
-    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Сабантуй Малмыж — народный праздник' }],
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Сабантуй в Малмыже — народный праздник' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Сабантуй Малмыж',
+    title: 'Сабантуй в Малмыже',
     description: SITE_DESC,
     images: ['/og.jpg'],
   },

@@ -77,4 +77,4 @@ export async function MapView({ locale }: { locale: Locale }) {
   )
 }
 
-export const mapMeta = (locale: Locale): Metadata => ({ title: `${t(locale, 'home.map.title')} — Сабантуй Малмыж` })
+export const mapMeta = (locale: Locale): Metadata => ({ title: `${t(locale, 'home.map.title')} — Сабантуй в Малмыже` })

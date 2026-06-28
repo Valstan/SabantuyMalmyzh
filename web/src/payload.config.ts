@@ -41,7 +41,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     meta: {
-      titleSuffix: ' — Сабантуй Малмыж',
+      titleSuffix: ' — Сабантуй в Малмыже',
     },
   },
   editor: lexicalEditor(),
@@ -64,7 +64,7 @@ export default buildConfig({
   email: process.env.SMTP_HOST
     ? nodemailerAdapter({
         defaultFromAddress: process.env.SMTP_FROM_ADDRESS || 'no-reply@sabantuy-malmyzh.ru',
-        defaultFromName: process.env.SMTP_FROM_NAME || 'Сабантуй Малмыж',
+        defaultFromName: process.env.SMTP_FROM_NAME || 'Сабантуй в Малмыже',
         transportOptions: {
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT) || 587,
