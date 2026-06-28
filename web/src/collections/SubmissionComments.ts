@@ -121,6 +121,19 @@ export const SubmissionComments: CollectionConfig<'submission-comments'> = {
       admin: { hidden: true },
     },
     {
+      name: 'ownerVisitor',
+      type: 'number',
+      label: 'Владелец (VK-аккаунт)',
+      // PK строки visitors — управление «своим» коммом с любого устройства (VK-вход, PR5B).
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
+    {
       name: 'userAgent',
       type: 'text',
       label: 'User-Agent',

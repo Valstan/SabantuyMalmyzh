@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { deleteObject } from '../../../../lib/s3'
-import { getPayloadClient, isStaffRequest, mutateRateOk, requestOwnerHash } from '../../../../lib/ugcOwner'
+import { getPayloadClient, isOwnerOf, isStaffRequest, mutateRateOk } from '../../../../lib/ugcOwner'
 
 // Удалить «свою» публикацию (автор по токену) ИЛИ любую (персонал). Мягкое удаление:
 // status='removed' (исчезает из ленты, строка остаётся для аудита) + удаление файла из
@@ -24,7 +24,13 @@ export async function POST(req: Request) {
   if (!id) return NextResponse.json({ error: 'Не указана публикация.' }, { status: 400 })
 
   const payload = await getPayloadClient()
-  let sub: { status?: string | null; ownerHash?: string | null; objectKey?: string | null; posterKey?: string | null }
+  let sub: {
+    status?: string | null
+    ownerHash?: string | null
+    ownerVisitor?: number | null
+    objectKey?: string | null
+    posterKey?: string | null
+  }
   try {
     sub = await payload.findByID({ collection: 'submissions', id, depth: 0, overrideAccess: true })
   } catch {
@@ -34,8 +40,7 @@ export async function POST(req: Request) {
   if (sub.status === 'removed') return NextResponse.json({ ok: true }, { status: 200 })
 
   const staff = await isStaffRequest(payload, req.headers)
-  const owner = requestOwnerHash(req.headers)
-  const isOwner = Boolean(owner && sub.ownerHash && owner === sub.ownerHash)
+  const isOwner = isOwnerOf(sub, req.headers)
   if (!staff && !isOwner) {
     return NextResponse.json({ error: 'Нет прав на удаление.' }, { status: 403 })
   }

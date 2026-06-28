@@ -227,6 +227,20 @@ export const Submissions: CollectionConfig<'submissions'> = {
       admin: { hidden: true },
     },
     {
+      name: 'ownerVisitor',
+      type: 'number',
+      label: 'Владелец (VK-аккаунт)',
+      // PK строки visitors — по нему автор управляет «своим» с ЛЮБОГО устройства (VK-вход,
+      // PR5B). Ставит хук из сессии-cookie на создании; анонимом/посетителем не задаётся.
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
+    {
       name: 'userAgent',
       type: 'text',
       label: 'User-Agent',

@@ -6,6 +6,7 @@ import { t, type Locale } from '../../../lib/i18n'
 import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaUpload } from './LentaUpload'
+import { OwnedProvider } from './OwnedContext'
 import type { LentaItem } from './lentaTypes'
 
 type Sort = 'new' | 'top'
@@ -40,6 +41,7 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
   ]
 
   return (
+    <OwnedProvider>
     <div className="lenta">
       <div className="lenta-top">
         <LentaUpload locale={locale} onUploaded={(item) => setItems((prev) => [item, ...prev])} />
@@ -101,5 +103,6 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
         />
       )}
     </div>
+    </OwnedProvider>
   )
 }

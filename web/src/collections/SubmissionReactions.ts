@@ -64,6 +64,19 @@ export const SubmissionReactions: CollectionConfig<'submission-reactions'> = {
       },
       admin: { hidden: true },
     },
+    {
+      name: 'ownerVisitor',
+      type: 'number',
+      label: 'Владелец (VK-аккаунт)',
+      // PK строки visitors — отмена «своего» лайка с любого устройства (VK-вход, PR5B).
+      index: true,
+      access: {
+        read: adminOrEditorField,
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { hidden: true },
+    },
   ],
   hooks: {
     beforeValidate: [rateLimitReaction],
