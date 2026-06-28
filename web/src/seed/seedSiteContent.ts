@@ -53,7 +53,7 @@ const idMap = (rows: any[] | undefined) =>
     context: { disableRevalidate: true },
     data: {
       heroEyebrow: 'Народный праздник Малмыжа',
-      heroTitleAccent: 'Малмыж',
+      heroTitleAccent: 'Малмыже',
       heroTagline: 'Праздник труда, силы и дружбы народов — каждое лето на малмыжской земле.',
       featuresEyebrow: 'Что вас ждёт',
       featuresTitle: 'Праздник для всей семьи',
@@ -76,7 +76,7 @@ const idMap = (rows: any[] | undefined) =>
     context: { disableRevalidate: true },
     data: {
       heroEyebrow: 'Малмыжның халык бәйрәме',
-      heroTitleAccent: 'Малмыж',
+      heroTitleAccent: 'Малмыже',
       heroTagline: 'Хезмәт, көч һәм халыклар дуслыгы бәйрәме — һәр җәйне Малмыж җирендә.',
       featuresEyebrow: 'Сезне нәрсә көтә',
       featuresTitle: 'Бөтен гаилә өчен бәйрәм',
