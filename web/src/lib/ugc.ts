@@ -25,6 +25,10 @@ export const UGC_MAX_VIDEO_MB = Number(process.env.UGC_MAX_VIDEO_MB) || 100
 export const UGC_MAX_AUTHOR = 64
 export const UGC_MAX_CAPTION = 500
 
+// Максимум файлов в одной публикации (пост-в-стиле-ВК: одна подпись — много медиа).
+// Обложка (верхнеуровневые поля) + массив media (≤ UGC_MAX_FILES-1) = ≤ UGC_MAX_FILES.
+export const UGC_MAX_FILES = Number(process.env.UGC_MAX_FILES) || 20
+
 // Ключ объекта, который выдаёт buildObjectKey: media/<phase>/<yyyymm>/<uuid>.<ext>.
 // Проверяем формат при создании записи, чтобы аноним не подсунул произвольный путь
 // (напр. ссылку на чужой объект бакета).

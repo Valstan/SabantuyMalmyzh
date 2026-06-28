@@ -6,7 +6,7 @@ import { anyone } from '../access/anyone'
 import { publicVisibleOrStaff } from '../access/publicVisibleOrStaff'
 import { rateLimitSubmission } from '../hooks/rateLimitSubmission'
 import { stampSubmissionMeta } from '../hooks/stampSubmissionMeta'
-import { UGC_MAX_AUTHOR, UGC_MAX_CAPTION } from '../lib/ugc'
+import { UGC_MAX_AUTHOR, UGC_MAX_CAPTION, UGC_MAX_FILES } from '../lib/ugc'
 
 // «Народная лента» (UGC): фото/видео, снятые посетителями и выложенные прямо на сайте.
 // Одна строка = одна публикация. Медиа НЕ хранится здесь и НЕ идёт через наш бокс —
@@ -100,6 +100,38 @@ export const Submissions: CollectionConfig<'submissions'> = {
       type: 'number',
       label: 'Длительность видео (с)',
       min: 0,
+    },
+    // Дополнительные файлы поста (в стиле ВК: одна подпись — несколько медиа). Поля
+    // выше (kind/objectKey/…) — ОБЛОЖКА (файл №1); этот массив — файлы №2…№20. Всего
+    // в посте ≤ UGC_MAX_FILES; здесь ≤ UGC_MAX_FILES-1. Серверная валидация формата
+    // ключа/mime/размера каждого элемента — в rateLimitSubmission (анти-подмена пути).
+    {
+      name: 'media',
+      type: 'array',
+      label: 'Доп. файлы поста',
+      maxRows: UGC_MAX_FILES - 1,
+      admin: {
+        description: `Файлы №2…№${UGC_MAX_FILES} поста (обложка — поля выше). Лента показывает их мозаикой, клик открывает галерею.`,
+      },
+      fields: [
+        {
+          name: 'kind',
+          type: 'select',
+          label: 'Тип',
+          required: true,
+          options: [
+            { label: 'Фото', value: 'photo' },
+            { label: 'Видео', value: 'video' },
+          ],
+        },
+        { name: 'objectKey', type: 'text', label: 'Ключ объекта (S3)', required: true },
+        { name: 'posterKey', type: 'text', label: 'Ключ постера видео (S3)' },
+        { name: 'mime', type: 'text', label: 'MIME-тип', required: true },
+        { name: 'bytes', type: 'number', label: 'Размер (байт)', min: 0 },
+        { name: 'width', type: 'number', label: 'Ширина (px)', min: 0 },
+        { name: 'height', type: 'number', label: 'Высота (px)', min: 0 },
+        { name: 'durationSec', type: 'number', label: 'Длительность видео (с)', min: 0 },
+      ],
     },
     {
       name: 'authorName',

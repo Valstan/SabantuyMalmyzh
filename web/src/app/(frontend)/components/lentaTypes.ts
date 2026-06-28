@@ -1,11 +1,24 @@
+// Одно медиа поста (фото/видео). URL уже указывает на Object Storage — браузер грузит
+// напрямую. Пост-в-стиле-ВК: одна подпись — несколько таких медиа (мозаика + галерея).
+export type LentaMedia = {
+  kind: 'photo' | 'video'
+  mediaUrl: string
+  posterUrl: string | null
+  width: number | null
+  height: number | null
+}
+
 // Карточка «Народной ленты» — данные, подготовленные сервером (LentaView), либо
 // собранные на клиенте после загрузки (LentaUpload) для оптимистичного показа.
-// Медиа-URL уже указывает на Object Storage (publicUrl) — браузер грузит напрямую.
+// `media` — все файлы поста (media[0] = обложка, ≤ UGC_MAX_FILES). Верхнеуровневые
+// kind/mediaUrl/posterUrl/width/height дублируют обложку (media[0]) для удобства
+// (Фотобитва, топы рейтинга) — карточка/лайтбокс итерируют `media`.
 export type LentaItem = {
   id: number
   kind: 'photo' | 'video'
   mediaUrl: string
   posterUrl: string | null
+  media: LentaMedia[]
   authorName: string | null
   caption: string | null
   phase: 'preparation' | 'festival'

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { viewSubmission } from '../../../lib/ugcClient'
 import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaRatings } from './LentaRatings'
@@ -11,6 +10,9 @@ import { LentaUpload } from './LentaUpload'
 import { PhotoBattle } from './PhotoBattle'
 import { OwnedProvider } from './OwnedContext'
 import type { LentaItem, LentaRatings as Ratings } from './lentaTypes'
+
+// Открытый в лайтбоксе пост + индекс активного медиа внутри его галереи.
+type OpenMedia = { item: LentaItem; mediaIndex: number }
 
 type Sort = 'new' | 'likes' | 'views'
 type PhaseFilter = 'all' | 'preparation' | 'festival'
@@ -33,8 +35,8 @@ export function LentaFeed({
   const [tab, setTab] = useState<Tab>('feed')
   const [sort, setSort] = useState<Sort>('new')
   const [phase, setPhase] = useState<PhaseFilter>('all')
-  // Индекс открытого в лайтбоксе медиа в текущем `view` (null — закрыт).
-  const [open, setOpen] = useState<number | null>(null)
+  // Открытый в лайтбоксе пост и активный кадр его галереи (null — закрыт).
+  const [open, setOpen] = useState<OpenMedia | null>(null)
   // Игра «Фотобитва» (PR3): открыта ли, и пул фото для пар.
   const [battleOpen, setBattleOpen] = useState(false)
   const photos = useMemo(() => items.filter((i) => i.kind === 'photo'), [items])
@@ -121,12 +123,12 @@ export function LentaFeed({
 
       {view.length > 0 ? (
         <ul className="lenta-grid">
-          {view.map((item, i) => (
+          {view.map((item) => (
             <LentaCard
               key={item.id}
               item={item}
               locale={locale}
-              onOpenMedia={() => setOpen(i)}
+              onOpenMedia={(mediaIndex) => setOpen({ item, mediaIndex })}
               onRemoved={(id) => setItems((prev) => prev.filter((it) => it.id !== id))}
             />
           ))}
@@ -135,18 +137,15 @@ export function LentaFeed({
         <div className="placeholder">{t(locale, 'lenta.empty')}</div>
       )}
 
-      {open !== null && view[open] && (
+      {open && (
         <LentaLightbox
-          items={view}
-          index={open}
+          media={open.item.media}
+          index={open.mediaIndex}
+          caption={open.item.caption}
+          authorName={open.item.authorName}
           locale={locale}
           onClose={() => setOpen(null)}
-          onNavigate={(i) => {
-            setOpen(i)
-            // Листание в лайтбоксе = открытие медиа → засчитываем просмотр (идемпотентно).
-            const it = view[i]
-            if (it) void viewSubmission(it.id)
-          }}
+          onNavigate={(i) => setOpen((o) => (o ? { ...o, mediaIndex: i } : o))}
         />
       )}
       </>

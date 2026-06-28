@@ -3,30 +3,34 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
-import type { LentaItem } from './lentaTypes'
+import type { LentaMedia } from './lentaTypes'
 
 /**
  * Полноэкранный лайтбокс «Народной ленты» (I16). Контролируется из LentaFeed:
- * получает текущий список `items` (в порядке сортировки/фильтра) и активный `index`,
- * сам не хранит состояние перелистывания. Навигация: кнопки ‹/›, клавиши ←/→, Esc,
- * клик по фону — закрыть; на телефоне — свайп влево/вправо (фото). Видео играет прямо
- * в оверлее (нативные controls). Образец — gallery/[slug]/AlbumGallery.tsx + touch + video.
+ * получает медиа ОДНОГО поста (`media`, пост-в-стиле-ВК) и активный `index`, сам не
+ * хранит состояние перелистывания. Навигация: кнопки ‹/›, клавиши ←/→, Esc, клик по
+ * фону — закрыть; на телефоне — свайп влево/вправо (фото). Видео играет прямо в оверлее
+ * (нативные controls). Образец — gallery/[slug]/AlbumGallery.tsx + touch + video.
  */
 export function LentaLightbox({
-  items,
+  media,
   index,
+  caption,
+  authorName,
   locale,
   onClose,
   onNavigate,
 }: {
-  items: LentaItem[]
+  media: LentaMedia[]
   index: number
+  caption: string | null
+  authorName: string | null
   locale: Locale
   onClose: () => void
   onNavigate: (i: number) => void
 }) {
-  const n = items.length
-  const current = items[index]
+  const n = media.length
+  const current = media[index]
 
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
@@ -149,7 +153,7 @@ export function LentaLightbox({
       <figure className="lightbox-fig" onClick={(e) => e.stopPropagation()}>
         {current.kind === 'video' ? (
           <video
-            key={current.id}
+            key={index}
             className="lightbox-video"
             src={current.mediaUrl}
             poster={current.posterUrl ?? undefined}
@@ -159,13 +163,13 @@ export function LentaLightbox({
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={current.id} src={current.mediaUrl} alt={current.caption || current.authorName || 'Фото'} />
+          <img key={index} src={current.mediaUrl} alt={caption || authorName || 'Фото'} />
         )}
-        {(current.caption || current.authorName) && (
+        {(caption || authorName) && (
           <figcaption>
-            {current.caption}
-            {current.caption && current.authorName ? ' — ' : ''}
-            {current.authorName}
+            {caption}
+            {caption && authorName ? ' — ' : ''}
+            {authorName}
           </figcaption>
         )}
       </figure>

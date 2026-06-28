@@ -14,12 +14,60 @@ import {
 import { LentaComments } from './LentaComments'
 import { useOwned } from './OwnedContext'
 import { useAdminMode } from './edit/AdminMode'
-import type { LentaItem } from './lentaTypes'
+import type { LentaItem, LentaMedia } from './lentaTypes'
+
+// Миниатюра одного медиа в мозаике поста: фото — <img>, видео — постер/заглушка с ▶.
+// Своё состояние broken (битый URL → иконка-фолбэк). overlay — «+N» на последней плитке.
+function MediaThumb({
+  media,
+  alt,
+  label,
+  overlay,
+  onOpen,
+}: {
+  media: LentaMedia
+  alt: string
+  label: string
+  overlay?: string | null
+  onOpen: () => void
+}) {
+  const [broken, setBroken] = useState(false)
+  const isVideo = media.kind === 'video'
+  return (
+    <button type="button" className="lenta-thumb" onClick={onOpen} aria-label={label}>
+      {!broken && (isVideo ? media.posterUrl : media.mediaUrl) ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={(isVideo ? media.posterUrl : media.mediaUrl) as string}
+          alt={alt}
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <span className="lenta-fallback" aria-hidden="true">
+          {isVideo ? '🎬' : '📷'}
+        </span>
+      )}
+      {isVideo && (
+        <span className="lenta-play" aria-hidden="true">
+          ▶
+        </span>
+      )}
+      {overlay && (
+        <span className="lenta-thumb-more" aria-hidden="true">
+          +{overlay}
+        </span>
+      )}
+    </button>
+  )
+}
 
 // Карточка ленты с медиа и взаимодействием (PR5): лайк/отмена (оптимистично, дедуп
 // localStorage + серверный 409), поделиться (Web Share), пожаловаться, комментарии
 // (раскрываемый тред). Управление своим (PR4): удалить свою публикацию (по токену) —
 // и персонал в режиме «Редактирование» удаляет любую. Медиа — напрямую с Object Storage.
+// Пост-в-стиле-ВК: одна подпись — несколько файлов (item.media), показываются мозаикой;
+// клик по любому открывает галерею поста с этого кадра (onOpenMedia(index)).
 export function LentaCard({
   item,
   locale,
@@ -29,11 +77,10 @@ export function LentaCard({
   item: LentaItem
   locale: Locale
   onRemoved?: (id: number) => void
-  onOpenMedia?: () => void
+  onOpenMedia?: (mediaIndex: number) => void
 }) {
   const { isAdmin, mode } = useAdminMode()
   const owned = useOwned()
-  const [broken, setBroken] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(item.likeCount)
   const [viewCount, setViewCount] = useState(item.viewCount)
@@ -57,9 +104,9 @@ export function LentaCard({
     setMineLocal(isMine('submission', item.id))
   }, [item.id])
 
-  // Открытие медиа (лайтбокс/видео) = просмотр. Засчитываем один раз на браузер,
+  // Открытие медиа (лайтбокс/видео) = просмотр поста. Засчитываем один раз на браузер,
   // оптимистично инкрементим счётчик; если сервер не засчитал (уже было) — откат.
-  function openMedia() {
+  function openMedia(mediaIndex: number) {
     if (!viewed) {
       setViewed(true)
       setViewCount((c) => c + 1)
@@ -67,7 +114,7 @@ export function LentaCard({
         if (!counted) setViewCount((c) => Math.max(item.viewCount, c - 1))
       })
     }
-    onOpenMedia?.()
+    onOpenMedia?.(mediaIndex)
   }
 
   // «Моё» = по браузерному токену (localStorage) ИЛИ по VK-аккаунту (PR5B, с любого устройства).
@@ -169,53 +216,26 @@ export function LentaCard({
     }
   }
 
+  const media = item.media.length > 0 ? item.media : [{ kind: item.kind, mediaUrl: item.mediaUrl, posterUrl: item.posterUrl, width: item.width, height: item.height }]
+  // Мозаика: показываем до 4 плиток; если файлов больше — на 4-й бейдж «+N».
+  const MAX_TILES = 4
+  const tiles = media.slice(0, MAX_TILES)
+  const extra = media.length - MAX_TILES
+  const alt = item.caption || item.authorName || 'Фото'
+
   return (
     <li className="lenta-card">
-      <div className="lenta-media">
-        {item.kind === 'video' ? (
-          <button
-            type="button"
-            className="lenta-videobtn"
-            onClick={openMedia}
-            aria-label={t(locale, 'lenta.playVideo')}
-          >
-            {item.posterUrl && !broken ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.posterUrl}
-                alt={item.caption || item.authorName || t(locale, 'lenta.video')}
-                loading="lazy"
-                onError={() => setBroken(true)}
-              />
-            ) : (
-              <span className="lenta-fallback" aria-hidden="true">
-                🎬
-              </span>
-            )}
-            <span className="lenta-play" aria-hidden="true">
-              ▶
-            </span>
-          </button>
-        ) : !broken ? (
-          <button
-            type="button"
-            className="lenta-mediabtn"
-            onClick={openMedia}
-            aria-label={t(locale, 'lenta.openPhoto')}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.mediaUrl}
-              alt={item.caption || item.authorName || 'Фото'}
-              loading="lazy"
-              onError={() => setBroken(true)}
-            />
-          </button>
-        ) : (
-          <span className="lenta-fallback" aria-hidden="true">
-            📷
-          </span>
-        )}
+      <div className={`lenta-media lenta-media--n${Math.min(media.length, MAX_TILES)}${media.length > 1 ? ' is-mosaic' : ''}`}>
+        {tiles.map((m, i) => (
+          <MediaThumb
+            key={i}
+            media={m}
+            alt={alt}
+            label={t(locale, m.kind === 'video' ? 'lenta.playVideo' : 'lenta.openPhoto')}
+            overlay={i === MAX_TILES - 1 && extra > 0 ? String(extra) : null}
+            onOpen={() => openMedia(i)}
+          />
+        ))}
         <span className={`lenta-badge lenta-badge--${item.phase}`}>{phaseLabel}</span>
       </div>
 

@@ -11,6 +11,7 @@ import {
   OBJECT_KEY_RE,
   UGC_MAX_AUTHOR,
   UGC_MAX_CAPTION,
+  UGC_MAX_FILES,
   UGC_MAX_PHOTO_MB,
   UGC_MAX_VIDEO_MB,
   UGC_PHASES,
@@ -28,12 +29,43 @@ import {
 const MAX = 15 // отправок
 const WINDOW_MS = 15 * 60 * 1000 // за 15 минут на IP
 
+// Валидация одного медиа-дескриптора (обложка ИЛИ элемент массива media): тип, формат
+// ключа объекта (анти-подмена чужого пути в бакете), mime для типа, размер в лимите.
+// Бросает APIError с понятным сообщением. `where` — для текста ошибки (какой файл).
+function validateMediaDescriptor(m: unknown, where: string): void {
+  if (!m || typeof m !== 'object') throw new APIError(`Некорректный файл (${where}).`, 400)
+  const d = m as Record<string, unknown>
+  const kind = d.kind
+  if (kind !== 'photo' && kind !== 'video') {
+    throw new APIError(`Тип должен быть photo или video (${where}).`, 400)
+  }
+  if (typeof d.objectKey !== 'string' || !OBJECT_KEY_RE.test(d.objectKey)) {
+    throw new APIError(`Некорректный ключ объекта (${where}).`, 400)
+  }
+  if (
+    d.posterKey != null &&
+    (typeof d.posterKey !== 'string' || !OBJECT_KEY_RE.test(d.posterKey))
+  ) {
+    throw new APIError(`Некорректный ключ постера (${where}).`, 400)
+  }
+  if (typeof d.mime !== 'string' || !isAllowedMime(kind, d.mime)) {
+    throw new APIError(`Неподдерживаемый формат файла (${where}).`, 400)
+  }
+  const maxBytes = (kind === 'photo' ? UGC_MAX_PHOTO_MB : UGC_MAX_VIDEO_MB) * 1024 * 1024
+  const bytes = Number(d.bytes)
+  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > maxBytes) {
+    const mb = kind === 'photo' ? UGC_MAX_PHOTO_MB : UGC_MAX_VIDEO_MB
+    throw new APIError(`Файл слишком большой (максимум ${mb} МБ, ${where}).`, 413)
+  }
+}
+
 export const rateLimitSubmission: CollectionBeforeValidateHook = ({ data, operation, req }) => {
   if (operation !== 'create') return data
   if (req.user) return data
   if (!data || typeof data !== 'object') throw new APIError('Некорректный запрос.', 400)
 
-  // 1) rate-limit по IP — до обращения к БД.
+  // 1) rate-limit по IP — до обращения к БД. Одна публикация = один POST, даже если в
+  //    ней много файлов (файлы грузятся прямо в S3 пресайн-PUT'ами, минуя этот хук).
   const ip = clientIp(req.headers)
   const { ok, retryAfterMs } = rateLimit(`ugc-submit:${ip}`, MAX, WINDOW_MS)
   if (!ok) {
@@ -41,39 +73,23 @@ export const rateLimitSubmission: CollectionBeforeValidateHook = ({ data, operat
     throw new APIError(`Слишком много загрузок. Попробуйте ещё раз через ${mins} мин.`, 429)
   }
 
-  // 2) тип / фаза — обязательны и из известных значений (select-поле тоже валидирует,
-  //    но проверяем явно, т.к. от них зависит проверка mime/размера).
-  const kind = data.kind
-  if (kind !== 'photo' && kind !== 'video') {
-    throw new APIError('Тип должен быть photo или video.', 400)
-  }
+  // 2) фаза — обязательна и из известных значений (select-поле тоже валидирует).
   if (typeof data.phase !== 'string' || !UGC_PHASES.includes(data.phase as never)) {
     throw new APIError('Неизвестная фаза.', 400)
   }
 
-  // 3) objectKey — наш формат (анти-подмена чужого пути в бакете).
-  if (typeof data.objectKey !== 'string' || !OBJECT_KEY_RE.test(data.objectKey)) {
-    throw new APIError('Некорректный ключ объекта.', 400)
-  }
-  if (
-    data.posterKey != null &&
-    (typeof data.posterKey !== 'string' || !OBJECT_KEY_RE.test(data.posterKey))
-  ) {
-    throw new APIError('Некорректный ключ постера.', 400)
-  }
-
-  // 4) mime разрешён для kind, размер в пределах лимита.
-  if (typeof data.mime !== 'string' || !isAllowedMime(kind, data.mime)) {
-    throw new APIError('Неподдерживаемый формат файла.', 400)
-  }
-  const maxBytes = (kind === 'photo' ? UGC_MAX_PHOTO_MB : UGC_MAX_VIDEO_MB) * 1024 * 1024
-  const bytes = Number(data.bytes)
-  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > maxBytes) {
-    const mb = kind === 'photo' ? UGC_MAX_PHOTO_MB : UGC_MAX_VIDEO_MB
-    throw new APIError(`Файл слишком большой (максимум ${mb} МБ).`, 413)
+  // 3) обложка (верхнеуровневые поля = файл №1) + доп. файлы (массив media = №2…№N).
+  validateMediaDescriptor(data, 'обложка')
+  const extra = data.media
+  if (extra != null) {
+    if (!Array.isArray(extra)) throw new APIError('Некорректный список файлов.', 400)
+    if (extra.length > UGC_MAX_FILES - 1) {
+      throw new APIError(`Слишком много файлов (максимум ${UGC_MAX_FILES}).`, 400)
+    }
+    extra.forEach((m, i) => validateMediaDescriptor(m, `файл ${i + 2}`))
   }
 
-  // 5) санитайз текста + стоп-фильтр мата.
+  // 4) санитайз текста + стоп-фильтр мата.
   data.authorName = clampText(data.authorName, UGC_MAX_AUTHOR)
   data.caption = clampText(data.caption, UGC_MAX_CAPTION)
   if (

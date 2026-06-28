@@ -10,6 +10,7 @@ import type { UgcKind, UgcPhase } from './ugc'
 export const CLIENT_MAX_PHOTO_MB = 12
 export const CLIENT_MAX_VIDEO_MB = 100
 export const CLIENT_MAX_VIDEO_SEC = 60
+export const CLIENT_MAX_FILES = 20 // макс. файлов в одном посте (зеркало UGC_MAX_FILES)
 const MAX_IMAGE_DIM = 1600 // даунскейл больших фото до этого по длинной стороне
 
 // Коды ошибок (UI маппит в i18n-сообщения — без Cyrillic в lib).
@@ -181,11 +182,18 @@ export type UploadOpts = {
   onProgress: (frac: number) => void
 }
 
-export type UploadResult = { publicUrl: string; id: number }
+// Одно загруженное медиа поста (для оптимистичного показа карточки сразу после отправки).
+export type UploadedMedia = {
+  kind: UgcKind
+  mediaUrl: string
+  posterUrl: string | null
+  width: number | null
+  height: number | null
+}
+export type UploadResult = { id: number; media: UploadedMedia[] }
 
-// Полный цикл: presigned PUT-ссылка → прямой PUT в S3 (с прогрессом) → запись в
-// коллекцию. Файл через наш Node НЕ идёт. Сервер 503 (ключи не заданы) → 'degraded'.
-export async function uploadSubmission(prepared: Prepared, opts: UploadOpts): Promise<UploadResult> {
+// Получить presigned PUT-ссылку для одного файла. Сервер 503 (ключи не заданы) → 'degraded'.
+async function signOne(prepared: Prepared, phase: UgcPhase): Promise<{ uploadUrl: string; objectKey: string; publicUrl: string }> {
   const signRes = await fetch('/api/ugc/sign-upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -193,41 +201,72 @@ export async function uploadSubmission(prepared: Prepared, opts: UploadOpts): Pr
       kind: prepared.kind,
       contentType: prepared.mime,
       sizeBytes: prepared.bytes,
-      phase: opts.phase,
+      phase,
     }),
   })
   if (signRes.status === 503) throw new UploadError('degraded')
   if (!signRes.ok) throw new UploadError('failed')
-  const { uploadUrl, objectKey, publicUrl } = (await signRes.json()) as {
-    uploadUrl: string
-    objectKey: string
-    publicUrl: string
+  return (await signRes.json()) as { uploadUrl: string; objectKey: string; publicUrl: string }
+}
+
+// Полный цикл публикации поста (1..N файлов, одна подпись — стиль ВК): по очереди для
+// каждого файла presigned-ссылка → прямой PUT в S3 (файлы через наш Node НЕ идут) →
+// ОДНА запись в коллекцию (обложка = файл №1, media = остальные). Прогресс — общий,
+// взвешен по байтам, чтобы бар шёл плавно по всем файлам.
+export async function uploadPost(prepareds: Prepared[], opts: UploadOpts): Promise<UploadResult> {
+  if (prepareds.length === 0) throw new UploadError('failed')
+  const totalBytes = prepareds.reduce((s, p) => s + (p.bytes || 0), 0) || 1
+  let doneBytes = 0
+  const uploaded: { p: Prepared; objectKey: string; publicUrl: string }[] = []
+
+  for (const p of prepareds) {
+    const { uploadUrl, objectKey, publicUrl } = await signOne(p, opts.phase)
+    await putWithProgress(uploadUrl, p.blob, p.mime, (frac) => {
+      opts.onProgress(Math.min(1, (doneBytes + frac * (p.bytes || 0)) / totalBytes))
+    })
+    doneBytes += p.bytes || 0
+    opts.onProgress(Math.min(1, doneBytes / totalBytes))
+    uploaded.push({ p, objectKey, publicUrl })
   }
 
-  await putWithProgress(uploadUrl, prepared.blob, prepared.mime, opts.onProgress)
+  const descriptor = (u: { p: Prepared; objectKey: string }) => ({
+    kind: u.p.kind,
+    objectKey: u.objectKey,
+    mime: u.p.mime,
+    bytes: u.p.bytes,
+    width: u.p.width ?? undefined,
+    height: u.p.height ?? undefined,
+    durationSec: u.p.durationSec ?? undefined,
+  })
+  const [cover, ...rest] = uploaded
 
   const subRes = await fetch('/api/submissions', {
     method: 'POST',
     headers: ugcHeaders(), // + X-UGC-Owner → сервер стампит ownerHash (владение)
     body: JSON.stringify({
-      kind: prepared.kind,
-      objectKey,
-      mime: prepared.mime,
-      bytes: prepared.bytes,
+      ...descriptor(cover),
       phase: opts.phase,
       consent: true,
       authorName: opts.authorName || undefined,
       caption: opts.caption || undefined,
-      width: prepared.width ?? undefined,
-      height: prepared.height ?? undefined,
-      durationSec: prepared.durationSec ?? undefined,
+      media: rest.map(descriptor),
     }),
   })
   if (!subRes.ok) throw new UploadError('failed')
   const json = (await subRes.json()) as { doc?: { id?: number } }
   const id = Number(json.doc?.id) || 0
   if (id) markMine('submission', id) // помним «моё» → покажем кнопку удаления
-  return { publicUrl, id }
+
+  return {
+    id,
+    media: uploaded.map((u) => ({
+      kind: u.p.kind,
+      mediaUrl: u.publicUrl,
+      posterUrl: null,
+      width: u.p.width,
+      height: u.p.height,
+    })),
+  }
 }
 
 // --- Владение контентом в браузере (PR3/PR4 «удалить/править своё») ---
