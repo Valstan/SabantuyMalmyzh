@@ -522,6 +522,22 @@ export interface Submission {
   width?: number | null;
   height?: number | null;
   durationSec?: number | null;
+  /**
+   * Файлы №2…№20 поста (обложка — поля выше). Лента показывает их мозаикой, клик открывает галерею.
+   */
+  media?:
+    | {
+        kind: 'photo' | 'video';
+        objectKey: string;
+        posterKey?: string | null;
+        mime: string;
+        bytes?: number | null;
+        width?: number | null;
+        height?: number | null;
+        durationSec?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   authorName?: string | null;
   caption?: string | null;
   phase: 'preparation' | 'festival';
@@ -1048,6 +1064,19 @@ export interface SubmissionsSelect<T extends boolean = true> {
   width?: T;
   height?: T;
   durationSec?: T;
+  media?:
+    | T
+    | {
+        kind?: T;
+        objectKey?: T;
+        posterKey?: T;
+        mime?: T;
+        bytes?: T;
+        width?: T;
+        height?: T;
+        durationSec?: T;
+        id?: T;
+      };
   authorName?: T;
   caption?: T;
   phase?: T;

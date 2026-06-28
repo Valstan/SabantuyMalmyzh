@@ -11,6 +11,7 @@ import { LentaFeed } from '../components/LentaFeed'
 import type {
   LentaAuthorStat,
   LentaItem,
+  LentaMedia,
   LentaRatings,
   LentaTopItem,
 } from '../components/lentaTypes'
@@ -26,11 +27,20 @@ const FETCH_LIMIT = 2000 // верхняя граница выборки для 
 const TOP_N = 12 // длина топов «по лайкам»/«по просмотрам»
 const TOP_AUTHORS = 30 // длина рейтинга авторов
 
+type MediaDoc = {
+  kind?: string | null
+  objectKey?: string | null
+  posterKey?: string | null
+  width?: number | null
+  height?: number | null
+}
+
 type SubmissionDoc = {
   id: number
   kind?: string | null
   objectKey?: string | null
   posterKey?: string | null
+  media?: MediaDoc[] | null
   authorName?: string | null
   caption?: string | null
   phase?: string | null
@@ -43,13 +53,29 @@ type SubmissionDoc = {
   ownerVisitor?: number | null
 }
 
+function toMedia(m: MediaDoc): LentaMedia {
+  return {
+    kind: m.kind === 'video' ? 'video' : 'photo',
+    mediaUrl: publicUrl(m.objectKey as string),
+    posterUrl: m.posterKey ? publicUrl(m.posterKey) : null,
+    width: m.width != null ? Number(m.width) : null,
+    height: m.height != null ? Number(m.height) : null,
+  }
+}
+
 function toItem(d: SubmissionDoc): LentaItem {
   const kind = d.kind === 'video' ? 'video' : 'photo'
+  // Обложка (media[0]) — из верхнеуровневых полей; затем доп. файлы массива media.
+  const cover = toMedia(d)
+  const extra = Array.isArray(d.media)
+    ? d.media.filter((m) => typeof m?.objectKey === 'string' && m.objectKey).map(toMedia)
+    : []
   return {
     id: d.id,
     kind,
-    mediaUrl: publicUrl(d.objectKey as string),
-    posterUrl: d.posterKey ? publicUrl(d.posterKey) : null,
+    mediaUrl: cover.mediaUrl,
+    posterUrl: cover.posterUrl,
+    media: [cover, ...extra],
     authorName: d.authorName ?? null,
     caption: d.caption ?? null,
     phase: d.phase === 'festival' ? 'festival' : 'preparation',
