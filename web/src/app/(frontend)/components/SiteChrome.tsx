@@ -9,6 +9,7 @@ import { localeHref, pathLocale } from '../../../lib/localeHref'
 import { getCultureSections } from '../../../lib/cultureSections'
 import { InstallAppButton } from './InstallAppButton'
 import { LanguageToggle } from './LanguageToggle'
+import { VisitorAuth } from './VisitorAuth'
 import { LiveInternetCounter } from './LiveInternetCounter'
 import { SectionDivider } from './SectionDivider'
 import { LoginControl } from './edit/LoginControl'
@@ -77,6 +78,7 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
           </nav>
           <span className="site-nav-actions">
             <LanguageToggle locale={locale} />
+            <VisitorAuth locale={locale} />
             <HeaderEditor locale={locale} />
             <LoginControl />
           </span>

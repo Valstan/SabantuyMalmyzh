@@ -1843,6 +1843,64 @@ a.feature-card--cover:hover .feature-cover img {
   border-color: var(--c-green-state);
 }
 
+/* Вход через VK (VisitorAuth) */
+.vk-login-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.32rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #07f; /* VK-синий */
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.16s ease;
+}
+.vk-login-btn:hover {
+  background: #06c;
+}
+.vk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  max-width: 220px;
+}
+.vk-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+.vk-name {
+  font-weight: 600;
+  color: var(--c-green-state);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+.vk-logout {
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: 7px;
+  border: 1px solid rgba(21, 92, 57, 0.35);
+  background: #fff;
+  color: var(--c-green-state);
+}
+.vk-logout:hover {
+  background: var(--c-cream);
+}
+.vk-logout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Верхняя панель редактора */
 .edit-bar {
   position: sticky;
