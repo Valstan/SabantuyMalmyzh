@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { containsProfanity } from '../../../../lib/profanity'
 import { clampText } from '../../../../lib/ugc'
-import { getPayloadClient, isStaffRequest, mutateRateOk, requestOwnerHash } from '../../../../lib/ugcOwner'
+import { getPayloadClient, isOwnerOf, isStaffRequest, mutateRateOk } from '../../../../lib/ugcOwner'
 
 // Редактировать «свой» комментарий (автор по токену) ИЛИ любой (персонал). Новый текст
 // проходит тот же санитайз + стоп-фильтр мата, что и при создании. Статус не меняем.
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   }
 
   const payload = await getPayloadClient()
-  let comment: { status?: string | null; ownerHash?: string | null }
+  let comment: { status?: string | null; ownerHash?: string | null; ownerVisitor?: number | null }
   try {
     comment = await payload.findByID({ collection: 'submission-comments', id, depth: 0, overrideAccess: true })
   } catch {
@@ -45,8 +45,7 @@ export async function POST(req: Request) {
   }
 
   const staff = await isStaffRequest(payload, req.headers)
-  const owner = requestOwnerHash(req.headers)
-  const isOwner = Boolean(owner && comment.ownerHash && owner === comment.ownerHash)
+  const isOwner = isOwnerOf(comment, req.headers)
   if (!staff && !isOwner) {
     return NextResponse.json({ error: 'Нет прав на редактирование.' }, { status: 403 })
   }

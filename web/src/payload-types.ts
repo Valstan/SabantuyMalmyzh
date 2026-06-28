@@ -532,6 +532,7 @@ export interface Submission {
   reportCount?: number | null;
   ipHash?: string | null;
   ownerHash?: string | null;
+  ownerVisitor?: number | null;
   userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -547,6 +548,7 @@ export interface SubmissionReaction {
   submission: number | Submission;
   ipHash?: string | null;
   ownerHash?: string | null;
+  ownerVisitor?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -566,6 +568,7 @@ export interface SubmissionComment {
   reportCount?: number | null;
   ipHash?: string | null;
   ownerHash?: string | null;
+  ownerVisitor?: number | null;
   userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1013,6 +1016,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   reportCount?: T;
   ipHash?: T;
   ownerHash?: T;
+  ownerVisitor?: T;
   userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1025,6 +1029,7 @@ export interface SubmissionReactionsSelect<T extends boolean = true> {
   submission?: T;
   ipHash?: T;
   ownerHash?: T;
+  ownerVisitor?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1041,6 +1046,7 @@ export interface SubmissionCommentsSelect<T extends boolean = true> {
   reportCount?: T;
   ipHash?: T;
   ownerHash?: T;
+  ownerVisitor?: T;
   userAgent?: T;
   updatedAt?: T;
   createdAt?: T;

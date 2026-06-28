@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { getPayloadClient, isStaffRequest, mutateRateOk, requestOwnerHash } from '../../../../lib/ugcOwner'
+import { getPayloadClient, isOwnerOf, isStaffRequest, mutateRateOk } from '../../../../lib/ugcOwner'
 
 // Удалить «свой» комментарий (автор по токену) ИЛИ любой (персонал). Мягкое удаление:
 // status='removed' → afterChange-хук пересчитывает commentCount (видимые) на публикации.
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   if (!id) return NextResponse.json({ error: 'Не указан комментарий.' }, { status: 400 })
 
   const payload = await getPayloadClient()
-  let comment: { status?: string | null; ownerHash?: string | null }
+  let comment: { status?: string | null; ownerHash?: string | null; ownerVisitor?: number | null }
   try {
     comment = await payload.findByID({ collection: 'submission-comments', id, depth: 0, overrideAccess: true })
   } catch {
@@ -32,8 +32,7 @@ export async function POST(req: Request) {
   if (comment.status === 'removed') return NextResponse.json({ ok: true }, { status: 200 })
 
   const staff = await isStaffRequest(payload, req.headers)
-  const owner = requestOwnerHash(req.headers)
-  const isOwner = Boolean(owner && comment.ownerHash && owner === comment.ownerHash)
+  const isOwner = isOwnerOf(comment, req.headers)
   if (!staff && !isOwner) {
     return NextResponse.json({ error: 'Нет прав на удаление.' }, { status: 403 })
   }

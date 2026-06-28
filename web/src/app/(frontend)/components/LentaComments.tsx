@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { deleteComment, editComment, isMine, markMine, ugcHeaders } from '../../../lib/ugcClient'
+import { useOwned } from './OwnedContext'
 import { useAdminMode } from './edit/AdminMode'
 
 type Comment = { id: number; authorName: string | null; body: string; createdAt: string }
@@ -25,6 +26,7 @@ export function LentaComments({
   onRemoved: () => void
 }) {
   const { isAdmin, mode } = useAdminMode()
+  const owned = useOwned()
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [body, setBody] = useState('')
   const [author, setAuthor] = useState('')
@@ -49,7 +51,9 @@ export function LentaComments({
     }
   }, [submissionId])
 
-  const canManage = (c: Comment) => isMine('comment', c.id) || (isAdmin && mode === 'manage')
+  // «Своё» = по браузерному токену ИЛИ по VK-аккаунту (PR5B); персонал в режиме правки — любое.
+  const canManage = (c: Comment) =>
+    isMine('comment', c.id) || owned.comments.has(c.id) || (isAdmin && mode === 'manage')
 
   async function submit() {
     const text = body.trim()

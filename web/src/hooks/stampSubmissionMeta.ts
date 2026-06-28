@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook } from 'payload'
 
 import { clientIp, hashIp, ownerHashFromHeaders } from '../lib/ugc'
+import { visitorFromHeaders } from '../lib/visitorSession'
 
 // Проставляет служебные поля заявки в ленту на создании: необратимый хеш IP (для
 // дедупа лайков/жалоб в PR3 и трассировки абьюза), user-agent и ownerHash (хеш
@@ -17,6 +18,10 @@ export const stampSubmissionMeta: CollectionBeforeChangeHook = ({ data, operatio
   data.userAgent = ua ? ua.slice(0, 512) : undefined
   const owner = ownerHashFromHeaders(req.headers)
   if (owner) data.ownerHash = owner
+  // VK-вход (PR5B): если посетитель залогинен — закрепляем контент за аккаунтом, чтобы
+  // управлять «своим» с любого устройства. Сессия — отдельная подписанная cookie.
+  const visitor = visitorFromHeaders(req.headers)
+  if (visitor) data.ownerVisitor = visitor.visitorId
 
   return data
 }

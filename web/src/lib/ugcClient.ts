@@ -270,6 +270,27 @@ export function ugcHeaders(): Record<string, string> {
   return h
 }
 
+/**
+ * «Моё» по VK-аккаунту (PR5B): id публикаций/комментов, закреплённых за вошедшим
+ * посетителем — для бейджа «Ваше» и управления С ЛЮБОГО устройства. Заодно сервер
+ * присваивает прежний аноним-контент этого браузера аккаунту (по X-UGC-Owner). Без
+ * VK-сессии вернёт пусто. credentials:same-origin → шлём cookie сессии посетителя.
+ */
+export async function fetchMyOwned(): Promise<{ submissions: number[]; comments: number[] }> {
+  try {
+    const res = await fetch('/api/ugc/mine', {
+      method: 'POST',
+      headers: ugcHeaders(),
+      credentials: 'same-origin',
+    })
+    if (!res.ok) return { submissions: [], comments: [] }
+    const j = (await res.json()) as { submissions?: number[]; comments?: number[] }
+    return { submissions: j.submissions ?? [], comments: j.comments ?? [] }
+  } catch {
+    return { submissions: [], comments: [] }
+  }
+}
+
 type MineKind = 'submission' | 'comment'
 const mineKey = (kind: MineKind, id: number) => `${MINE_PREFIX}:${kind}:${id}`
 

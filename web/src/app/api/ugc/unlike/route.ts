@@ -1,6 +1,8 @@
+import type { Where } from 'payload'
+
 import { NextResponse } from 'next/server'
 
-import { getPayloadClient, mutateRateOk, requestOwnerHash } from '../../../../lib/ugcOwner'
+import { getPayloadClient, mutateRateOk, requestOwnerHash, requestVisitorId } from '../../../../lib/ugcOwner'
 
 // Отменить «свой» лайк: ищем реакцию по (submission, ownerHash текущего браузера) и
 // удаляем → afterDelete-хук пересчитывает likeCount на публикации. Только владелец
@@ -14,7 +16,8 @@ export async function POST(req: Request) {
   }
 
   const owner = requestOwnerHash(req.headers)
-  if (!owner) return NextResponse.json({ error: 'Нет токена владельца.' }, { status: 400 })
+  const visitorId = requestVisitorId(req.headers)
+  if (!owner && !visitorId) return NextResponse.json({ error: 'Нет токена владельца.' }, { status: 400 })
 
   let submissionId: number | null = null
   try {
@@ -27,10 +30,15 @@ export async function POST(req: Request) {
   }
   if (!submissionId) return NextResponse.json({ error: 'Не указана публикация.' }, { status: 400 })
 
+  // Реакция «своя», если совпал браузерный токен (ownerHash) ИЛИ VK-аккаунт (ownerVisitor).
+  const orConds: Where[] = []
+  if (owner) orConds.push({ ownerHash: { equals: owner } })
+  if (visitorId) orConds.push({ ownerVisitor: { equals: visitorId } })
+
   const payload = await getPayloadClient()
   const found = await payload.find({
     collection: 'submission-reactions',
-    where: { and: [{ submission: { equals: submissionId } }, { ownerHash: { equals: owner } }] },
+    where: { and: [{ submission: { equals: submissionId } }, { or: orConds }] },
     limit: 1,
     depth: 0,
     overrideAccess: true,

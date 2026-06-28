@@ -3,14 +3,16 @@ import { getPayload, type Payload } from 'payload'
 
 import { rateLimit } from './rateLimit'
 import { clientIp, ownerHashFromHeaders } from './ugc'
+import { visitorFromHeaders } from './visitorSession'
 
-// Серверная обвязка эндпоинтов /api/ugc/* «удалить/править своё» (PR3).
+// Серверная обвязка эндпоинтов /api/ugc/* «удалить/править своё» (PR3 + PR5B).
 //
 // Модель доступа: действие разрешено, если запрос пришёл (а) от ПЕРСОНАЛА (валидный
 // payload-token, роль admin/editor) — тогда правит/удаляет ЛЮБОЕ (это и есть «админы
 // удаляют чужое»); ИЛИ (б) от ВЛАДЕЛЬЦА — хеш браузерного токена X-UGC-Owner совпал с
-// ownerHash записи. Иначе 403. Запись грузим/правим overrideAccess (коллекции закрыты
-// на update/delete для анонима #015 — авторизацию делаем здесь явно).
+// ownerHash записи (аноним-владение), ИЛИ visitorId из VK-сессии совпал с ownerVisitor
+// записи (PR5B: «своё» с любого устройства). Иначе 403. Запись грузим/правим
+// overrideAccess (коллекции закрыты на update/delete для анонима #015).
 
 let cached: Payload | null = null
 export async function getPayloadClient(): Promise<Payload> {
@@ -32,6 +34,27 @@ export async function isStaffRequest(payload: Payload, headers: Headers): Promis
 /** ownerHash запроса из заголовка X-UGC-Owner (null, если токена нет). */
 export function requestOwnerHash(headers: Headers): string | null {
   return ownerHashFromHeaders(headers)
+}
+
+/** visitorId из VK-сессии запроса (null, если не вошёл через VK). */
+export function requestVisitorId(headers: Headers): number | null {
+  return visitorFromHeaders(headers)?.visitorId ?? null
+}
+
+/**
+ * Владеет ли запрос документом: по браузерному токену (ownerHash) ИЛИ по VK-аккаунту
+ * (ownerVisitor). Единая проверка для всех /api/ugc/* эндпоинтов.
+ */
+export function isOwnerOf(
+  doc: { ownerHash?: string | null; ownerVisitor?: number | null },
+  headers: Headers,
+): boolean {
+  const owner = requestOwnerHash(headers)
+  const visitorId = requestVisitorId(headers)
+  return Boolean(
+    (owner && doc.ownerHash && owner === doc.ownerHash) ||
+      (visitorId && doc.ownerVisitor && visitorId === doc.ownerVisitor),
+  )
 }
 
 /** Скромный rate-limit на мутации (delete/edit/unlike) по IP: анти-абьюз эндпоинтов. */

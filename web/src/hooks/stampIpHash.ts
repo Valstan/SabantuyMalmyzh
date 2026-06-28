@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook } from 'payload'
 
 import { clientIp, hashIp, ownerHashFromHeaders } from '../lib/ugc'
+import { visitorFromHeaders } from '../lib/visitorSession'
 
 // Проставляет необратимый хеш IP на создании (дедуп лайков/жалоб, трассировка абьюза;
 // не PII) и ownerHash (хеш браузерного токена — по нему автор отменяет «свой» лайк).
@@ -14,5 +15,9 @@ export const stampIpHash: CollectionBeforeChangeHook = ({ data, operation, req }
   data.ipHash = hashIp(clientIp(req.headers))
   const owner = ownerHashFromHeaders(req.headers)
   if (owner) data.ownerHash = owner
+  // VK-вход (PR5B): закрепляем лайк за аккаунтом → отмена с любого устройства. У
+  // content-reports поля ownerVisitor нет → лишний ключ Payload отбрасывает (как ownerHash).
+  const visitor = visitorFromHeaders(req.headers)
+  if (visitor) data.ownerVisitor = visitor.visitorId
   return data
 }

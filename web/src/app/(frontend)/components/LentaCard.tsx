@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { t, type Locale } from '../../../lib/i18n'
 import { deleteSubmission, isMine, ugcHeaders, unlikeSubmission } from '../../../lib/ugcClient'
 import { LentaComments } from './LentaComments'
+import { useOwned } from './OwnedContext'
 import { useAdminMode } from './edit/AdminMode'
 import type { LentaItem } from './lentaTypes'
 
@@ -24,13 +25,14 @@ export function LentaCard({
   onOpenMedia?: () => void
 }) {
   const { isAdmin, mode } = useAdminMode()
+  const owned = useOwned()
   const [broken, setBroken] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(item.likeCount)
   const [reported, setReported] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [commentCount, setCommentCount] = useState(item.commentCount)
-  const [mine, setMine] = useState(false)
+  const [mineLocal, setMineLocal] = useState(false)
   const [actErr, setActErr] = useState(false)
   const phaseLabel = t(locale, `lenta.phase.${item.phase}`)
 
@@ -42,10 +44,12 @@ export function LentaCard({
     } catch {
       /* приватный режим — игнор */
     }
-    setMine(isMine('submission', item.id))
+    setMineLocal(isMine('submission', item.id))
   }, [item.id])
 
-  // Удалять можно своё (по токену) ИЛИ любое, если ты персонал в режиме «Редактирование».
+  // «Моё» = по браузерному токену (localStorage) ИЛИ по VK-аккаунту (PR5B, с любого устройства).
+  const mine = mineLocal || owned.subs.has(item.id)
+  // Удалять можно своё ИЛИ любое, если ты персонал в режиме «Редактирование».
   const canDelete = mine || (isAdmin && mode === 'manage')
 
   async function like() {
