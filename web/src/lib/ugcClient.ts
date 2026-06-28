@@ -424,14 +424,25 @@ export async function viewSubmission(id: number): Promise<boolean> {
   }
 }
 
-/** Записать раунд «Фотобитвы»: winner победил loser. Fire-and-forget; true — учтено
- *  сервером (счёт battleWins/battleShows пересчитается хуком, отдельно от лайков ленты). */
-export async function recordBattle(winnerId: number, loserId: number): Promise<boolean> {
+/** Записать раунд «Фотобитвы»: фото (winnerId, winnerIdx) победило (loserId, loserIdx).
+ *  Фото = публикация + индекс кадра в ней (мульти-файловые посты — каждый кадр отдельно).
+ *  Fire-and-forget; true — учтено сервером (месячный рейтинг фото считается из раундов). */
+export async function recordBattle(
+  winnerId: number,
+  winnerIdx: number,
+  loserId: number,
+  loserIdx: number,
+): Promise<boolean> {
   try {
     const res = await fetch('/api/photo-battles', {
       method: 'POST',
       headers: ugcHeaders(),
-      body: JSON.stringify({ winner: winnerId, loser: loserId }),
+      body: JSON.stringify({
+        winner: winnerId,
+        winnerIndex: winnerIdx,
+        loser: loserId,
+        loserIndex: loserIdx,
+      }),
     })
     return res.ok
   } catch {

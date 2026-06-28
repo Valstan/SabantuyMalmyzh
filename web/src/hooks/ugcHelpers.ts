@@ -33,9 +33,19 @@ export async function assertVisibleTarget(
   if (status !== 'visible') throw new APIError('Действие недоступно для этой публикации.', 409)
 }
 
-/** Публикация должна быть видимым ФОТО (для «Фотобитвы»), иначе APIError. */
-export async function assertVisiblePhoto(req: PayloadRequest, id: number): Promise<void> {
-  let doc: { status?: unknown; kind?: unknown } | null = null
+/** Список kind кадров поста: [обложка, ...media[]] — индекс совпадает с LentaItem.media. */
+function postMediaKinds(doc: { kind?: unknown; media?: unknown }): string[] {
+  const kinds: string[] = [doc.kind === 'video' ? 'video' : 'photo']
+  if (Array.isArray(doc.media)) {
+    for (const m of doc.media) kinds.push((m as { kind?: unknown })?.kind === 'video' ? 'video' : 'photo')
+  }
+  return kinds
+}
+
+/** Конкретный кадр поста (id, index) должен быть видимым ФОТО (для «Фотобитвы»), иначе
+ *  APIError. Мульти-файловые посты: index — кадр в [обложка, ...media]. */
+export async function assertVisiblePhotoAt(req: PayloadRequest, id: number, index: number): Promise<void> {
+  let doc: { status?: unknown; kind?: unknown; media?: unknown } | null = null
   try {
     doc = await req.payload.findByID({ collection: 'submissions', id, depth: 0, overrideAccess: true, req })
   } catch {
@@ -43,5 +53,9 @@ export async function assertVisiblePhoto(req: PayloadRequest, id: number): Promi
   }
   if (!doc) throw new APIError('Публикация не найдена.', 404)
   if (doc.status !== 'visible') throw new APIError('Действие недоступно для этой публикации.', 409)
-  if (doc.kind !== 'photo') throw new APIError('Фотобитва доступна только для фото.', 400)
+  const kinds = postMediaKinds(doc)
+  if (!Number.isInteger(index) || index < 0 || index >= kinds.length) {
+    throw new APIError('Некорректный кадр.', 400)
+  }
+  if (kinds[index] !== 'photo') throw new APIError('Фотобитва доступна только для фото.', 400)
 }

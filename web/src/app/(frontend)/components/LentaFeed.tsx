@@ -9,7 +9,7 @@ import { LentaRatings } from './LentaRatings'
 import { LentaUpload } from './LentaUpload'
 import { PhotoBattle } from './PhotoBattle'
 import { OwnedProvider } from './OwnedContext'
-import type { LentaItem, LentaRatings as Ratings } from './lentaTypes'
+import type { BattlePhoto, LentaItem, LentaRatings as Ratings } from './lentaTypes'
 
 // Открытый в лайтбоксе пост + индекс активного медиа внутри его галереи.
 type OpenMedia = { item: LentaItem; mediaIndex: number }
@@ -37,9 +37,18 @@ export function LentaFeed({
   const [phase, setPhase] = useState<PhaseFilter>('all')
   // Открытый в лайтбоксе пост и активный кадр его галереи (null — закрыт).
   const [open, setOpen] = useState<OpenMedia | null>(null)
-  // Игра «Фотобитва» (PR3): открыта ли, и пул фото для пар.
+  // Игра «Фотобитва» (PR3): открыта ли, и пул фото для пар. Пул — КАЖДЫЙ кадр КАЖДОГО
+  // поста (мульти-файловые посты дают все свои фото, а не только обложку).
   const [battleOpen, setBattleOpen] = useState(false)
-  const photos = useMemo(() => items.filter((i) => i.kind === 'photo'), [items])
+  const photos = useMemo(() => {
+    const out: BattlePhoto[] = []
+    for (const it of items) {
+      it.media.forEach((m, idx) => {
+        if (m.kind === 'photo') out.push({ subId: it.id, idx, mediaUrl: m.mediaUrl, authorName: it.authorName })
+      })
+    }
+    return out
+  }, [items])
 
   const view = useMemo(() => {
     // items в порядке «Новое» (сервер отдал по -createdAt; новые загрузки prepend'ятся).
