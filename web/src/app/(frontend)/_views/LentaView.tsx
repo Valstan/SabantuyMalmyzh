@@ -37,6 +37,7 @@ type SubmissionDoc = {
   likeCount?: number | null
   commentCount?: number | null
   viewCount?: number | null
+  battleWins?: number | null
   width?: number | null
   height?: number | null
   ownerVisitor?: number | null
@@ -69,6 +70,7 @@ function toTop(d: SubmissionDoc): LentaTopItem {
     authorName: d.authorName ?? null,
     likeCount: Number(d.likeCount) || 0,
     viewCount: Number(d.viewCount) || 0,
+    battleWins: Number(d.battleWins) || 0,
   }
 }
 
@@ -147,9 +149,14 @@ async function getData(): Promise<{ items: LentaItem[]; ratings: LentaRatings } 
         .sort((a, b) => (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0))
         .slice(0, TOP_N)
         .map(toTop)
+      const topByBattle = [...docs]
+        .filter((d) => (Number(d.battleWins) || 0) > 0)
+        .sort((a, b) => (Number(b.battleWins) || 0) - (Number(a.battleWins) || 0))
+        .slice(0, TOP_N)
+        .map(toTop)
       const authors = await buildAuthors(payload, docs)
 
-      return { items, ratings: { authors, topByLikes, topByViews } }
+      return { items, ratings: { authors, topByLikes, topByViews, topByBattle } }
     })
   } catch {
     return null
@@ -177,7 +184,7 @@ export async function LentaView({ locale }: { locale: Locale }) {
           {/* Контейнер всегда: кнопка загрузки доступна и при пустой ленте. */}
           <LentaFeed
             initialItems={data?.items ?? []}
-            ratings={data?.ratings ?? { authors: [], topByLikes: [], topByViews: [] }}
+            ratings={data?.ratings ?? { authors: [], topByLikes: [], topByViews: [], topByBattle: [] }}
             locale={locale}
           />
         </div>

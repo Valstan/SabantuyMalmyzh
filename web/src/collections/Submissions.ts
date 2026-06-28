@@ -200,6 +200,29 @@ export const Submissions: CollectionConfig<'submissions'> = {
       admin: { position: 'sidebar', readOnly: true },
     },
     {
+      name: 'battleWins',
+      type: 'number',
+      label: 'Побед в Фотобитве',
+      defaultValue: 0,
+      // Счёт игры «Фотобитва» — ОТДЕЛЬНО от likeCount. Пишет только сервер (recountBattle).
+      access: {
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { position: 'sidebar', readOnly: true },
+    },
+    {
+      name: 'battleShows',
+      type: 'number',
+      label: 'Показов в Фотобитве',
+      defaultValue: 0,
+      access: {
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { position: 'sidebar', readOnly: true },
+    },
+    {
       name: 'reportCount',
       type: 'number',
       label: 'Жалоб',
