@@ -82,6 +82,7 @@ export interface Config {
     'submission-reactions': SubmissionReaction;
     'submission-comments': SubmissionComment;
     'content-reports': ContentReport;
+    visitors: Visitor;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -105,6 +106,7 @@ export interface Config {
     'submission-reactions': SubmissionReactionsSelect<false> | SubmissionReactionsSelect<true>;
     'submission-comments': SubmissionCommentsSelect<false> | SubmissionCommentsSelect<true>;
     'content-reports': ContentReportsSelect<false> | ContentReportsSelect<true>;
+    visitors: VisitorsSelect<false> | VisitorsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -584,6 +586,24 @@ export interface ContentReport {
   createdAt: string;
 }
 /**
+ * Посетители, вошедшие через ВКонтакте. Содержат vkId/имя/аватар (152-ФЗ) — доступ только у персонала. Закрепляют «своё» в «Народной ленте».
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitors".
+ */
+export interface Visitor {
+  id: number;
+  /**
+   * Идентификатор пользователя ВКонтакте (стабильный ключ аккаунта).
+   */
+  vkId: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  lastLoginAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -693,6 +713,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'content-reports';
         value: number | ContentReport;
+      } | null)
+    | ({
+        relationTo: 'visitors';
+        value: number | Visitor;
       } | null)
     | ({
         relationTo: 'users';
@@ -1030,6 +1054,18 @@ export interface ContentReportsSelect<T extends boolean = true> {
   targetId?: T;
   reason?: T;
   ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitors_select".
+ */
+export interface VisitorsSelect<T extends boolean = true> {
+  vkId?: T;
+  name?: T;
+  avatarUrl?: T;
+  lastLoginAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

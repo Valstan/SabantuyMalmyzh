@@ -275,6 +275,9 @@ const UI: Dict = {
   'lenta.lb.close': { ru: 'Закрыть', tt: 'Ябу' },
   'lenta.lb.prev': { ru: 'Предыдущее', tt: 'Алдагысы' },
   'lenta.lb.next': { ru: 'Следующее', tt: 'Киләсе' },
+  // вход через VK (VisitorAuth в шапке)
+  'vk.login': { ru: 'Войти через VK', tt: 'VK аша керү' },
+  'vk.logout': { ru: 'Выйти', tt: 'Чыгу' },
   // действия на карточке
   'lenta.like': { ru: 'Нравится', tt: 'Ошый' },
   'lenta.unlike': { ru: 'Убрать лайк', tt: 'Лайкны алу' },
