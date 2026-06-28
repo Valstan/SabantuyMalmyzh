@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { LentaCard } from './LentaCard'
+import { LentaLightbox } from './LentaLightbox'
 import { LentaUpload } from './LentaUpload'
 import type { LentaItem } from './lentaTypes'
 
@@ -18,6 +19,8 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
   const [items, setItems] = useState<LentaItem[]>(initialItems)
   const [sort, setSort] = useState<Sort>('new')
   const [phase, setPhase] = useState<PhaseFilter>('all')
+  // Индекс открытого в лайтбоксе медиа в текущем `view` (null — закрыт).
+  const [open, setOpen] = useState<number | null>(null)
 
   const view = useMemo(() => {
     // items в порядке «Новое» (сервер отдал по -createdAt; новые загрузки prepend'ятся).
@@ -74,17 +77,28 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
 
       {view.length > 0 ? (
         <ul className="lenta-grid">
-          {view.map((item) => (
+          {view.map((item, i) => (
             <LentaCard
               key={item.id}
               item={item}
               locale={locale}
-              onRemoved={(id) => setItems((prev) => prev.filter((i) => i.id !== id))}
+              onOpenMedia={() => setOpen(i)}
+              onRemoved={(id) => setItems((prev) => prev.filter((it) => it.id !== id))}
             />
           ))}
         </ul>
       ) : (
         <div className="placeholder">{t(locale, 'lenta.empty')}</div>
+      )}
+
+      {open !== null && view[open] && (
+        <LentaLightbox
+          items={view}
+          index={open}
+          locale={locale}
+          onClose={() => setOpen(null)}
+          onNavigate={(i) => setOpen(i)}
+        />
       )}
     </div>
   )

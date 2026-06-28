@@ -16,13 +16,14 @@ export function LentaCard({
   item,
   locale,
   onRemoved,
+  onOpenMedia,
 }: {
   item: LentaItem
   locale: Locale
   onRemoved?: (id: number) => void
+  onOpenMedia?: () => void
 }) {
   const { isAdmin, mode } = useAdminMode()
-  const [playing, setPlaying] = useState(false)
   const [broken, setBroken] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(item.likeCount)
@@ -145,48 +146,44 @@ export function LentaCard({
     <li className="lenta-card">
       <div className="lenta-media">
         {item.kind === 'video' ? (
-          playing ? (
-            <video
-              className="lenta-video"
-              src={item.mediaUrl}
-              poster={item.posterUrl ?? undefined}
-              controls
-              autoPlay
-              playsInline
-            />
-          ) : (
-            <button
-              type="button"
-              className="lenta-videobtn"
-              onClick={() => setPlaying(true)}
-              aria-label={t(locale, 'lenta.playVideo')}
-            >
-              {item.posterUrl && !broken ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.posterUrl}
-                  alt={item.caption || item.authorName || t(locale, 'lenta.video')}
-                  loading="lazy"
-                  onError={() => setBroken(true)}
-                />
-              ) : (
-                <span className="lenta-fallback" aria-hidden="true">
-                  🎬
-                </span>
-              )}
-              <span className="lenta-play" aria-hidden="true">
-                ▶
+          <button
+            type="button"
+            className="lenta-videobtn"
+            onClick={() => onOpenMedia?.()}
+            aria-label={t(locale, 'lenta.playVideo')}
+          >
+            {item.posterUrl && !broken ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.posterUrl}
+                alt={item.caption || item.authorName || t(locale, 'lenta.video')}
+                loading="lazy"
+                onError={() => setBroken(true)}
+              />
+            ) : (
+              <span className="lenta-fallback" aria-hidden="true">
+                🎬
               </span>
-            </button>
-          )
+            )}
+            <span className="lenta-play" aria-hidden="true">
+              ▶
+            </span>
+          </button>
         ) : !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.mediaUrl}
-            alt={item.caption || item.authorName || 'Фото'}
-            loading="lazy"
-            onError={() => setBroken(true)}
-          />
+          <button
+            type="button"
+            className="lenta-mediabtn"
+            onClick={() => onOpenMedia?.()}
+            aria-label={t(locale, 'lenta.openPhoto')}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.mediaUrl}
+              alt={item.caption || item.authorName || 'Фото'}
+              loading="lazy"
+              onError={() => setBroken(true)}
+            />
+          </button>
         ) : (
           <span className="lenta-fallback" aria-hidden="true">
             📷
