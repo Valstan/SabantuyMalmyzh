@@ -1919,6 +1919,19 @@ a.feature-card--cover:hover .feature-cover img {
   opacity: 0.6;
   cursor: default;
 }
+/* Вход редактора в подвале — как текстовая ссылка (рядом с «админка»/«политика») */
+.footer-admin-login {
+  font: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: underline;
+}
+.footer-admin-login:hover {
+  color: var(--c-gold);
+}
 
 /* Верхняя панель редактора */
 .edit-bar {
