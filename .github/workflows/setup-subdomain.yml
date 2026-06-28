@@ -1,16 +1,16 @@
-name: Setup subdomain (manual)
+name: Domain CORS (manual)
 
-# Подключение дополнительного домена сабантуй.вмалмыже.рф к работающему сайту Сабантуя
-# (бокс 1942c6fc87be.vps.myjino.ru, app на 127.0.0.1:3000). Делает то, что нельзя с
-# машины разработчика (G8: edge myjino режет клиентский IP) — ходит на бокс по SSH
-# из раннера, как apply-migration / deploy-prod.
+# Добавляет origin нового домена сабантуй.вмалмыже.рф в CORS бакета Object Storage,
+# чтобы загрузка фото/видео «Народной ленты» (presigned PUT браузер→S3) работала и с
+# нового домена. Аддитивно — существующие origin'ы (сабантуймалмыж.рф) остаются.
 #
-#   mode=inspect (по умолчанию) — ТОЛЬКО ЧТЕНИЕ: текущие vhost'ы, certbot, sudo-доступ,
-#                                 app:3000, как резолвится новый домен с бокса. DNS не нужен.
-#   mode=apply  — пишет HTTP server-block для нового имени → reload → certbot --nginx
-#                 (выпуск TLS + 443-блок + http→https). ТРЕБУЕТ: DNS нового домена уже
-#                 указывает на этот бокс (иначе certbot HTTP-01 не пройдёт) — workflow
-#                 это проверяет и аварийно выходит, если не так.
+# Почему через раннер: @aws-sdk на боксе вшит в бандл (отдельно не вызвать), а с машины
+# разработчика бокс недоступен (G8). Раннер ставит web-deps (там @aws-sdk) и пайпит
+# S3_*-креды из /etc/sabantuy/sabantuy.env по SSH в STDIN скрипта — значения в логи НЕ
+# попадают (на экран только origins).
+#
+#   mode=inspect (по умолчанию) — только показать текущий CORS.
+#   mode=apply — добавить NEW_ORIGIN и перечитать.
 #
 # Требует те же доступы, что deploy-prod.yml:
 #   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
@@ -19,19 +19,18 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'inspect (read-only) | apply (пишет nginx + certbot)'
+        description: 'inspect (показать CORS) | apply (добавить origin)'
         required: true
         default: 'inspect'
         type: choice
         options: [inspect, apply]
 
 concurrency:
-  group: prod-nginx
+  group: prod-s3-cors
   cancel-in-progress: false
 
 env:
-  NEW_PUNY: xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # сабантуй.вмалмыже.рф
-  OLD_PUNY: xn--80aaac1aqpgcf4bqn1j.xn--p1ai            # сабантуймалмыж.рф (эталон vhost)
+  NEW_ORIGIN: https://xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # https://сабантуй.вмалмыже.рф
 
 jobs:
   run:
@@ -39,6 +38,19 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Enable corepack + pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      - name: Install web deps (для @aws-sdk)
+        working-directory: web
+        run: pnpm install --frozen-lockfile
 
       - name: Setup SSH
         env:
@@ -67,82 +79,9 @@ jobs:
           CFG
           chmod 600 ~/.ssh/config
 
-      - name: Inspect (read-only)
+      - name: Update CORS
         run: |
-          set -e
-          ssh sabantuy 'bash -s' "$NEW_PUNY" "$OLD_PUNY" <<'REMOTE'
-          set -e
-          NEW="$1"; OLD="$2"
-          echo "== host =="; hostname; hostname -I 2>/dev/null | awk '{print "ip(s): "$0}'
-          echo "== app :3000 =="; curl -s -o /dev/null -w 'localhost:3000 → %{http_code}\n' --max-time 10 http://127.0.0.1:3000/ || echo "app не ответил"
-          echo "== nginx =="; nginx -v 2>&1 || echo "нет nginx в PATH"
-          echo "== где определён OLD-домен (nginx -T) =="
-          sudo nginx -T 2>/dev/null | grep -nE "configuration file|server_name|listen |proxy_pass|ssl_certificate|client_max_body_size|root " | grep -iE "$OLD|configuration file .*(conf|nginx)|listen |proxy_pass|ssl_certificate|server_name|client_max_body_size" | head -80
-          echo "== файлы конфига с OLD =="; sudo grep -rl "$OLD" /etc/nginx/ 2>/dev/null || echo "не найдено в /etc/nginx"
-          echo "== include-директивы http{} =="; sudo grep -rnE "include\s" /etc/nginx/nginx.conf 2>/dev/null || true
-          echo "== каталоги конфигов =="; for d in /etc/nginx/sites-available /etc/nginx/sites-enabled /etc/nginx/conf.d; do echo -n "$d: "; ls -1 "$d" 2>/dev/null | tr '\n' ' '; echo; done
-          echo "== live-сертификаты certbot =="; sudo certbot certificates 2>/dev/null | grep -E "Certificate Name:|Domains:|Expiry" || echo "нет/недоступно"
-          echo "== уже есть vhost для NEW? =="; sudo grep -rl "$NEW" /etc/nginx/ 2>/dev/null || echo "нет (ожидаемо)"
-          echo "== certbot =="; certbot --version 2>&1 || echo "нет certbot"
-          echo "== sudo scope =="
-          sudo -n true 2>/dev/null && echo "sudo -n: БЕЗ пароля (полный)" || echo "sudo -n: нужен пароль/ограничен"
-          echo "== DNS: OLD и NEW (резолв с публичных) =="
-          echo "OLD $OLD → $(getent hosts "$OLD" | awk '{print $1}' | head -1)"
-          echo "NEW $NEW → $(getent hosts "$NEW" | awk '{print $1}' | head -1 || echo '<не резолвится>')"
-          REMOTE
-
-      - name: Apply (nginx vhost + certbot)
-        if: ${{ inputs.mode == 'apply' }}
-        run: |
-          set -e
-          echo "::notice::APPLY-режим — пишу nginx + выпускаю сертификат для $NEW_PUNY"
-          ssh sabantuy 'bash -s' "$NEW_PUNY" "$OLD_PUNY" <<'REMOTE'
-          set -e
-          NEW="$1"; OLD="$2"
-
-          # 0) гейт: новый домен должен резолвиться туда же, куда старый (этот бокс за NAT —
-          #    локальный IP внутренний, поэтому сверяем DNS NEW == DNS OLD, а не с hostname -I).
-          OLDIP=$(getent hosts "$OLD" | awk '{print $1}' | head -1)
-          NEWIP=$(getent hosts "$NEW" | awk '{print $1}' | head -1)
-          echo "DNS $OLD → ${OLDIP:-<пусто>} ; DNS $NEW → ${NEWIP:-<пусто>}"
-          if [ -z "$NEWIP" ] || [ "$NEWIP" != "$OLDIP" ]; then
-            echo "::error::DNS $NEW (${NEWIP:-<пусто>}) не совпадает с DNS работающего сайта $OLD ($OLDIP). Сначала пропишите A/CNAME на тот же бокс и дождитесь распространения."
-            exit 1
-          fi
-
-          # 1) HTTP server-block (минимальный, проксирует на app:3000). certbot --nginx
-          #    допишет 443-блок и http→https редирект сам.
-          CONF=/etc/nginx/sites-available/sabantuy-vmalmyzhe
-          sudo tee "$CONF" >/dev/null <<NGINX
-          server {
-              listen 80;
-              listen [::]:80;
-              server_name $NEW;
-
-              client_max_body_size 110m;
-
-              location / {
-                  proxy_pass http://127.0.0.1:3000;
-                  proxy_http_version 1.1;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_set_header Upgrade \$http_upgrade;
-                  proxy_set_header Connection "upgrade";
-              }
-          }
-          NGINX
-          sudo ln -sfn "$CONF" /etc/nginx/sites-enabled/sabantuy-vmalmyzhe
-          sudo nginx -t
-          sudo systemctl reload nginx
-
-          # 2) выпуск TLS + 443-блок + редирект (переиспользует существующий ACME-аккаунт)
-          sudo certbot --nginx -d "$NEW" --non-interactive --agree-tos --redirect --keep-until-expiring
-          sudo nginx -t
-          sudo systemctl reload nginx
-
-          # 3) проверка
-          echo "== итог =="
-          curl -s -o /dev/null -w "https://$NEW/ → %{http_code}\n" --max-time 15 "https://$NEW/" || echo "https не ответил (проверьте сертификат)"
-          REMOTE
+          set -e -o pipefail
+          # Креды S3 идут с бокса по SSH прямо в STDIN скрипта — в логах их нет.
+          ssh sabantuy 'grep -E "^S3_(ENDPOINT|REGION|BUCKET|ACCESS_KEY_ID|SECRET_ACCESS_KEY)=" /etc/sabantuy/sabantuy.env' \
+            | node web/scripts/update-s3-cors.mjs "${{ inputs.mode }}" "$NEW_ORIGIN"
