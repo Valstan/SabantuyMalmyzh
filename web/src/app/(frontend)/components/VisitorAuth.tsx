@@ -48,15 +48,26 @@ export function VisitorAuth({ locale }: { locale: Locale }) {
   if (!me || !me.configured) return null
 
   if (me.visitor) {
+    // Показываем ТОЛЬКО аватар (без имени) — чтобы посетитель не смущался, что его имя
+    // «светится» на сайте, и спокойнее выкладывал фото/видео. Аватар = видно, что вошёл.
     return (
       <span className="vk-auth vk-chip">
-        {me.visitor.avatarUrl && (
+        {me.visitor.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="vk-avatar" src={me.visitor.avatarUrl} alt="" width={24} height={24} loading="lazy" />
+          <img
+            className="vk-avatar"
+            src={me.visitor.avatarUrl}
+            alt={t(locale, 'vk.loggedIn')}
+            title={t(locale, 'vk.loggedIn')}
+            width={28}
+            height={28}
+            loading="lazy"
+          />
+        ) : (
+          <span className="vk-avatar vk-avatar--fallback" title={t(locale, 'vk.loggedIn')} aria-label={t(locale, 'vk.loggedIn')}>
+            ✓
+          </span>
         )}
-        <span className="vk-name" title={me.visitor.name}>
-          {me.visitor.name}
-        </span>
         <button type="button" className="vk-logout" onClick={logout} disabled={busy} aria-label={t(locale, 'vk.logout')}>
           {t(locale, 'vk.logout')}
         </button>
