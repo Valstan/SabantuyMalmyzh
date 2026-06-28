@@ -1,0 +1,148 @@
+name: Setup subdomain (manual)
+
+# Подключение дополнительного домена сабантуй.вмалмыже.рф к работающему сайту Сабантуя
+# (бокс 1942c6fc87be.vps.myjino.ru, app на 127.0.0.1:3000). Делает то, что нельзя с
+# машины разработчика (G8: edge myjino режет клиентский IP) — ходит на бокс по SSH
+# из раннера, как apply-migration / deploy-prod.
+#
+#   mode=inspect (по умолчанию) — ТОЛЬКО ЧТЕНИЕ: текущие vhost'ы, certbot, sudo-доступ,
+#                                 app:3000, как резолвится новый домен с бокса. DNS не нужен.
+#   mode=apply  — пишет HTTP server-block для нового имени → reload → certbot --nginx
+#                 (выпуск TLS + 443-блок + http→https). ТРЕБУЕТ: DNS нового домена уже
+#                 указывает на этот бокс (иначе certbot HTTP-01 не пройдёт) — workflow
+#                 это проверяет и аварийно выходит, если не так.
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'inspect (read-only) | apply (пишет nginx + certbot)'
+        required: true
+        default: 'inspect'
+        type: choice
+        options: [inspect, apply]
+
+concurrency:
+  group: prod-nginx
+  cancel-in-progress: false
+
+env:
+  NEW_PUNY: xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # сабантуй.вмалмыже.рф
+  OLD_PUNY: xn--80aaac1aqpgcf4bqn1j.xn--p1ai            # сабантуймалмыж.рф (эталон vhost)
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Inspect (read-only)
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' "$NEW_PUNY" "$OLD_PUNY" <<'REMOTE'
+          set -e
+          NEW="$1"; OLD="$2"
+          echo "== host =="; hostname; hostname -I 2>/dev/null | awk '{print "ip(s): "$0}'
+          echo "== app :3000 =="; curl -s -o /dev/null -w 'localhost:3000 → %{http_code}\n' --max-time 10 http://127.0.0.1:3000/ || echo "app не ответил"
+          echo "== nginx =="; nginx -v 2>&1 || echo "нет nginx в PATH"
+          echo "== sites-enabled =="; ls -1 /etc/nginx/sites-enabled/ 2>/dev/null || echo "нет sites-enabled"
+          echo "== vhost с OLD-доменом =="
+          OLDFILE=$(grep -rl "$OLD" /etc/nginx/sites-available/ /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null | head -1 || true)
+          echo "файл эталона: ${OLDFILE:-не найден}"
+          if [ -n "$OLDFILE" ]; then echo "----- $OLDFILE -----"; sudo -n cat "$OLDFILE" 2>/dev/null || cat "$OLDFILE" 2>/dev/null || echo "(нет прав читать без sudo)"; fi
+          echo "== уже есть vhost для NEW? =="; grep -rl "$NEW" /etc/nginx/ 2>/dev/null || echo "нет (ожидаемо)"
+          echo "== certbot =="; certbot --version 2>&1 || echo "нет certbot"
+          echo "== sudo scope =="
+          sudo -n true 2>/dev/null && echo "sudo -n: БЕЗ пароля (полный)" || echo "sudo -n: нужен пароль/ограничен"
+          for c in "nginx -t" "systemctl reload nginx" "certbot --version" "tee /etc/nginx/sites-available/_probe"; do
+            sudo -n $c >/dev/null 2>&1 && echo "  sudo OK: $c" || echo "  sudo NET: $c"
+          done
+          sudo -n rm -f /etc/nginx/sites-available/_probe 2>/dev/null || true
+          echo "== DNS NEW с бокса =="; getent hosts "$NEW" || echo "$NEW пока не резолвится отсюда"
+          REMOTE
+
+      - name: Apply (nginx vhost + certbot)
+        if: ${{ inputs.mode == 'apply' }}
+        run: |
+          set -e
+          echo "::notice::APPLY-режим — пишу nginx + выпускаю сертификат для $NEW_PUNY"
+          ssh sabantuy 'bash -s' "$NEW_PUNY" "$OLD_PUNY" <<'REMOTE'
+          set -e
+          NEW="$1"; OLD="$2"
+
+          # 0) гейт: новый домен должен резолвиться в IP этого бокса (иначе certbot не пройдёт)
+          MYIP=$(curl -s --max-time 10 https://api.ipify.org || hostname -I | awk '{print $1}')
+          DNSIP=$(getent hosts "$NEW" | awk '{print $1}' | head -1)
+          echo "IP бокса: $MYIP ; DNS $NEW → ${DNSIP:-<пусто>}"
+          if [ -z "$DNSIP" ] || [ "$DNSIP" != "$MYIP" ]; then
+            echo "::error::DNS $NEW не указывает на этот бокс ($MYIP). Сначала пропишите A-запись/CNAME и дождитесь распространения."
+            exit 1
+          fi
+
+          # 1) HTTP server-block (минимальный, проксирует на app:3000). certbot --nginx
+          #    допишет 443-блок и http→https редирект сам.
+          CONF=/etc/nginx/sites-available/sabantuy-vmalmyzhe
+          sudo tee "$CONF" >/dev/null <<NGINX
+          server {
+              listen 80;
+              listen [::]:80;
+              server_name $NEW;
+
+              client_max_body_size 110m;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection "upgrade";
+              }
+          }
+          NGINX
+          sudo ln -sfn "$CONF" /etc/nginx/sites-enabled/sabantuy-vmalmyzhe
+          sudo nginx -t
+          sudo systemctl reload nginx
+
+          # 2) выпуск TLS + 443-блок + редирект (переиспользует существующий ACME-аккаунт)
+          sudo certbot --nginx -d "$NEW" --non-interactive --agree-tos --redirect --keep-until-expiring
+          sudo nginx -t
+          sudo systemctl reload nginx
+
+          # 3) проверка
+          echo "== итог =="
+          curl -s -o /dev/null -w "https://$NEW/ → %{http_code}\n" --max-time 15 "https://$NEW/" || echo "https не ответил (проверьте сертификат)"
+          REMOTE
