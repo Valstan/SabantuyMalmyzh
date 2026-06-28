@@ -72,7 +72,7 @@ export async function EfirView({ locale }: { locale: Locale }) {
 }
 
 export const efirMeta = (locale: Locale): Metadata => ({
-  title: `${t(locale, 'efir.title')} — Сабантуй Малмыж`,
+  title: `${t(locale, 'efir.title')} — Сабантуй в Малмыже`,
   description: t(locale, 'efir.lead'),
   alternates: {
     canonical: locale === 'tt' ? '/tt/efir' : '/efir',

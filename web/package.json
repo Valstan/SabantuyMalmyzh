@@ -1,7 +1,7 @@
 {
   "name": "sabantuy-web",
   "version": "0.1.0",
-  "description": "Сабантуй Малмыж — сайт фестиваля (Next.js + Payload CMS + PostgreSQL)",
+  "description": "Сабантуй в Малмыже — сайт фестиваля (Next.js + Payload CMS + PostgreSQL)",
   "license": "UNLICENSED",
   "private": true,
   "type": "module",

@@ -159,7 +159,7 @@ export function QuizGame({
   const rank = useMemo(() => getQuizRank(correctCount, total), [correctCount, total])
 
   async function share() {
-    const text = `${rank.title[locale]} — ${correctCount}/${total}. ${t(locale, 'game.title')} «Сабантуй Малмыж»`
+    const text = `${rank.title[locale]} — ${correctCount}/${total}. ${t(locale, 'game.title')} «Сабантуй в Малмыже»`
     const url = typeof window !== 'undefined' ? window.location.href : ''
     try {
       if (navigator.share) {

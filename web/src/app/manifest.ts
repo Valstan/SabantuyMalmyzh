@@ -11,7 +11,7 @@ import type { MetadataRoute } from 'next'
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Сабантуй Малмыж',
+    name: 'Сабантуй в Малмыже',
     short_name: 'Сабантуй',
     description:
       'Народный праздник Малмыжа — программа, карта, галерея и традиции Сабантуя. Программа и карта доступны без сети.',

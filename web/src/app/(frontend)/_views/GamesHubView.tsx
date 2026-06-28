@@ -52,7 +52,7 @@ export function GamesHubView({ locale }: { locale: Locale }) {
 }
 
 export const gamesHubMeta = (locale: Locale): Metadata => ({
-  title: `${t(locale, 'games.title')} — Сабантуй Малмыж`,
+  title: `${t(locale, 'games.title')} — Сабантуй в Малмыже`,
   description: t(locale, 'games.lead'),
   alternates: {
     canonical: locale === 'tt' ? '/tt/igra' : '/igra',

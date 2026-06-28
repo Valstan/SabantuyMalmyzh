@@ -42,7 +42,7 @@ const overlay = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="63
   </g>
   <g filter="url(#sh)" text-anchor="middle">
     <text x="600" y="290" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-style="italic" fill="#f4c54a">Народный праздник Малмыжа</text>
-    <text x="600" y="392" font-family="Georgia, 'Times New Roman', serif" font-size="98" font-weight="bold" fill="#fff7e6">Сабантуй Малмыж</text>
+    <text x="600" y="392" font-family="Georgia, 'Times New Roman', serif" font-size="98" font-weight="bold" fill="#fff7e6">Сабантуй в Малмыже</text>
     <text x="600" y="470" font-family="Arial, sans-serif" font-size="34" fill="#fff7e6">Праздник труда, силы и дружбы народов</text>
   </g>
 </svg>`
