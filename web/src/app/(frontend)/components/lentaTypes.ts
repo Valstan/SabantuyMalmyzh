@@ -11,6 +11,7 @@ export type LentaItem = {
   phase: 'preparation' | 'festival'
   likeCount: number
   commentCount: number
+  viewCount: number
   width: number | null
   height: number | null
 }

@@ -354,6 +354,37 @@ export async function editComment(id: number, body: string): Promise<string | nu
   return typeof j.body === 'string' ? j.body : null
 }
 
+// --- Просмотры (засчитываются при открытии медиа) ---
+// Один просмотр на браузер: помним в localStorage (ugc-viewed:<id>), сервер дополнительно
+// дедупит по токену/IP. Возвращает true, если сервер засчитал просмотр сейчас (для
+// оптимистичного счётчика); false — уже было/недоступно.
+export function hasViewed(id: number): boolean {
+  try {
+    return localStorage.getItem(`ugc-viewed:${id}`) === '1'
+  } catch {
+    return false
+  }
+}
+
+export async function viewSubmission(id: number): Promise<boolean> {
+  if (typeof window === 'undefined' || hasViewed(id)) return false
+  try {
+    localStorage.setItem(`ugc-viewed:${id}`, '1')
+  } catch {
+    /* приватный режим — всё равно пингуем (сервер дедупит по токену/IP) */
+  }
+  try {
+    const res = await fetch('/api/submission-views', {
+      method: 'POST',
+      headers: ugcHeaders(), // + X-UGC-Owner → дедуп «один просмотр на браузер»
+      body: JSON.stringify({ submission: id }),
+    })
+    return res.ok // 409 (уже считали) → false, это нормально
+  } catch {
+    return false
+  }
+}
+
 /** Отменить свой лайк. true — лайк был и удалён (или его уже не было). */
 export async function unlikeSubmission(id: number): Promise<boolean> {
   const res = await fetch('/api/ugc/unlike', {

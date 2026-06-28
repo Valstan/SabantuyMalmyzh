@@ -188,6 +188,18 @@ export const Submissions: CollectionConfig<'submissions'> = {
       admin: { position: 'sidebar', readOnly: true },
     },
     {
+      name: 'viewCount',
+      type: 'number',
+      label: 'Просмотров',
+      defaultValue: 0,
+      // Публично читаемо (лента показывает счётчик), пишет только сервер (recountViews).
+      access: {
+        create: adminOrEditorField,
+        update: adminOrEditorField,
+      },
+      admin: { position: 'sidebar', readOnly: true },
+    },
+    {
       name: 'reportCount',
       type: 'number',
       label: 'Жалоб',

@@ -3,13 +3,14 @@
 import { useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { viewSubmission } from '../../../lib/ugcClient'
 import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaUpload } from './LentaUpload'
 import { OwnedProvider } from './OwnedContext'
 import type { LentaItem } from './lentaTypes'
 
-type Sort = 'new' | 'top'
+type Sort = 'new' | 'likes' | 'views'
 type PhaseFilter = 'all' | 'preparation' | 'festival'
 
 // Клиентский контейнер ленты (PR4 + PR5): держит снимок публикаций (initialItems из
@@ -26,13 +27,15 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
   const view = useMemo(() => {
     // items в порядке «Новое» (сервер отдал по -createdAt; новые загрузки prepend'ятся).
     const filtered = phase === 'all' ? items : items.filter((i) => i.phase === phase)
-    if (sort === 'top') return [...filtered].sort((a, b) => b.likeCount - a.likeCount)
+    if (sort === 'likes') return [...filtered].sort((a, b) => b.likeCount - a.likeCount)
+    if (sort === 'views') return [...filtered].sort((a, b) => b.viewCount - a.viewCount)
     return filtered
   }, [items, sort, phase])
 
   const sorts: { key: Sort; label: string }[] = [
     { key: 'new', label: t(locale, 'lenta.sort.new') },
-    { key: 'top', label: t(locale, 'lenta.sort.top') },
+    { key: 'likes', label: t(locale, 'lenta.sort.likes') },
+    { key: 'views', label: t(locale, 'lenta.sort.views') },
   ]
   const phases: { key: PhaseFilter; label: string }[] = [
     { key: 'all', label: t(locale, 'lenta.phase.all') },
@@ -99,7 +102,12 @@ export function LentaFeed({ initialItems, locale }: { initialItems: LentaItem[];
           index={open}
           locale={locale}
           onClose={() => setOpen(null)}
-          onNavigate={(i) => setOpen(i)}
+          onNavigate={(i) => {
+            setOpen(i)
+            // Листание в лайтбоксе = открытие медиа → засчитываем просмотр (идемпотентно).
+            const it = view[i]
+            if (it) void viewSubmission(it.id)
+          }}
         />
       )}
     </div>
