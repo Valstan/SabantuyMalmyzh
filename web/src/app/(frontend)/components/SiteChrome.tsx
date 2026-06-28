@@ -75,7 +75,6 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
               <LanguageToggle locale={locale} />
               <VisitorAuth locale={locale} />
               <HeaderEditor locale={locale} />
-              <LoginControl />
             </span>
           </div>
           {/* Ряд 2: меню-ссылки (переносятся аккуратно) */}
@@ -127,7 +126,9 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
         ·{' '}
         <Link href="/admin" prefetch={false}>
           {t(locale, 'footer.admin')}
-        </Link>
+        </Link>{' '}
+        ·{' '}
+        <LoginControl label={t(locale, 'footer.editorLogin')} className="footer-admin-login" />
         <FooterEditor locale={locale} />
         <LiveInternetCounter />
       </footer>

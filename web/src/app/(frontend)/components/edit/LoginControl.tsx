@@ -6,11 +6,15 @@ import { fetchMe, isAdminUser, loginUser } from '../../../../lib/me'
 import { useAdminMode } from './AdminMode'
 import { Modal } from './Modal'
 
-// Постоянная кнопка входа в шапке. Гость → «Войти» открывает модалку email+пароль
-// (POST /api/users/login), остаёмся на странице (без перехода в /admin); на успехе
-// включается режим «Редактирование» → на страницах появляются inline-контролы.
-// Залогиненный редактор → кнопка скрыта (выход — в верхней панели EditToolbar).
-export const LoginControl: React.FC = () => {
+// Кнопка входа редактора (в подвале — чтобы не путалась с VK-входом посетителей в
+// шапке). Гость → открывает модалку email+пароль (POST /api/users/login), остаёмся на
+// странице (без перехода в /admin); на успехе включается режим «Редактирование» → на
+// страницах появляются inline-контролы. Залогиненный редактор → кнопка скрыта (выход —
+// в верхней панели EditToolbar). label/className — для разного контекста размещения.
+export const LoginControl: React.FC<{ label?: string; className?: string }> = ({
+  label = 'Войти',
+  className = 'edit-login-btn',
+}) => {
   const { isAdmin, setIsAdmin, setMode } = useAdminMode()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
@@ -55,8 +59,8 @@ export const LoginControl: React.FC = () => {
 
   return (
     <>
-      <button type="button" className="edit-login-btn" onClick={() => setOpen(true)} title="Вход для редактора">
-        Войти
+      <button type="button" className={className} onClick={() => setOpen(true)} title="Вход для редактора">
+        {label}
       </button>
 
       <Modal
