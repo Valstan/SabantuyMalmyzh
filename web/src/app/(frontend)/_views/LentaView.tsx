@@ -63,7 +63,7 @@ function toMedia(m: MediaDoc): LentaMedia {
   }
 }
 
-function toItem(d: SubmissionDoc): LentaItem {
+function toItem(d: SubmissionDoc, ownerName: string | null = null): LentaItem {
   const kind = d.kind === 'video' ? 'video' : 'photo'
   // Обложка (media[0]) — из верхнеуровневых полей; затем доп. файлы массива media.
   const cover = toMedia(d)
@@ -76,7 +76,9 @@ function toItem(d: SubmissionDoc): LentaItem {
     mediaUrl: cover.mediaUrl,
     posterUrl: cover.posterUrl,
     media: [cover, ...extra],
-    authorName: d.authorName ?? null,
+    // Имя автора: ручное (если вписал), иначе имя VK-аккаунта владельца (вошёл через VK),
+    // иначе пусто. Так пост вошедшего посетителя подписан его именем, а не «Аноним».
+    authorName: (d.authorName?.trim() || ownerName) || null,
     caption: d.caption ?? null,
     phase: d.phase === 'festival' ? 'festival' : 'preparation',
     likeCount: Number(d.likeCount) || 0,
@@ -87,13 +89,13 @@ function toItem(d: SubmissionDoc): LentaItem {
   }
 }
 
-function toTop(d: SubmissionDoc): LentaTopItem {
+function toTop(d: SubmissionDoc, ownerName: string | null = null): LentaTopItem {
   return {
     id: d.id,
     kind: d.kind === 'video' ? 'video' : 'photo',
     mediaUrl: publicUrl(d.objectKey as string),
     posterUrl: d.posterKey ? publicUrl(d.posterKey) : null,
-    authorName: d.authorName ?? null,
+    authorName: (d.authorName?.trim() || ownerName) || null,
     likeCount: Number(d.likeCount) || 0,
     viewCount: Number(d.viewCount) || 0,
   }
@@ -148,6 +150,29 @@ async function buildAuthors(
     .slice(0, TOP_AUTHORS)
 }
 
+// Имена VK-аккаунтов по их id (PK строки visitors) — чтобы подписать пост именем
+// вошедшего автора, когда ручное имя не задано. Пустые имена в карту не кладём.
+async function fetchVisitorNames(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  rawIds: (number | null | undefined)[],
+): Promise<Map<number, string>> {
+  const ids = [...new Set(rawIds.filter((v): v is number => typeof v === 'number'))]
+  if (ids.length === 0) return new Map()
+  const res = await payload.find({
+    collection: 'visitors',
+    where: { id: { in: ids } },
+    depth: 0,
+    pagination: false,
+    overrideAccess: true,
+  })
+  const map = new Map<number, string>()
+  for (const v of res.docs) {
+    const name = (v.name as string | null)?.trim()
+    if (name) map.set(v.id as number, name)
+  }
+  return map
+}
+
 async function getData(): Promise<{ items: LentaItem[]; ratings: LentaRatings } | null> {
   try {
     return await withRetry(async () => {
@@ -162,18 +187,28 @@ async function getData(): Promise<{ items: LentaItem[]; ratings: LentaRatings } 
       })
       const docs = res.docs as SubmissionDoc[]
 
-      const items = docs.slice(0, FEED_LIMIT).map(toItem)
-
-      const topByLikes = [...docs]
+      const feedDocs = docs.slice(0, FEED_LIMIT)
+      const topLikeDocs = [...docs]
         .filter((d) => (Number(d.likeCount) || 0) > 0)
         .sort((a, b) => (Number(b.likeCount) || 0) - (Number(a.likeCount) || 0))
         .slice(0, TOP_N)
-        .map(toTop)
-      const topByViews = [...docs]
+      const topViewDocs = [...docs]
         .filter((d) => (Number(d.viewCount) || 0) > 0)
         .sort((a, b) => (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0))
         .slice(0, TOP_N)
-        .map(toTop)
+
+      // Имена VK-владельцев для ленты и топов — одним запросом.
+      const nameByVisitor = await fetchVisitorNames(payload, [
+        ...feedDocs.map((d) => d.ownerVisitor),
+        ...topLikeDocs.map((d) => d.ownerVisitor),
+        ...topViewDocs.map((d) => d.ownerVisitor),
+      ])
+      const ownerName = (d: SubmissionDoc): string | null =>
+        d.ownerVisitor != null ? nameByVisitor.get(d.ownerVisitor) ?? null : null
+
+      const items = feedDocs.map((d) => toItem(d, ownerName(d)))
+      const topByLikes = topLikeDocs.map((d) => toTop(d, ownerName(d)))
+      const topByViews = topViewDocs.map((d) => toTop(d, ownerName(d)))
       const authors = await buildAuthors(payload, docs)
 
       return { items, ratings: { authors, topByLikes, topByViews } }

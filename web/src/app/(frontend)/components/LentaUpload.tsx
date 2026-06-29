@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
@@ -40,7 +40,29 @@ export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded
   const [author, setAuthor] = useState('')
   const [consent, setConsent] = useState(false)
   const [cameraOpen, setCameraOpen] = useState(false)
+  const [vkName, setVkName] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Имя вошедшего через VK — чтобы по умолчанию подписать пост его именем (а не «Аноним»).
+  useEffect(() => {
+    let alive = true
+    fetch('/api/auth/vk/me', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d: { visitor?: { name?: string } | null }) => {
+        if (alive && d?.visitor?.name) setVkName(d.visitor.name)
+      })
+      .catch(() => {
+        /* не вошёл / сеть — поле автора останется ручным */
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // При открытии формы подставить имя из VK, если поле пустое (посетитель может стереть).
+  useEffect(() => {
+    if (open && vkName) setAuthor((a) => (a.trim() ? a : vkName))
+  }, [open, vkName])
 
   function reset() {
     setStatus('idle')

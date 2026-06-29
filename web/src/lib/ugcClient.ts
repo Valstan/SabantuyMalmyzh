@@ -243,6 +243,10 @@ export async function uploadPost(prepareds: Prepared[], opts: UploadOpts): Promi
   const subRes = await fetch('/api/submissions', {
     method: 'POST',
     headers: ugcHeaders(), // + X-UGC-Owner → сервер стампит ownerHash (владение)
+    // cookie VK-сессии (sabantuy-visitor) → сервер стампит ownerVisitor (привязка поста к
+    // аккаунту: бейдж «Ваше» с любого устройства, имя автора, рейтинг). same-origin —
+    // явно, чтобы не зависеть от дефолта браузера на групповой загрузке.
+    credentials: 'same-origin',
     body: JSON.stringify({
       ...descriptor(cover),
       phase: opts.phase,
