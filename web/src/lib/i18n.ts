@@ -324,9 +324,11 @@ const UI: Dict = {
   'lenta.playVideo': { ru: 'Смотреть видео', tt: 'Видеоны карау' },
   'lenta.openPhoto': { ru: 'Открыть фото', tt: 'Фотоны ачу' },
   // лайтбокс (полноэкранный просмотр, I16)
-  'lenta.lb.close': { ru: 'Закрыть', tt: 'Ябу' },
+  'lenta.lb.close': { ru: 'Закрыть галерею', tt: 'Галереяны ябу' },
   'lenta.lb.prev': { ru: 'Предыдущее', tt: 'Алдагысы' },
   'lenta.lb.next': { ru: 'Следующее', tt: 'Киләсе' },
+  'lenta.lb.fullscreen': { ru: 'На весь экран', tt: 'Тулы экранга' },
+  'lenta.lb.exitFullscreen': { ru: 'Свернуть', tt: 'Кечерәйтү' },
   // вход через VK (VisitorAuth в шапке)
   'vk.login': { ru: 'Войти через VK', tt: 'VK аша керү' },
   'vk.logout': { ru: 'Выйти', tt: 'Чыгу' },

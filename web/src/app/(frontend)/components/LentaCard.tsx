@@ -8,10 +8,10 @@ import {
   hasViewed,
   isMine,
   ugcHeaders,
-  unlikeSubmission,
   viewSubmission,
 } from '../../../lib/ugcClient'
 import { LentaComments } from './LentaComments'
+import { TulipLike } from './TulipLike'
 import { useOwned } from './OwnedContext'
 import { useAdminMode } from './edit/AdminMode'
 import type { LentaItem, LentaMedia } from './lentaTypes'
@@ -71,18 +71,20 @@ function MediaThumb({
 export function LentaCard({
   item,
   locale,
+  liked,
+  onToggleLike,
   onRemoved,
   onOpenMedia,
 }: {
   item: LentaItem
   locale: Locale
+  liked: boolean
+  onToggleLike: () => void
   onRemoved?: (id: number) => void
   onOpenMedia?: (mediaIndex: number) => void
 }) {
   const { isAdmin, mode } = useAdminMode()
   const owned = useOwned()
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(item.likeCount)
   const [viewCount, setViewCount] = useState(item.viewCount)
   const [viewed, setViewed] = useState(false)
   const [reported, setReported] = useState(false)
@@ -92,10 +94,10 @@ export function LentaCard({
   const [actErr, setActErr] = useState(false)
   const phaseLabel = t(locale, `lenta.phase.${item.phase}`)
 
-  // «Моё»/лайк/жалоба — из localStorage после гидрации (иначе SSR/CSR расходятся).
+  // «Моё»/жалоба — из localStorage после гидрации (иначе SSR/CSR расходятся). Лайк
+  // поднят в LentaFeed (общий с лайтбоксом) → сюда приходит пропсом.
   useEffect(() => {
     try {
-      if (localStorage.getItem(`ugc-liked:${item.id}`)) setLiked(true)
       if (localStorage.getItem(`ugc-reported:${item.id}`)) setReported(true)
     } catch {
       /* приватный режим — игнор */
@@ -121,59 +123,6 @@ export function LentaCard({
   const mine = mineLocal || owned.subs.has(item.id)
   // Удалять можно своё ИЛИ любое, если ты персонал в режиме «Редактирование».
   const canDelete = mine || (isAdmin && mode === 'manage')
-
-  async function like() {
-    if (liked) return
-    setLiked(true)
-    setLikeCount((c) => c + 1)
-    try {
-      localStorage.setItem(`ugc-liked:${item.id}`, '1')
-    } catch {
-      /* игнор */
-    }
-    try {
-      const res = await fetch('/api/submission-reactions', {
-        method: 'POST',
-        headers: ugcHeaders(), // + X-UGC-Owner → лайк привязан к браузеру (для отмены)
-        body: JSON.stringify({ submission: item.id }),
-      })
-      // 409 = уже лайкнули с этого IP → оставляем как есть. Иные ошибки — откат.
-      if (!res.ok && res.status !== 409) {
-        setLiked(false)
-        setLikeCount((c) => Math.max(0, c - 1))
-      }
-    } catch {
-      setLiked(false)
-      setLikeCount((c) => Math.max(0, c - 1))
-    }
-  }
-
-  async function unlike() {
-    if (!liked) return
-    setLiked(false)
-    setLikeCount((c) => Math.max(0, c - 1))
-    try {
-      localStorage.removeItem(`ugc-liked:${item.id}`)
-    } catch {
-      /* игнор */
-    }
-    const ok = await unlikeSubmission(item.id)
-    if (!ok) {
-      // откат: сервер не снял (напр. лайк ставился до входа/из другого браузера)
-      setLiked(true)
-      setLikeCount((c) => c + 1)
-      try {
-        localStorage.setItem(`ugc-liked:${item.id}`, '1')
-      } catch {
-        /* игнор */
-      }
-    }
-  }
-
-  function toggleLike() {
-    if (liked) void unlike()
-    else void like()
-  }
 
   async function del() {
     if (typeof window !== 'undefined' && !window.confirm(t(locale, 'lenta.confirmDelete'))) return
@@ -249,12 +198,12 @@ export function LentaCard({
         <div className="lenta-actions">
           <button
             type="button"
-            className={`lenta-act${liked ? ' is-on' : ''}`}
-            onClick={toggleLike}
+            className={`lenta-act lenta-act--like${liked ? ' is-on' : ''}`}
+            onClick={onToggleLike}
             aria-pressed={liked}
             aria-label={t(locale, liked ? 'lenta.unlike' : 'lenta.like')}
           >
-            {liked ? '❤' : '🤍'} {likeCount}
+            <TulipLike filled={liked} /> {item.likeCount}
           </button>
           <button
             type="button"
