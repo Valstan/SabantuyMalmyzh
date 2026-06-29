@@ -1129,7 +1129,7 @@ a.feature-card--cover:hover .feature-cover img {
 }
 .lightbox-count {
   position: absolute;
-  bottom: 1rem;
+  top: 1rem;
   left: 50%;
   transform: translateX(-50%);
   color: var(--c-cream);
@@ -1138,6 +1138,70 @@ a.feature-card--cover:hover .feature-cover img {
   background: rgba(0, 0, 0, 0.35);
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
+}
+
+/* Панель действий лайтбокса (под медиа): лайк-тюльпан · на весь экран · удалить. */
+.lightbox-actions {
+  position: absolute;
+  bottom: 1.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  z-index: 2;
+}
+.lightbox-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 247, 230, 0.4);
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.lightbox-act svg {
+  display: block;
+}
+.lightbox-act:hover {
+  background: rgba(232, 181, 58, 0.92);
+  color: #3a2400;
+}
+.lightbox-like.is-on {
+  border-color: #c8203f;
+  background: rgba(200, 32, 63, 0.22);
+}
+.lightbox-act--danger:hover {
+  background: #a3242f;
+  border-color: #a3242f;
+  color: #fff;
+}
+
+/* Разворот на весь экран: убираем поля/скругления, медиа занимает максимум, подпись прячем. */
+.lightbox.is-expanded {
+  padding: 0;
+}
+.lightbox.is-expanded .lightbox-fig {
+  max-width: 100vw;
+}
+.lightbox.is-expanded .lightbox-fig img,
+.lightbox.is-expanded .lightbox-video {
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+}
+.lightbox.is-expanded .lightbox-fig figcaption {
+  display: none;
 }
 
 /* ── Обратный отсчёт до праздника ──────────────────────────────────────────── */
@@ -2977,6 +3041,18 @@ a.feature-card--cover:hover .feature-cover img {
 .lenta-act.is-on {
   border-color: var(--c-gold);
   background: #fff7e6;
+}
+.lenta-act--like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.lenta-act--like svg {
+  display: block;
+}
+.lenta-act--like.is-on {
+  border-color: #c8203f;
+  background: #fff0f2;
 }
 .lenta-stat {
   font-size: 0.9rem;

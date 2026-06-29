@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { ugcHeaders, unlikeSubmission } from '../../../lib/ugcClient'
 import { LentaCard } from './LentaCard'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaRatings } from './LentaRatings'
@@ -11,8 +12,8 @@ import { PhotoBattle } from './PhotoBattle'
 import { OwnedProvider } from './OwnedContext'
 import type { BattlePhoto, LentaItem, LentaRatings as Ratings } from './lentaTypes'
 
-// Открытый в лайтбоксе пост + индекс активного медиа внутри его галереи.
-type OpenMedia = { item: LentaItem; mediaIndex: number }
+// Открытый в лайтбоксе пост (по id — всегда берём свежий из items) + индекс кадра.
+type OpenMedia = { id: number; mediaIndex: number }
 
 type Sort = 'new' | 'likes' | 'views'
 type PhaseFilter = 'all' | 'preparation' | 'festival'
@@ -37,6 +38,63 @@ export function LentaFeed({
   const [phase, setPhase] = useState<PhaseFilter>('all')
   // Открытый в лайтбоксе пост и активный кадр его галереи (null — закрыт).
   const [open, setOpen] = useState<OpenMedia | null>(null)
+  // Лайки (id постов) — состояние поднято сюда, чтобы карточка и лайтбокс показывали
+  // ОДИН лайк синхронно. Гидрируем из localStorage после монтирования (анти-SSR-расхож.).
+  const [likedIds, setLikedIds] = useState<Set<number>>(new Set())
+  useEffect(() => {
+    const s = new Set<number>()
+    try {
+      for (const it of initialItems) if (localStorage.getItem(`ugc-liked:${it.id}`)) s.add(it.id)
+    } catch {
+      /* приватный режим — игнор */
+    }
+    setLikedIds(s)
+  }, [initialItems])
+
+  // Лайк/отмена (оптимистично): множество likedIds + счётчик в items; дедуп localStorage
+  // + сервер (409 = уже лайкнули с этого IP → оставляем). Любая иная ошибка — откат.
+  async function toggleLike(id: number) {
+    const wasLiked = likedIds.has(id)
+    const applied = (like: boolean) => {
+      setLikedIds((prev) => {
+        const nset = new Set(prev)
+        if (like) nset.add(id)
+        else nset.delete(id)
+        return nset
+      })
+      setItems((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, likeCount: Math.max(0, it.likeCount + (like ? 1 : -1)) } : it)),
+      )
+      try {
+        if (like) localStorage.setItem(`ugc-liked:${id}`, '1')
+        else localStorage.removeItem(`ugc-liked:${id}`)
+      } catch {
+        /* игнор */
+      }
+    }
+    applied(!wasLiked)
+    try {
+      if (wasLiked) {
+        const ok = await unlikeSubmission(id)
+        if (!ok) applied(true) // сервер не снял (лайк из другого браузера) — вернуть
+      } else {
+        const res = await fetch('/api/submission-reactions', {
+          method: 'POST',
+          headers: ugcHeaders(), // + X-UGC-Owner → лайк привязан к браузеру (для отмены)
+          body: JSON.stringify({ submission: id }),
+        })
+        if (!res.ok && res.status !== 409) applied(false) // откат
+      }
+    } catch {
+      applied(wasLiked) // вернуть как было
+    }
+  }
+
+  // Убрать пост из ленты (после удаления своего/персоналом) + закрыть лайтбокс, если он на нём.
+  function removeItem(id: number) {
+    setItems((prev) => prev.filter((it) => it.id !== id))
+    setOpen((o) => (o && o.id === id ? null : o))
+  }
   // Игра «Фотобитва» (PR3): открыта ли, и пул фото для пар. Пул — КАЖДЫЙ кадр КАЖДОГО
   // поста (мульти-файловые посты дают все свои фото, а не только обложку).
   const [battleOpen, setBattleOpen] = useState(false)
@@ -73,6 +131,9 @@ export function LentaFeed({
     { key: 'feed', label: t(locale, 'lenta.tab.feed') },
     { key: 'ratings', label: t(locale, 'lenta.tab.ratings') },
   ]
+
+  // Открытый пост берём СВЕЖИМ из items по id (likeCount/media актуальны после лайка/удаления).
+  const openItem = open ? items.find((it) => it.id === open.id) ?? null : null
 
   return (
     <OwnedProvider>
@@ -137,8 +198,10 @@ export function LentaFeed({
               key={item.id}
               item={item}
               locale={locale}
-              onOpenMedia={(mediaIndex) => setOpen({ item, mediaIndex })}
-              onRemoved={(id) => setItems((prev) => prev.filter((it) => it.id !== id))}
+              liked={likedIds.has(item.id)}
+              onToggleLike={() => toggleLike(item.id)}
+              onOpenMedia={(mediaIndex) => setOpen({ id: item.id, mediaIndex })}
+              onRemoved={removeItem}
             />
           ))}
         </ul>
@@ -146,14 +209,19 @@ export function LentaFeed({
         <div className="placeholder">{t(locale, 'lenta.empty')}</div>
       )}
 
-      {open && (
+      {openItem && open && (
         <LentaLightbox
-          media={open.item.media}
-          index={open.mediaIndex}
-          caption={open.item.caption}
-          authorName={open.item.authorName}
+          submissionId={openItem.id}
+          media={openItem.media}
+          index={Math.min(open.mediaIndex, openItem.media.length - 1)}
+          caption={openItem.caption}
+          authorName={openItem.authorName}
+          liked={likedIds.has(openItem.id)}
+          likeCount={openItem.likeCount}
           locale={locale}
           onClose={() => setOpen(null)}
+          onToggleLike={() => toggleLike(openItem.id)}
+          onRemoved={removeItem}
           onNavigate={(i) => setOpen((o) => (o ? { ...o, mediaIndex: i } : o))}
         />
       )}

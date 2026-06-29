@@ -1,32 +1,52 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { deleteSubmission, isMine } from '../../../lib/ugcClient'
+import { useAdminMode } from './edit/AdminMode'
+import { useOwned } from './OwnedContext'
+import { TulipLike } from './TulipLike'
 import type { LentaMedia } from './lentaTypes'
 
 /**
- * Полноэкранный лайтбокс «Народной ленты» (I16). Контролируется из LentaFeed:
- * получает медиа ОДНОГО поста (`media`, пост-в-стиле-ВК) и активный `index`, сам не
- * хранит состояние перелистывания. Навигация: кнопки ‹/›, клавиши ←/→, Esc, клик по
- * фону — закрыть; на телефоне — свайп влево/вправо (фото). Видео играет прямо в оверлее
- * (нативные controls). Образец — gallery/[slug]/AlbumGallery.tsx + touch + video.
+ * Полноэкранный лайтбокс «Народной ленты». Контролируется из LentaFeed: получает медиа
+ * ОДНОГО поста (`media`, пост-в-стиле-ВК) и активный `index`, состояние перелистывания
+ * не хранит. Навигация: ‹/›, ←/→, Esc, клик по фону — закрыть; на телефоне свайп (фото).
+ * Видео играет в оверлее (нативные controls).
+ *
+ * Панель действий под медиа (заявка владельца): лайк (тюльпан — фирменный цветок),
+ * удалить (если своё/персонал), развернуть на весь экран. Лайк связан с лентой через
+ * LentaFeed (одно состояние на пост). Кнопка «На весь экран» — Fullscreen API (где
+ * поддержан) + CSS-разворот (работает везде, в т.ч. iOS, где div-fullscreen недоступен).
  */
 export function LentaLightbox({
+  submissionId,
   media,
   index,
   caption,
   authorName,
+  liked = false,
+  likeCount = 0,
   locale,
   onClose,
+  onToggleLike,
+  onRemoved,
   onNavigate,
 }: {
+  // submissionId/лайк/удаление опциональны: лента передаёт их (полная карточка), а
+  // одиночный просмотр (статистика Фотобитвы) — нет (тогда панель = только «на весь экран»).
+  submissionId?: number
   media: LentaMedia[]
   index: number
   caption: string | null
   authorName: string | null
+  liked?: boolean
+  likeCount?: number
   locale: Locale
   onClose: () => void
+  onToggleLike?: () => void
+  onRemoved?: (id: number) => void
   onNavigate: (i: number) => void
 }) {
   const n = media.length
@@ -39,13 +59,49 @@ export function LentaLightbox({
   const touchRef = useRef<{ x: number; y: number } | null>(null)
   const swipedRef = useRef(false)
 
+  // Развёрнут ли на весь экран (CSS-разворот; + Fullscreen API где поддержан).
+  const [expanded, setExpanded] = useState(false)
+
+  // Право удалить: своё (по токену браузера ИЛИ VK-аккаунту) или персонал в «Управлении».
+  const owned = useOwned()
+  const { isAdmin, mode } = useAdminMode()
+  const [mineLocal, setMineLocal] = useState(false)
+  useEffect(() => {
+    setMineLocal(submissionId != null && isMine('submission', submissionId))
+  }, [submissionId])
+  const mine = submissionId != null && (mineLocal || owned.subs.has(submissionId))
+  const canDelete = submissionId != null && (mine || (isAdmin && mode === 'manage'))
+
   const go = useCallback((i: number) => onNavigate(((i % n) + n) % n), [n, onNavigate])
+
+  const collapse = useCallback(() => {
+    setExpanded(false)
+    try {
+      if (document.fullscreenElement) void document.exitFullscreen?.()
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    const el = dialogRef.current
+    const willExpand = !expanded
+    setExpanded(willExpand)
+    try {
+      if (willExpand) void el?.requestFullscreen?.()
+      else if (document.fullscreenElement) void document.exitFullscreen?.()
+    } catch {
+      /* iOS: div-fullscreen недоступен — CSS-разворот всё равно применился */
+    }
+  }, [expanded])
 
   // Клавиатура (Esc / ←/→) + focus-trap по Tab + блокировка прокрутки фона.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowRight') go(index + 1)
+      if (e.key === 'Escape') {
+        if (expanded) collapse()
+        else onClose()
+      } else if (e.key === 'ArrowRight') go(index + 1)
       else if (e.key === 'ArrowLeft') go(index - 1)
       else if (e.key === 'Tab') {
         const focusables = dialogRef.current?.querySelectorAll<HTMLElement>('button')
@@ -68,10 +124,25 @@ export function LentaLightbox({
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
     }
-  }, [index, go, onClose])
+  }, [index, go, onClose, expanded, collapse])
 
-  // Фокус: при открытии — на «Закрыть»; при закрытии — обратно на элемент-триггер
-  // (медиа-кнопка карточки, активная в момент монтирования). Только на открытии/закрытии.
+  // Синхронизация CSS-разворота с реальным выходом из Fullscreen (Esc/жест браузера).
+  useEffect(() => {
+    const onFs = () => {
+      if (!document.fullscreenElement) setExpanded(false)
+    }
+    document.addEventListener('fullscreenchange', onFs)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFs)
+      try {
+        if (document.fullscreenElement) void document.exitFullscreen?.()
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [])
+
+  // Фокус: при открытии — на «Закрыть»; при закрытии — обратно на элемент-триггер.
   useEffect(() => {
     const trigger = document.activeElement as HTMLElement | null
     closeBtnRef.current?.focus()
@@ -113,11 +184,18 @@ export function LentaLightbox({
     onClose()
   }
 
+  async function del() {
+    if (submissionId == null || !onRemoved) return
+    if (typeof window !== 'undefined' && !window.confirm(t(locale, 'lenta.confirmDelete'))) return
+    const ok = await deleteSubmission(submissionId)
+    if (ok) onRemoved(submissionId) // LentaFeed уберёт из ленты и закроет лайтбокс
+  }
+
   if (!current) return null
 
   return (
     <div
-      className="lightbox"
+      className={`lightbox${expanded ? ' is-expanded' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label={t(locale, 'lenta.title')}
@@ -193,6 +271,49 @@ export function LentaLightbox({
           {index + 1} / {n}
         </span>
       )}
+
+      {/* Панель действий под медиа: лайк (тюльпан) · на весь экран · удалить. */}
+      <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
+        {onToggleLike && (
+          <button
+            type="button"
+            className={`lightbox-act lightbox-like${liked ? ' is-on' : ''}`}
+            onClick={onToggleLike}
+            aria-pressed={liked}
+            aria-label={t(locale, liked ? 'lenta.unlike' : 'lenta.like')}
+          >
+            <TulipLike filled={liked} size={24} />
+            <span>{likeCount}</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className={`lightbox-act${expanded ? ' is-on' : ''}`}
+          onClick={toggleFullscreen}
+          aria-pressed={expanded}
+          aria-label={t(locale, expanded ? 'lenta.lb.exitFullscreen' : 'lenta.lb.fullscreen')}
+        >
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {expanded ? (
+              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+            ) : (
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            )}
+          </svg>
+        </button>
+
+        {canDelete && onRemoved && (
+          <button
+            type="button"
+            className="lightbox-act lightbox-act--danger"
+            onClick={del}
+            aria-label={t(locale, 'lenta.delete')}
+          >
+            🗑
+          </button>
+        )}
+      </div>
     </div>
   )
 }
