@@ -425,7 +425,15 @@ export async function HomeView({ locale }: { locale: Locale }) {
           <SectionHeading eyebrow={t(locale, 'nav.schedule')} title={t(locale, 'home.schedule.eyebrow')} />
           {items.length > 0 && <FestivalNotice locale={locale} />}
           {items.length > 0 ? (
-            <ScheduleList items={items} locale={locale} />
+            <>
+              <ScheduleList items={items} locale={locale} />
+              {/* Атрибуция свободных фото-миниатюр — одной ссылкой, не под карточками */}
+              <p className="schedule-credits">
+                <Link href={localeHref(locale, '/istochniki-foto')}>
+                  {t(locale, 'schedule.photoCredits')}
+                </Link>
+              </p>
+            </>
           ) : (
             <div className="placeholder">{t(locale, 'home.schedule.emptyAdmin')}</div>
           )}
