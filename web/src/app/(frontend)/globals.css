@@ -620,3 +620,77 @@ a {
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+/* ── Новости праздника ─────────────────────────────────────────────────── */
+.news-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  max-width: 720px;
+}
+
+.news-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.news-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.news-card-img {
+  background: var(--brand-green);
+  overflow: hidden;
+  max-height: 420px;
+}
+
+.news-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+
+.news-card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.news-card-body h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.25rem;
+  color: var(--brand-green-dark);
+}
+
+.news-card-excerpt {
+  margin: 0.5rem 0 0.75rem;
+  color: var(--muted);
+  white-space: pre-line;
+}
+
+.news-card-more {
+  color: var(--brand-red, #c8203f);
+  font-weight: 600;
+}
+
+.news-post-cover {
+  margin: 1.5rem 0;
+}
+
+.news-post-cover img {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: block;
+}

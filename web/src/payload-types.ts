@@ -70,6 +70,7 @@ export interface Config {
     pages: Page;
     events: Event;
     gallery: Gallery;
+    news: News;
     media: Media;
     registrations: Registration;
     'poll-votes': PollVote;
@@ -96,6 +97,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     gallery: GallerySelect<false> | GallerySelect<true>;
+    news: NewsSelect<false> | NewsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
@@ -312,6 +314,39 @@ export interface Gallery {
         id?: string | null;
       }[]
     | null;
+  publishedAt?: string | null;
+  /**
+   * Заполняется автоматически из заголовка. Можно переопределить вручную.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news".
+ */
+export interface News {
+  id: number;
+  title: string;
+  excerpt?: string | null;
+  cover?: (number | null) | Media;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   publishedAt?: string | null;
   /**
    * Заполняется автоматически из заголовка. Можно переопределить вручную.
@@ -726,6 +761,10 @@ export interface PayloadLockedDocument {
         value: number | Gallery;
       } | null)
     | ({
+        relationTo: 'news';
+        value: number | News;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -891,6 +930,21 @@ export interface GallerySelect<T extends boolean = true> {
         title?: T;
         id?: T;
       };
+  publishedAt?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news_select".
+ */
+export interface NewsSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  cover?: T;
+  body?: T;
   publishedAt?: T;
   slug?: T;
   updatedAt?: T;

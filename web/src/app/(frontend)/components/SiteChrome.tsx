@@ -26,6 +26,7 @@ export type ChromeContent = { ru: ChromeLocaleData; tt: ChromeLocaleData } | nul
 // адреса — в коде; редактор меняет только подписи (по ключу).
 const NAV_LINKS: { key: string; path: string; i18nKey: string }[] = [
   { key: 'schedule', path: '/', i18nKey: 'nav.schedule' },
+  { key: 'news', path: '/novosti', i18nKey: 'nav.news' },
   { key: 'gallery', path: '/gallery', i18nKey: 'nav.gallery' },
   { key: 'map', path: '/map', i18nKey: 'nav.map' },
   { key: 'game', path: '/igra', i18nKey: 'nav.game' },

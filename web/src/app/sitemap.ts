@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 
 const baseUrl = (process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '')
 
-type Coll = 'events' | 'pages' | 'gallery'
+type Coll = 'events' | 'pages' | 'gallery' | 'news'
 type Entry = MetadataRoute.Sitemap[number]
 type Doc = { slug?: string | null; updatedAt?: string | null }
 
@@ -40,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entryFor('/', { changeFrequency: 'daily', priority: 1 }),
     entryFor('/map', { changeFrequency: 'monthly', priority: 0.5 }),
     entryFor('/gallery', { changeFrequency: 'weekly', priority: 0.6 }),
+    entryFor('/novosti', { changeFrequency: 'daily', priority: 0.7 }),
     entryFor('/lenta', { changeFrequency: 'daily', priority: 0.6 }),
     entryFor('/lenta/fotobitva', { changeFrequency: 'weekly', priority: 0.4 }),
     entryFor('/efir', { changeFrequency: 'daily', priority: 0.5 }),
@@ -94,6 +95,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? entryFor(`/${encodeURIComponent(p.slug)}`, {
           lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
           changeFrequency: 'monthly',
+        })
+      : null,
+  )
+  await collect('news', (n) =>
+    n.slug
+      ? entryFor(`/novosti/${encodeURIComponent(n.slug)}`, {
+          lastModified: n.updatedAt ? new Date(n.updatedAt) : undefined,
+          changeFrequency: 'weekly',
         })
       : null,
   )

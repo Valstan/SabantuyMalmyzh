@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 import { Pages } from './collections/Pages'
 import { Events } from './collections/Events'
 import { Gallery } from './collections/Gallery'
+import { News } from './collections/News'
 import { Media } from './collections/Media'
 import { PollVotes } from './collections/PollVotes'
 import { QuizQuestions } from './collections/QuizQuestions'
@@ -53,7 +54,7 @@ export default buildConfig({
     // на этапе деплоя (web/src/migrations/), как у GONBA.
     push: true,
   }),
-  collections: [Pages, Events, Gallery, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, Visitors, Users],
+  collections: [Pages, Events, Gallery, News, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, Visitors, Users],
   globals: [FestivalMap, HomeContent, LiveStream, SiteHeader, SiteFooter],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)

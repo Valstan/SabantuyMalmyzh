@@ -1,0 +1,117 @@
+name: Seed news post (manual)
+
+# Наполняет ПРОД-БД первым постом «Новостей праздника» (официальная программа
+# Сабантуя-2026 + афиша-обложка) сидом web/src/seed/seedNews.ts (ru + tt-черновик).
+#
+# Безопасно для прода:
+#   • Создаёт одну запись коллекции news + один файл в Media — таблицы news
+#     создаёт миграция 20260702_090000 (накатить ДО этого сида, #017).
+#   • Идемпотентен: пост по slug уже есть → ru-тело не трогается (правки в
+#     /admin сохраняются), force=1 (SEED_FORCE) перезаписывает осознанно;
+#     афиша в Media ищется по filename, не дублируется.
+#   • Афиша пишется в MEDIA_DIR (персистентный каталог медиа) — сид получает
+#     MEDIA_DIR из /etc/sabantuy/sabantuy.env, иначе файл лёг бы в чекаут.
+#
+# Предусловие: deploy-prod уже выкатил релиз с разделом /novosti и миграция
+# 20260702_090000 накатана (apply-migration.yml).
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git-ref репозитория для seed-кода на боксе'
+        required: true
+        default: 'main'
+      force:
+        description: 'Перезаписать ru-тело существующей страницы (1 = да, SEED_FORCE)'
+        required: false
+        default: '0'
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Seed on box
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" "${{ inputs.force }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"
+          FORCE="${2:-0}"
+          BASE=/home/valstan/sabantuy
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          # 1. Репо на боксе (read-only deploy key)
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+
+          # 2. Зависимости (seed-рантайм; не next build → без OOM на 1.5 GiB)
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          # 3. Секреты прода → env (значения НЕ печатаем)
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          MEDIA=$(grep '^MEDIA_DIR=' "$ENVF" | head -1 | sed 's/^MEDIA_DIR=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+          if [ -z "$MEDIA" ]; then echo "::error::нет MEDIA_DIR в $ENVF — афиша легла бы в чекаут"; exit 1; fi
+
+          # 4. Seed поста новостей (NODE_ENV=production → push выключен).
+          echo "Запускаю seedNews на проде (force=$FORCE) ..."
+          NODE_ENV=production SEED_FORCE="$FORCE" \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" MEDIA_DIR="$MEDIA" \
+            corepack pnpm -C web payload run src/seed/seedNews.ts
+
+          # 5. Сводка (read-only)
+          echo "пост в БД: $(psql "$DB" -tAc "SELECT slug || ' :: ' || _status FROM news WHERE slug = 'programma-sabantuya-2026';")"
+          REMOTE
+
+      - name: Smoke — новости
+        run: |
+          set -e
+          for p in /novosti /tt/novosti /novosti/programma-sabantuya-2026; do
+            S=$(ssh sabantuy "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000$p")
+            echo "$p → $S"
+            [ "$S" = "200" ] || { echo "::error::$p вернул $S, ожидался 200"; exit 1; }
+          done
