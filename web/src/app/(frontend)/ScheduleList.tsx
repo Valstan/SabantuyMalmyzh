@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
-import { CATEGORY_COVER, CATEGORY_LABELS, categoryLabel } from '../../lib/categories'
+import { CATEGORY_COVER, CATEGORY_LABELS, EVENT_COVER, categoryLabel } from '../../lib/categories'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
 import { MyProgramActions } from './components/MyProgramActions'
@@ -299,7 +299,9 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
             {group.items.map((event) => {
               const href = event.slug ? localeHref(locale, `/events/${encodeURIComponent(event.slug)}`) : undefined
               const status = statusById.get(event.id)
-              const cover = event.category ? CATEGORY_COVER[event.category] : undefined
+              const cover =
+                (event.slug ? EVENT_COVER[event.slug] : undefined) ??
+                (event.category ? CATEGORY_COVER[event.category] : undefined)
               return (
                 <article
                   className={`schedule-item${status === 'live' ? ' is-live' : ''}${

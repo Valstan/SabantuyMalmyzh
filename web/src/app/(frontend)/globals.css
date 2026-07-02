@@ -114,6 +114,61 @@ a {
   flex: 1 1 auto;
   min-width: 0;
 }
+/* Ссылка на страницу атрибуции фото-миниатюр — тихая строка под расписанием */
+.schedule-credits {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.schedule-credits a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* «Источники фотографий» (/istochniki-foto) */
+.credits-own {
+  color: var(--muted);
+  margin: 0 0 1.25rem;
+}
+.credits-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.credits-item {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #fff;
+}
+.credits-thumb {
+  flex: 0 0 auto;
+  width: clamp(72px, 18vw, 120px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.credits-usage {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+.credits-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.credits-note {
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 
 /* «Идёт сейчас» — акцентная зелёная рамка; «Далее» — янтарная. */
 .schedule-item.is-live {

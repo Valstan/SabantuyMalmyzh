@@ -32,6 +32,25 @@ export const CATEGORY_COVER: Record<string, string> = {
   crafts: 'card-podvorya',
 }
 
+/**
+ * Точечные обложки для конкретных событий программы (slug → базовый slug в
+ * /decor) — поверх категорийного дефолта: у категории «Спорт» 7 разных пунктов
+ * (волейбол, скачки, футбол…), одна картинка кореша на всех не годится.
+ * feat-volleyball/football/gift/mosque — свободные фото Wikimedia Commons,
+ * авторы и лицензии — lib/imageCredits.ts (страница /istochniki-foto).
+ */
+export const EVENT_COVER: Record<string, string> = {
+  'p2026-voleybol': 'feat-volleyball',
+  'p2026-konnye-zabegi': 'feat-horse',
+  'p2026-skachki': 'feat-horse',
+  'p2026-dua': 'feat-mosque',
+  'p2026-skazka-tukay': 'card-detskiy',
+  'p2026-sostyazaniya': 'feat-pole',
+  'p2026-mini-futbol': 'feat-football',
+  'p2026-futbol': 'feat-football',
+  'p2026-rozygrysh': 'feat-gift',
+}
+
 export const categoryLabel = (category?: string | null, locale: Locale = 'ru'): string => {
   if (!category) return ''
   const map = locale === 'tt' ? CATEGORY_LABELS_TT : CATEGORY_LABELS
