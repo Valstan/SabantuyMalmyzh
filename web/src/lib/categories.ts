@@ -49,6 +49,8 @@ export const EVENT_COVER: Record<string, string> = {
   'p2026-mini-futbol': 'feat-football',
   'p2026-futbol': 'feat-football',
   'p2026-rozygrysh': 'feat-gift',
+  // Фото группы «АВСТРАЛИЯ» (передано владельцем), медиа страницы — lib/eventMedia.ts
+  'p2026-koncert-avstraliya': 'feat-avstralia',
 }
 
 export const categoryLabel = (category?: string | null, locale: Locale = 'ru'): string => {

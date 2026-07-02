@@ -11,6 +11,7 @@ import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
+import { EVENT_MEDIA } from '../../../lib/eventMedia'
 import { FestivalNotice } from '../components/FestivalNotice'
 import { EventEditor } from '../components/edit/EventEditor'
 import { RegistrationForm } from '../events/[slug]/RegistrationForm'
@@ -46,6 +47,10 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
   if (!event) notFound()
 
   const hero = typeof event.heroImage === 'object' && event.heroImage !== null ? event.heroImage : null
+  // Кодовые медиа (шапка/галерея) для событий без heroImage в БД — lib/eventMedia.ts
+  const media = event.slug ? EVENT_MEDIA[event.slug] : undefined
+  const heroSrc = hero?.url || media?.hero?.src || null
+  const heroAlt = hero?.url ? hero.alt || event.title : media?.hero?.alt || event.title
   const isComp = isCompetitionCategory(event.category)
 
   return (
@@ -63,9 +68,9 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
           <FestivalNotice locale={locale} />
 
           <article className="event-detail">
-            {hero?.url ? (
+            {heroSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="event-hero" src={hero.url} alt={hero.alt || event.title} />
+              <img className="event-hero" src={heroSrc} alt={heroAlt} />
             ) : (
               <div className="event-hero event-hero-fallback" aria-hidden="true">
                 <span>Сабантуй&nbsp;Малмыж</span>
@@ -86,6 +91,20 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
               <div className="event-content">
                 <RichText data={event.content} />
               </div>
+            )}
+
+            {media?.gallery && media.gallery.length > 0 && (
+              <section className="event-gallery" aria-label={t(locale, 'event.photos')}>
+                <h2>{t(locale, 'event.photos')}</h2>
+                <div className="event-gallery-grid">
+                  {media.gallery.map((p) => (
+                    <a key={p.full} href={p.full} target="_blank" rel="noopener noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.thumb} alt={p.alt} loading="lazy" />
+                    </a>
+                  ))}
+                </div>
+              </section>
             )}
           </article>
 
