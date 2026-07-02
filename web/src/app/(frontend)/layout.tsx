@@ -65,7 +65,9 @@ export const metadata: Metadata = {
   },
   // PWA (I10): apple-touch при «добавить на экран» в iOS; manifest Next впрыскивает
   // сам из app/manifest.ts. appleWebApp — полноэкранный режим на iOS.
-  icons: { apple: '/icons/apple-touch-icon.png' },
+  // favicon (тюльпан из PWA-набора): явный icons.icon — файл-конвенция app/icon.png
+  // сама по себе линк в head не даёт, когда icons задан в metadata.
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Сабантуй' },
 }
 

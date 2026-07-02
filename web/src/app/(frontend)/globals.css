@@ -398,6 +398,33 @@ a {
   margin-top: 1rem;
 }
 
+/* Фотогалерея события (кодовые медиа, lib/eventMedia.ts) */
+.event-gallery {
+  margin-top: 1.5rem;
+}
+.event-gallery h2 {
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+}
+.event-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+.event-gallery-grid img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+  transition: transform 0.15s ease;
+}
+.event-gallery-grid a:hover img,
+.event-gallery-grid a:focus-visible img {
+  transform: scale(1.03);
+}
+
 /* ── Форма регистрации ─────────────────────────────────────────────────── */
 .register-section {
   margin-top: 2rem;
