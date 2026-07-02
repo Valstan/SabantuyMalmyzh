@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CATEGORY_COVER, CATEGORY_LABELS, categoryLabel } from '../../lib/categories'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
+import { MyProgramActions } from './components/MyProgramActions'
 
 export type ScheduleItem = {
   id: number
@@ -211,16 +212,35 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
       )}
 
       {items.length > 0 && (
-        <div className="filters" role="group" aria-label={t(locale, 'schedule.myProgram')}>
-          <button
-            type="button"
-            className={`chip star-chip${onlyStarred ? ' active' : ''}`}
-            aria-pressed={onlyStarred}
-            onClick={() => setOnlyStarred((v) => !v)}
-          >
-            {t(locale, 'schedule.myProgramChip')}
-            {hydrated && starred.size > 0 ? ` (${starred.size})` : ''}
-          </button>
+        <div className="myprog-panel" role="region" aria-label={t(locale, 'schedule.myProgram')}>
+          <div className="myprog-head">
+            <span className="myprog-title">★ {t(locale, 'schedule.myProgram')}</span>
+            {hydrated && starred.size > 0 && (
+              <span className="myprog-count">{starred.size}</span>
+            )}
+            {hydrated && starred.size > 0 && (
+              <button
+                type="button"
+                className={`chip star-chip${onlyStarred ? ' active' : ''}`}
+                aria-pressed={onlyStarred}
+                onClick={() => setOnlyStarred((v) => !v)}
+              >
+                {onlyStarred ? t(locale, 'schedule.showAll') : t(locale, 'schedule.showMine')}
+              </button>
+            )}
+          </div>
+          {hydrated && starred.size === 0 ? (
+            <p className="myprog-hint">{t(locale, 'schedule.myProgramHint')}</p>
+          ) : (
+            hydrated && (
+              <MyProgramActions
+                locale={locale}
+                items={items
+                  .filter((i) => starred.has(i.id))
+                  .map((i) => ({ title: i.title, startDate: i.startDate, venue: i.venue }))}
+              />
+            )
+          )}
         </div>
       )}
 
@@ -304,7 +324,10 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
                         title={starred.has(event.id) ? t(locale, 'schedule.starRemove') : t(locale, 'schedule.starAddTitle')}
                         onClick={() => toggleStar(event.id)}
                       >
-                        {starred.has(event.id) ? '★' : '☆'}
+                        <span className="star-btn-icon" aria-hidden="true">{starred.has(event.id) ? '★' : '☆'}</span>
+                        <span className="star-btn-label">
+                          {starred.has(event.id) ? t(locale, 'schedule.starInProgram') : t(locale, 'schedule.starAddTitle')}
+                        </span>
                       </button>
                     </div>
                     <h4 className="schedule-item-title">
