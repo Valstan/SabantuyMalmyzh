@@ -604,6 +604,17 @@ a.feature-card--cover:hover .feature-cover img {
   background: rgba(255, 255, 255, 0.16);
   border-color: var(--c-gold);
 }
+/* Узкий экран: кнопки-пункты компактнее, чтобы липкая шапка не съедала полэкрана */
+@media (max-width: 560px) {
+  .site-header .site-nav-links {
+    gap: 0.3rem 0.35rem;
+  }
+  .site-header .site-nav-links a {
+    padding: 0.22rem 0.5rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+}
 
 /* Якорь #program не должен прятаться под липким хедером */
 [id] {
