@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
+import { NewsEditor } from '../components/edit/NewsEditor'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Лента новостей праздника (ru: /novosti, tt: /tt/novosti) — блог-карточки:
@@ -53,6 +54,7 @@ export async function NewsView({ locale }: { locale: Locale }) {
 
       <section className="section">
         <div className="section-inner">
+          <NewsEditor locale={locale} />
           {posts && posts.length > 0 ? (
             <div className="news-list">
               {posts.map((p) => {

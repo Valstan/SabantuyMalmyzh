@@ -8,7 +8,9 @@ import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
+import { videoEmbedSrc } from '../../../lib/videoEmbed'
 import { withRetry } from '../../../lib/withRetry'
+import { NewsEditor } from '../components/edit/NewsEditor'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Пост новостей (ru: /novosti/[slug], tt: /tt/novosti/[slug]).
@@ -60,11 +62,42 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
             </figure>
           )}
 
+          <NewsEditor id={post.id} locale={locale} />
+
           <article className="page">
             <div className="page-prose">
               {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
             </div>
           </article>
+
+          {Array.isArray(post.videos) && post.videos.length > 0 && (
+            <div className="news-videos">
+              {post.videos.map((v) => {
+                const src = videoEmbedSrc(v.url)
+                return (
+                  <figure className="news-video" key={v.id || v.url}>
+                    {v.title && <figcaption className="news-video-title">🎬 {v.title}</figcaption>}
+                    {src ? (
+                      <div className="efir-player">
+                        <iframe
+                          src={src}
+                          title={v.title || t(locale, 'news.videoTitle')}
+                          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      // Не распознанная площадка — обычная ссылка, iframe не строим (анти-инъекция)
+                      <a href={v.url} target="_blank" rel="noopener noreferrer">
+                        {v.title || v.url}
+                      </a>
+                    )}
+                  </figure>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
     </main>

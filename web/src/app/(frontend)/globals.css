@@ -694,3 +694,20 @@ a {
   border: 1px solid var(--border);
   display: block;
 }
+
+.news-videos {
+  display: grid;
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+  max-width: 720px;
+}
+
+.news-video {
+  margin: 0;
+}
+
+.news-video-title {
+  margin: 0 0 0.4rem;
+  font-weight: 600;
+  color: var(--brand-green-dark);
+}
