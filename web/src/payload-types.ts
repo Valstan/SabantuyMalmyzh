@@ -347,6 +347,16 @@ export interface News {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * Видео не заливается на сайт — вставьте ссылку на ролик (VK, Rutube, YouTube), на странице появится плеер.
+   */
+  videos?:
+    | {
+        url: string;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   publishedAt?: string | null;
   /**
    * Заполняется автоматически из заголовка. Можно переопределить вручную.
@@ -945,6 +955,13 @@ export interface NewsSelect<T extends boolean = true> {
   excerpt?: T;
   cover?: T;
   body?: T;
+  videos?:
+    | T
+    | {
+        url?: T;
+        title?: T;
+        id?: T;
+      };
   publishedAt?: T;
   slug?: T;
   updatedAt?: T;

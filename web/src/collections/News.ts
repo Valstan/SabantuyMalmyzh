@@ -51,6 +51,29 @@ export const News: CollectionConfig<'news'> = {
       localized: true,
     },
     {
+      name: 'videos',
+      type: 'array',
+      label: 'Видео (по ссылке — VK / Rutube / YouTube)',
+      labels: { singular: 'Видео', plural: 'Видео' },
+      admin: {
+        description:
+          'Видео не заливается на сайт — вставьте ссылку на ролик (VK, Rutube, YouTube), на странице появится плеер.',
+      },
+      fields: [
+        {
+          name: 'url',
+          type: 'text',
+          label: 'Ссылка на видео',
+          required: true,
+        },
+        {
+          name: 'title',
+          type: 'text',
+          label: 'Название (необязательно)',
+        },
+      ],
+    },
+    {
       name: 'publishedAt',
       type: 'date',
       label: 'Дата публикации',
