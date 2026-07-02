@@ -582,31 +582,27 @@ a.feature-card--cover:hover .feature-cover img {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem 1.2rem;
+  gap: 0.4rem 0.5rem;
 }
+/* Пункты меню — явные «кнопки»: плашка + золотая рамка, а не голые слова */
 .site-nav-links a {
   position: relative;
-  padding: 0.2rem 0;
+  padding: 0.32rem 0.72rem;
   font-weight: 600;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(232, 181, 58, 0.4);
+  border-radius: 10px;
+  line-height: 1.2;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 .site-nav-links a:hover {
   text-decoration: none;
   color: var(--c-gold);
-}
-.site-nav-links a::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -2px;
-  height: 2px;
-  background: var(--c-gold);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.18s ease;
-}
-.site-nav-links a:hover::after {
-  transform: scaleX(1);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--c-gold);
 }
 
 /* Якорь #program не должен прятаться под липким хедером */
@@ -851,26 +847,50 @@ a.feature-card--cover:hover .feature-cover img {
 }
 
 /* ── «Моя программа»: звёздочка события + чип-фильтр ───────────────────────── */
+/* Явная кнопка «☆ В мою программу» на карточке события (не голая звезда) */
 .star-btn {
   margin-left: auto;
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #fff;
+  border: 1px solid var(--c-gold);
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 1.35rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
   line-height: 1;
-  color: var(--muted);
-  padding: 0 0.1rem;
+  color: var(--brand-green-dark);
+  padding: 0.28rem 0.65rem;
+  white-space: nowrap;
   transition:
-    transform 0.15s ease,
-    color 0.15s ease;
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.star-btn .star-btn-icon {
+  font-size: 1.05rem;
+  color: var(--c-gold);
 }
 .star-btn:hover {
-  transform: scale(1.18);
-  color: var(--c-gold);
+  background: rgba(232, 181, 58, 0.14);
+  box-shadow: 0 1px 6px rgba(232, 181, 58, 0.35);
 }
 .star-btn.on {
-  color: var(--c-gold);
-  text-shadow: 0 1px 5px rgba(232, 181, 58, 0.55);
+  background: var(--c-gold);
+  color: #fff;
+}
+.star-btn.on .star-btn-icon {
+  color: #fff;
+}
+@media (max-width: 480px) {
+  .star-btn .star-btn-label {
+    display: none; /* на узком экране — только звезда, подпись в title/aria */
+  }
+  .star-btn {
+    padding: 0.28rem 0.45rem;
+  }
 }
 .star-chip {
   font-weight: 600;
@@ -878,6 +898,61 @@ a.feature-card--cover:hover .feature-cover img {
 .star-chip:not(.active) {
   border-color: var(--c-gold);
   color: var(--brand-green-dark);
+}
+
+/* ── Панель «Моя программа»: заголовок + подсказка + экспорт ──────────────── */
+.myprog-panel {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(180deg, rgba(232, 181, 58, 0.12), rgba(232, 181, 58, 0.05));
+  border: 1px solid rgba(232, 181, 58, 0.55);
+  border-radius: 12px;
+}
+.myprog-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.myprog-title {
+  font-weight: 700;
+  color: var(--brand-green-dark);
+}
+.myprog-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--brand-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.myprog-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+.myprog-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.myprog-actions-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--brand-green-dark);
+}
+.myprog-chip {
+  text-decoration: none;
+}
+.myprog-chip:hover {
+  text-decoration: none;
 }
 
 /* ── Опрос «любимое состязание» ───────────────────────────────────────────── */
