@@ -952,22 +952,27 @@ a.feature-card--cover:hover .feature-cover img {
   position: relative;
   display: inline-block;
 }
+/* Список рендерится ПОРТАЛОМ в body (fixed) — поверх ВСЕХ слоёв сайта
+   (секции создают stacking-контексты, внутри них меню перекрывалось следующими
+   слоями). z-index 500 > модалки (200) и лайтбокса (100). Цвета жёсткие:
+   светлый фон + тёмные буквы независимо от фото-секций и их стилей ссылок. */
 .sharemenu-pop {
-  position: absolute;
-  z-index: 70;
-  top: calc(100% + 6px);
-  left: 0;
+  position: fixed;
+  z-index: 500;
   min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
   display: grid;
   padding: 0.35rem;
   border-radius: 12px;
   border: 1px solid rgba(31, 82, 52, 0.25);
   background: #fffdf6;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
-.sharemenu-item {
+.sharemenu-pop .sharemenu-item {
   font: inherit;
   font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.3;
   text-align: left;
   cursor: pointer;
   padding: 0.5rem 0.7rem;
@@ -976,10 +981,17 @@ a.feature-card--cover:hover .feature-cover img {
   background: transparent;
   color: #22323f;
   text-decoration: none;
+  text-shadow: none;
   display: block;
 }
-.sharemenu-item:hover {
-  background: rgba(31, 82, 52, 0.08);
+.sharemenu-pop a.sharemenu-item,
+.sharemenu-pop a.sharemenu-item:visited,
+.sharemenu-pop a.sharemenu-item:hover {
+  color: #22323f;
+  text-decoration: none;
+}
+.sharemenu-pop .sharemenu-item:hover {
+  background: rgba(31, 82, 52, 0.1);
 }
 
 /* ── Медиатека сайта (/mediateka) ────────────────────────────────────────────── */
