@@ -122,8 +122,23 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
 
 export async function newsPostMeta(slug: string, locale: Locale): Promise<Metadata> {
   const post = await queryPost(decodeURIComponent(slug), locale)
+  if (!post) return { title: t(locale, 'notFound.title') }
+  // Собственные OG/canonical поста: без них соц-скрейперы (ВК/TG/ОК) берут
+  // корневые метаданные layout — og:url на главную, общий og.jpg вместо обложки.
+  const path = localeHref(locale, `/novosti/${encodeURIComponent(post.slug ?? decodeURIComponent(slug))}`)
+  const img = post.cover && typeof post.cover === 'object' ? (post.cover as MediaLike) : null
+  const cover = img?.sizes?.wide?.url || img?.url || null
+  const title = `${post.title} — ${t(locale, 'nav.news')}`
   return {
-    title: post ? `${post.title} — ${t(locale, 'nav.news')}` : t(locale, 'notFound.title'),
-    description: post?.excerpt || undefined,
+    title,
+    description: post.excerpt || undefined,
+    alternates: { canonical: path },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || undefined,
+      url: path,
+      type: 'article',
+      ...(cover ? { images: [{ url: cover, alt: img?.alt || post.title }] } : {}),
+    },
   }
 }

@@ -18,3 +18,15 @@ export const SITE_DESC =
 // Абсолютный URL из относительного пути (для JSON-LD/llms — нужны полные URL).
 export const abs = (path: string): string =>
   path.startsWith('http') ? path : `${SITE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+
+// ASCII-форма URL для передачи внешним сервисам (share.php ВК/ОК и т.п.):
+// кириллический домен в юникоде ВК не переваривает — рисует «?4??4?…» вместо
+// ссылки. `new URL(...).href` каноникализирует хост в punycode (xn--…), который
+// соцсети корректно распознают и показывают домен по-человечески.
+export const asciiUrl = (u: string): string => {
+  try {
+    return new URL(u).href
+  } catch {
+    return u
+  }
+}
