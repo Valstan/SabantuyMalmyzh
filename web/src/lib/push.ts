@@ -1,11 +1,16 @@
 import type { Payload } from 'payload'
 
 // Отправка web-push уведомлений подписчикам (коллекция push-subscriptions).
+// ЕДИНАЯ подписка на все уведомления сайта: программа (скоро начнётся событие),
+// Новости, Народная лента.
+//
+// Кампания СЕЗОННАЯ: после PUSH_CAMPAIGN_END (23:59 МСК 7 июля 2026 — «3 дня
+// после Сабантуя», решение владельца) рассылка и подписка отключаются сами,
+// подписки вычищаются из БД. Ручная отписка — в любой момент.
+//
 // VAPID-ключи — ТОЛЬКО в рантайм-env прода (/etc/sabantuy/sabantuy.env,
 // воркфлоу apply-push-secrets.yml); без них фича молча выключена (degraded,
 // как S3/SMTP) — dev/CI собираются и работают без секретов.
-
-export type PushTopic = 'news' | 'lenta'
 
 export type PushMessage = {
   title: string
@@ -16,6 +21,13 @@ export type PushMessage = {
   tag?: string
 }
 
+// 23:59:59 МСК 7 июля 2026 (UTC+3).
+export const PUSH_CAMPAIGN_END = new Date('2026-07-07T20:59:59Z').getTime()
+
+export function pushCampaignActive(): boolean {
+  return Date.now() <= PUSH_CAMPAIGN_END
+}
+
 export function pushConfigured(): boolean {
   return Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
 }
@@ -24,11 +36,27 @@ export function vapidPublicKey(): string | null {
   return process.env.VAPID_PUBLIC_KEY || null
 }
 
-// Рассылка по теме. Вызывается из afterChange-хуков БЕЗ await (fire-and-forget):
-// публикация новости не должна ждать сотни HTTP-запросов к push-сервисам.
-// Протухшие подписки (404/410 от push-сервиса) удаляем по ходу.
-export async function sendPushToTopic(payload: Payload, topic: PushTopic, msg: PushMessage): Promise<void> {
+// Кампания кончилась → одноразовая чистка всех подписок («подписка отключится
+// сама»). Идемпотентно: пустая коллекция — no-op.
+async function cleanupExpired(payload: Payload): Promise<void> {
+  const res = await payload.delete({
+    collection: 'push-subscriptions',
+    where: { endpoint: { exists: true } },
+    overrideAccess: true,
+  })
+  const n = res.docs?.length ?? 0
+  if (n > 0) payload.logger.info(`[push] campaign ended — removed ${n} subscriptions`)
+}
+
+// Рассылка ВСЕМ подписчикам. Вызывается из хуков/тикера БЕЗ await
+// (fire-and-forget): публикация не должна ждать сотни HTTP-запросов к
+// push-сервисам. Протухшие подписки (404/410) удаляем по ходу.
+export async function sendPushToAll(payload: Payload, msg: PushMessage): Promise<void> {
   if (!pushConfigured()) return
+  if (!pushCampaignActive()) {
+    await cleanupExpired(payload).catch(() => undefined)
+    return
+  }
   const { default: webpush } = await import('web-push')
   webpush.setVapidDetails(
     `mailto:${process.env.ORGANIZER_EMAIL || 'no-reply@sabantuy-malmyzh.ru'}`,
@@ -36,10 +64,8 @@ export async function sendPushToTopic(payload: Payload, topic: PushTopic, msg: P
     process.env.VAPID_PRIVATE_KEY!,
   )
 
-  const topicField = topic === 'news' ? 'topicNews' : 'topicLenta'
   const subs = await payload.find({
     collection: 'push-subscriptions',
-    where: { [topicField]: { equals: true } },
     depth: 0,
     pagination: false,
     overrideAccess: true,
@@ -50,7 +76,7 @@ export async function sendPushToTopic(payload: Payload, topic: PushTopic, msg: P
     title: msg.title,
     body: msg.body || '',
     url: msg.url,
-    tag: msg.tag || `sabantuy-${topic}`,
+    tag: msg.tag || 'sabantuy',
   })
 
   // Пачками, чтобы не открывать сотни соединений разом.
@@ -84,5 +110,5 @@ export async function sendPushToTopic(payload: Payload, topic: PushTopic, msg: P
       }),
     )
   }
-  payload.logger.info(`[push] topic=${topic} sent=${sent} dropped=${dropped} of ${subs.docs.length}`)
+  payload.logger.info(`[push] "${msg.title}" sent=${sent} dropped=${dropped} of ${subs.docs.length}`)
 }

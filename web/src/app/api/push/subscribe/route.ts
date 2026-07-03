@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
 
-import { pushConfigured } from '../../../../lib/push'
+import { pushCampaignActive, pushConfigured } from '../../../../lib/push'
 import { getPayloadClient } from '../../../../lib/ugcOwner'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Сохранить/обновить push-подписку браузера (upsert по endpoint). Коллекция
-// закрыта для прямого REST (#015) — пишем локальным API после валидации.
+// Сохранить/обновить push-подписку браузера (upsert по endpoint). Подписка
+// ЕДИНАЯ — на все уведомления сайта. Коллекция закрыта для прямого REST
+// (#015) — пишем локальным API после валидации. После конца сезонной
+// кампании (7 июля) подписка не оформляется → 410.
 type Body = {
   subscription?: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
-  topics?: { news?: boolean; lenta?: boolean }
   locale?: string
 }
 
@@ -24,6 +25,7 @@ const isHttpsUrl = (s: string) => {
 
 export async function POST(req: Request) {
   if (!pushConfigured()) return NextResponse.json({ error: 'not_configured' }, { status: 503 })
+  if (!pushCampaignActive()) return NextResponse.json({ error: 'campaign_ended' }, { status: 410 })
 
   let body: Body
   try {
@@ -42,9 +44,6 @@ export async function POST(req: Request) {
   ) {
     return NextResponse.json({ error: 'bad_subscription' }, { status: 400 })
   }
-  const topicNews = body.topics?.news !== false
-  const topicLenta = body.topics?.lenta !== false
-  if (!topicNews && !topicLenta) return NextResponse.json({ error: 'no_topics' }, { status: 400 })
   const locale = body.locale === 'tt' ? 'tt' : 'ru'
 
   const payload = await getPayloadClient()
@@ -59,15 +58,15 @@ export async function POST(req: Request) {
     await payload.update({
       collection: 'push-subscriptions',
       id: existing.docs[0].id as number,
-      data: { p256dh, auth, topicNews, topicLenta, locale },
+      data: { p256dh, auth, locale },
       overrideAccess: true,
     })
   } else {
     await payload.create({
       collection: 'push-subscriptions',
-      data: { endpoint, p256dh, auth, topicNews, topicLenta, locale },
+      data: { endpoint, p256dh, auth, locale },
       overrideAccess: true,
     })
   }
-  return NextResponse.json({ ok: true, topics: { news: topicNews, lenta: topicLenta } })
+  return NextResponse.json({ ok: true })
 }

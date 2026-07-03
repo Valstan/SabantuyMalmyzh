@@ -4,8 +4,6 @@ CREATE TABLE IF NOT EXISTS "push_subscriptions" (
   "endpoint" varchar NOT NULL,
   "p256dh" varchar NOT NULL,
   "auth" varchar NOT NULL,
-  "topic_news" boolean DEFAULT true,
-  "topic_lenta" boolean DEFAULT true,
   "locale" varchar DEFAULT 'ru',
   "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL

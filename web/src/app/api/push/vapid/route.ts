@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { pushConfigured, vapidPublicKey } from '../../../../lib/push'
+import { pushCampaignActive, pushConfigured, vapidPublicKey } from '../../../../lib/push'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +10,10 @@ export const dynamic = 'force-dynamic'
 // Ключ публичный по протоколу — секрета тут нет. Без ключей → configured:false,
 // клиент прячет кнопку подписки (degraded, как sign-upload без S3).
 export async function GET() {
-  if (!pushConfigured()) return NextResponse.json({ configured: false }, { status: 200 })
+  // Кампания сезонная: после 7 июля подписка скрывается (configured:false),
+  // уже выданные подписки вычищает рассылка/тикер.
+  if (!pushConfigured() || !pushCampaignActive()) {
+    return NextResponse.json({ configured: false }, { status: 200 })
+  }
   return NextResponse.json({ configured: true, key: vapidPublicKey() })
 }

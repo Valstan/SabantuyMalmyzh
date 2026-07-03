@@ -27,6 +27,7 @@ import { PushSubscriptions } from './collections/PushSubscriptions'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { Visitors } from './collections/Visitors'
+import { startPushTicker } from './lib/pushTick'
 import { FestivalMap } from './globals/FestivalMap'
 import { HomeContent } from './globals/HomeContent'
 import { LiveStream } from './globals/LiveStream'
@@ -82,6 +83,12 @@ export default buildConfig({
         },
       })
     : undefined,
+  // Тикер push-уведомлений программы («скоро начнётся событие», lib/pushTick):
+  // один setInterval на процесс, no-op без VAPID-ключей (dev/CI). Payload
+  // инициализируется первым запросом после старта — деплой-смоук бьёт «/».
+  onInit: (payload) => {
+    startPushTicker(payload)
+  },
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,

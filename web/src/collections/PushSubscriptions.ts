@@ -2,11 +2,14 @@ import type { CollectionConfig } from 'payload'
 
 import { adminOrEditor } from '../access/adminOrEditor'
 
-// Web-push подписки браузеров на уведомления о новом контенте (Новости /novosti,
-// Народная лента /lenta). Записи создаются ТОЛЬКО через наши роуты
-// /api/push/{subscribe,unsubscribe} (валидация + overrideAccess) — прямой REST
-// закрыт целиком (#015): endpoint+ключи позволяют слать пуши этому браузеру,
-// наружу их не отдаём. НЕ versioned, НЕ localized.
+// Web-push подписки браузеров — ЕДИНАЯ подписка на все уведомления сайта:
+// программа (скоро начнётся событие), Новости, Народная лента. Кампания
+// сезонная: рассылка и подписка автоматически отключаются после PUSH_CAMPAIGN_END
+// (23:59 МСК 7 июля 2026 — 3 дня после Сабантуя, см. lib/push.ts), подписки
+// вычищаются; ручная отписка доступна в любой момент.
+// Записи создаются ТОЛЬКО через наши роуты /api/push/{subscribe,unsubscribe}
+// (валидация + overrideAccess) — прямой REST закрыт целиком (#015): endpoint+ключи
+// позволяют слать пуши этому браузеру, наружу их не отдаём. НЕ versioned, НЕ localized.
 export const PushSubscriptions: CollectionConfig = {
   slug: 'push-subscriptions',
   labels: {
@@ -20,8 +23,8 @@ export const PushSubscriptions: CollectionConfig = {
     delete: adminOrEditor,
   },
   admin: {
-    defaultColumns: ['endpoint', 'topicNews', 'topicLenta', 'createdAt'],
-    description: 'Браузеры, подписанные на push-уведомления (создаются с сайта).',
+    defaultColumns: ['endpoint', 'createdAt'],
+    description: 'Браузеры, подписанные на push-уведомления (создаются с сайта; сезонная кампания).',
   },
   fields: [
     {
@@ -43,18 +46,6 @@ export const PushSubscriptions: CollectionConfig = {
       type: 'text',
       label: 'Ключ auth',
       required: true,
-    },
-    {
-      name: 'topicNews',
-      type: 'checkbox',
-      label: 'Новости праздника',
-      defaultValue: true,
-    },
-    {
-      name: 'topicLenta',
-      type: 'checkbox',
-      label: 'Народная лента',
-      defaultValue: true,
     },
     {
       name: 'locale',

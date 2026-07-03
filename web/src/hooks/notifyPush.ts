@@ -1,18 +1,20 @@
 import type { CollectionAfterChangeHook } from 'payload'
 
-import { pushConfigured, sendPushToTopic } from '../lib/push'
+import { pushCampaignActive, pushConfigured, sendPushToAll } from '../lib/push'
 
-// Push-уведомления подписчикам о новом контенте. Fire-and-forget: рассылка идёт
-// фоном, публикация/загрузка не ждёт push-сервисы и не падает от их ошибок.
+// Push-уведомления подписчикам о новом контенте (единая подписка на всё).
+// Fire-and-forget: рассылка идёт фоном, публикация/загрузка не ждёт
+// push-сервисы и не падает от их ошибок. Уведомления о событиях программы
+// («скоро начнётся») шлёт серверный тикер — lib/pushTick.ts.
 
 // Новость: пуш на ПЕРЕХОДЕ в published (создана опубликованной или draft→published).
 // Правки уже опубликованной новости пуш НЕ шлют (иначе каждая опечатка = спам).
 export const notifyPushNews: CollectionAfterChangeHook = ({ doc, previousDoc, req: { payload } }) => {
-  if (!pushConfigured()) return doc
+  if (!pushConfigured() || !pushCampaignActive()) return doc
   const isPublished = doc._status === 'published'
   const wasPublished = previousDoc?._status === 'published'
   if (isPublished && !wasPublished) {
-    void sendPushToTopic(payload, 'news', {
+    void sendPushToAll(payload, {
       title: 'Новость праздника',
       body: String(doc.title || ''),
       url: doc.slug ? `/novosti/${doc.slug}` : '/novosti',
@@ -30,13 +32,13 @@ const LENTA_PUSH_INTERVAL_MS = 15 * 60_000
 let lastLentaPushAt = 0
 
 export const notifyPushLenta: CollectionAfterChangeHook = ({ doc, operation, req: { payload } }) => {
-  if (!pushConfigured()) return doc
+  if (!pushConfigured() || !pushCampaignActive()) return doc
   if (operation !== 'create' || doc.status !== 'visible') return doc
   const now = Date.now()
   if (now - lastLentaPushAt < LENTA_PUSH_INTERVAL_MS) return doc
   lastLentaPushAt = now
   const kind = doc.kind === 'video' ? 'Новое видео' : 'Новые фото'
-  void sendPushToTopic(payload, 'lenta', {
+  void sendPushToAll(payload, {
     title: 'Народная лента',
     body: `${kind} с праздника — смотрите на сайте!`,
     url: '/lenta',

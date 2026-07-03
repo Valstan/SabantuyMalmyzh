@@ -3022,11 +3022,6 @@ a.feature-card--cover:hover .feature-cover img {
   color: var(--brand-green-dark);
   border-color: rgba(31, 82, 52, 0.35);
 }
-.push-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
 .push-note {
   margin: 0;
   font-size: 0.82rem;

@@ -50,7 +50,7 @@ export async function NewsView({ locale }: { locale: Locale }) {
         <div className="section-inner">
           <SectionHeading eyebrow={t(locale, 'news.eyebrow')} title={t(locale, 'nav.news')} />
           <p className="section-lead">{t(locale, 'news.lead')}</p>
-          <PushSubscribe locale={locale} accent="news" />
+          <PushSubscribe locale={locale} />
         </div>
       </section>
 

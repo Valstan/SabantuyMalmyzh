@@ -232,7 +232,7 @@ export async function LentaView({ locale }: { locale: Locale }) {
             tulip
           />
           <p className="section-lead">{t(locale, 'lenta.lead')}</p>
-          <PushSubscribe locale={locale} accent="lenta" />
+          <PushSubscribe locale={locale} />
         </div>
       </section>
 

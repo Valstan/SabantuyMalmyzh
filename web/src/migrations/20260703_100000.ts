@@ -2,9 +2,9 @@ import { MigrateDownArgs, MigrateUpArgs, sql } from '@payloadcms/db-postgres'
 
 /**
  * Web-push уведомления: новая коллекция push-subscriptions (таблица
- * `push_subscriptions`) — подписки браузеров на пуши о новом контенте
- * (Новости /novosti, Народная лента /lenta). НЕ versioned → нет `_v`-зеркал,
- * НЕ localized.
+ * `push_subscriptions`) — ЕДИНАЯ подписка браузера на все уведомления сайта
+ * (программа «скоро начнётся», Новости, Народная лента; сезонная кампания
+ * до 7 июля — см. lib/push.ts). НЕ versioned → нет `_v`-зеркал, НЕ localized.
  *
  * Таблица НОВАЯ → push на dev создал аддитивно, без интерактива. Имена/типы/
  * индексы/FK сняты push-inspect'ом (pg_dump 17) из dev-БД (#017, паттерн
@@ -21,8 +21,6 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "endpoint" varchar NOT NULL,
       "p256dh" varchar NOT NULL,
       "auth" varchar NOT NULL,
-      "topic_news" boolean DEFAULT true,
-      "topic_lenta" boolean DEFAULT true,
       "locale" varchar DEFAULT 'ru',
       "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
       "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL

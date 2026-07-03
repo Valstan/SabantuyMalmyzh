@@ -4,15 +4,13 @@ import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 
-// Подписка на push-уведомления о новом контенте (Новости / Народная лента).
-// Рендерится на /novosti и /lenta. Показывается только если браузер умеет
-// Push API и на сервере заведены VAPID-ключи (/api/push/vapid). На iOS пуши
-// работают из УСТАНОВЛЕННОГО приложения (PWA) — вне standalone показываем
-// подсказку про установку.
-
-const TOPICS_KEY = 'sabantuy:push-topics'
-
-type Topics = { news: boolean; lenta: boolean }
+// ЕДИНАЯ подписка на все push-уведомления сайта: программа («скоро начнётся
+// событие»), Новости, Народная лента. Рендерится на главной (программа),
+// /novosti и /lenta. Показывается только если браузер умеет Push API и на
+// сервере заведены VAPID-ключи + сезонная кампания активна (/api/push/vapid).
+// Подписка отключится сама после 7 июля (говорим об этом при подписке);
+// отписаться вручную можно в любой момент. На iOS пуши работают из
+// УСТАНОВЛЕННОГО приложения (PWA) — вне standalone показываем подсказку.
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -20,11 +18,10 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
 }
 
-export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'news' | 'lenta' }) {
-  // state: 'hidden' — нет поддержки/ключей; 'ios-install' — iOS вне PWA;
-  // 'off' — можно подписаться; 'on' — подписан; 'busy' — идёт запрос.
+export function PushSubscribe({ locale }: { locale: Locale }) {
+  // state: 'hidden' — нет поддержки/ключей/кампания кончилась; 'ios-install' —
+  // iOS вне PWA; 'off' — можно подписаться; 'on' — подписан; 'busy' — запрос.
   const [state, setState] = useState<'hidden' | 'ios-install' | 'off' | 'on' | 'busy'>('hidden')
-  const [topics, setTopics] = useState<Topics>({ news: true, lenta: true })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -35,28 +32,17 @@ export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'new
       const standalone =
         window.matchMedia?.('(display-mode: standalone)').matches ||
         (navigator as { standalone?: boolean }).standalone === true
-      if (!('PushManager' in window)) {
-        if (isIos && !standalone && !cancelled) setState('ios-install')
-        return
-      }
       try {
         const res = await fetch('/api/push/vapid')
         const cfg = (await res.json()) as { configured?: boolean }
         if (!cfg.configured || cancelled) return
+        if (!('PushManager' in window)) {
+          if (isIos && !standalone) setState('ios-install')
+          return
+        }
         const reg = await navigator.serviceWorker.ready
         const sub = await reg.pushManager.getSubscription()
-        if (cancelled) return
-        if (sub) {
-          try {
-            const saved = JSON.parse(localStorage.getItem(TOPICS_KEY) || '') as Topics
-            if (saved && typeof saved.news === 'boolean') setTopics(saved)
-          } catch {
-            /* нет сохранённых тем — дефолт «обе» */
-          }
-          setState('on')
-        } else {
-          setState('off')
-        }
+        if (!cancelled) setState(sub ? 'on' : 'off')
       } catch {
         /* сеть/SW — просто не показываем блок */
       }
@@ -65,31 +51,6 @@ export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'new
       cancelled = true
     }
   }, [])
-
-  const persistTopics = async (next: Topics) => {
-    setTopics(next)
-    try {
-      localStorage.setItem(TOPICS_KEY, JSON.stringify(next))
-    } catch {
-      /* не критично */
-    }
-    // Уже подписан → сразу обновить темы на сервере.
-    if (state === 'on') {
-      try {
-        const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.getSubscription()
-        if (sub) {
-          await fetch('/api/push/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription: sub.toJSON(), topics: next, locale }),
-          })
-        }
-      } catch {
-        /* обновится при следующей подписке */
-      }
-    }
-  }
 
   const subscribe = async () => {
     setError(null)
@@ -112,7 +73,7 @@ export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'new
       const saved = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON(), topics, locale }),
+        body: JSON.stringify({ subscription: sub.toJSON(), locale }),
       })
       if (!saved.ok) throw new Error('save failed')
       setState('on')
@@ -147,24 +108,8 @@ export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'new
     return <p className="push-box push-hint-ios">{t(locale, 'push.iosInstall')}</p>
   }
 
-  const topicChip = (key: keyof Topics, label: string) => (
-    <button
-      type="button"
-      className={`chip push-topic${topics[key] ? ' active' : ''}`}
-      aria-pressed={topics[key]}
-      onClick={() => {
-        const next = { ...topics, [key]: !topics[key] }
-        if (!next.news && !next.lenta) return // хотя бы одна тема
-        void persistTopics(next)
-      }}
-    >
-      {topics[key] ? '✓ ' : ''}
-      {label}
-    </button>
-  )
-
   return (
-    <div className={`push-box push-box--${accent}`}>
+    <div className="push-box">
       <div className="push-box-head">
         <span className="push-box-title">🔔 {t(locale, 'push.title')}</span>
         {state === 'on' ? (
@@ -176,10 +121,6 @@ export function PushSubscribe({ locale, accent }: { locale: Locale; accent: 'new
             {state === 'busy' ? '…' : t(locale, 'push.subscribe')}
           </button>
         )}
-      </div>
-      <div className="push-topics">
-        {topicChip('news', t(locale, 'push.topicNews'))}
-        {topicChip('lenta', t(locale, 'push.topicLenta'))}
       </div>
       <p className="push-note">{error || (state === 'on' ? t(locale, 'push.active') : t(locale, 'push.lead'))}</p>
     </div>

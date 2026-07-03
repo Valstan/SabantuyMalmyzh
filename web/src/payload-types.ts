@@ -692,7 +692,7 @@ export interface PhotoBattle {
   createdAt: string;
 }
 /**
- * Браузеры, подписанные на push-уведомления (создаются с сайта).
+ * Браузеры, подписанные на push-уведомления (создаются с сайта; сезонная кампания).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "push-subscriptions".
@@ -702,8 +702,6 @@ export interface PushSubscription {
   endpoint: string;
   p256dh: string;
   auth: string;
-  topicNews?: boolean | null;
-  topicLenta?: boolean | null;
   locale?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1269,8 +1267,6 @@ export interface PushSubscriptionsSelect<T extends boolean = true> {
   endpoint?: T;
   p256dh?: T;
   auth?: T;
-  topicNews?: T;
-  topicLenta?: T;
   locale?: T;
   updatedAt?: T;
   createdAt?: T;
