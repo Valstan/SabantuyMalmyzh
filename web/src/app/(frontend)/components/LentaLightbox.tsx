@@ -33,6 +33,7 @@ export function LentaLightbox({
   onToggleLike,
   onRemoved,
   onNavigate,
+  libraryHref,
 }: {
   // submissionId/лайк/удаление опциональны: лента передаёт их (полная карточка), а
   // одиночный просмотр (статистика Фотобитвы) — нет (тогда панель = только «на весь экран»).
@@ -48,6 +49,8 @@ export function LentaLightbox({
   onToggleLike?: () => void
   onRemoved?: (id: number) => void
   onNavigate: (i: number) => void
+  /** Ссылка «Вся медиатека» в панели действий (просмотр из статей/медиатеки). */
+  libraryHref?: string
 }) {
   const n = media.length
   const current = media[index]
@@ -184,6 +187,29 @@ export function LentaLightbox({
     onClose()
   }
 
+  // «Поделиться» текущим кадром: системный share (телефон), иначе — URL в буфер.
+  const [shared, setShared] = useState(false)
+  async function share() {
+    const url = current?.mediaUrl
+    if (!url) return
+    const abs = url.startsWith('http') ? url : `${window.location.origin}${url}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: caption || undefined, url: abs })
+        return
+      }
+    } catch {
+      return // отмена пользователем — не ошибка
+    }
+    try {
+      await navigator.clipboard.writeText(abs)
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    } catch {
+      /* нет clipboard — молча */
+    }
+  }
+
   async function del() {
     if (submissionId == null || !onRemoved) return
     if (typeof window !== 'undefined' && !window.confirm(t(locale, 'lenta.confirmDelete'))) return
@@ -302,6 +328,22 @@ export function LentaLightbox({
             )}
           </svg>
         </button>
+
+        <button
+          type="button"
+          className={`lightbox-act${shared ? ' is-on' : ''}`}
+          onClick={share}
+          aria-label={t(locale, 'lenta.lb.share')}
+          title={t(locale, 'lenta.lb.share')}
+        >
+          {shared ? '✓' : '📤'}
+        </button>
+
+        {libraryHref && (
+          <a className="lightbox-act lightbox-act--link" href={libraryHref} onClick={(e) => e.stopPropagation()}>
+            🗂 {t(locale, 'lenta.lb.library')}
+          </a>
+        )}
 
         {canDelete && onRemoved && (
           <button

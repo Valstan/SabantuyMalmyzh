@@ -10,7 +10,10 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { videoEmbedSrc } from '../../../lib/videoEmbed'
 import { withRetry } from '../../../lib/withRetry'
+import { abs } from '../../../lib/site'
+import { ArticleLightbox } from '../components/ArticleLightbox'
 import { NewsEditor } from '../components/edit/NewsEditor'
+import { ShareMenu } from '../components/ShareMenu'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Пост новостей (ru: /novosti/[slug], tt: /tt/novosti/[slug]).
@@ -54,21 +57,34 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
           </p>
           <SectionHeading eyebrow={t(locale, 'news.eyebrow')} title={post.title} />
           {fmtDate(post.publishedAt) && <p className="meta">{fmtDate(post.publishedAt)}</p>}
+          {/* Компактный «Поделиться» новостью — одна кнопка со списком вариантов. */}
+          <div style={{ margin: '0.5rem 0 0.75rem' }}>
+            <ShareMenu
+              locale={locale}
+              title={post.title}
+              text={[post.title, post.excerpt].filter(Boolean).join(' — ')}
+              url={abs(localeHref(locale, `/novosti/${post.slug}`))}
+            />
+          </div>
 
-          {coverSrc && (
-            <figure className="news-post-cover">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverSrc} alt={img?.alt || post.title} />
-            </figure>
-          )}
+          {/* Обложка + тело — под единым лайтбоксом сайта (клик по фото →
+              пролистывание/шаринг как в «Народной ленте» + переход в медиатеку). */}
+          <ArticleLightbox locale={locale}>
+            {coverSrc && (
+              <figure className="news-post-cover">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverSrc} alt={img?.alt || post.title} />
+              </figure>
+            )}
 
-          <NewsEditor id={post.id} locale={locale} />
+            <NewsEditor id={post.id} locale={locale} />
 
-          <article className="page">
-            <div className="page-prose">
-              {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
-            </div>
-          </article>
+            <article className="page">
+              <div className="page-prose">
+                {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
+              </div>
+            </article>
+          </ArticleLightbox>
 
           {Array.isArray(post.videos) && post.videos.length > 0 && (
             <div className="news-videos">
@@ -106,8 +122,25 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
 
 export async function newsPostMeta(slug: string, locale: Locale): Promise<Metadata> {
   const post = await queryPost(decodeURIComponent(slug), locale)
+  if (!post) return { title: t(locale, 'notFound.title') }
+  // Собственные OG/canonical поста: без них соц-скрейперы (ВК/TG/ОК) берут
+  // корневые метаданные layout — og:url на главную, общий og.jpg вместо обложки.
+  const path = localeHref(locale, `/novosti/${encodeURIComponent(post.slug ?? decodeURIComponent(slug))}`)
+  const img = post.cover && typeof post.cover === 'object' ? (post.cover as MediaLike) : null
+  const cover = img?.sizes?.wide?.url || img?.url || null
+  const title = `${post.title} — ${t(locale, 'nav.news')}`
   return {
-    title: post ? `${post.title} — ${t(locale, 'nav.news')}` : t(locale, 'notFound.title'),
-    description: post?.excerpt || undefined,
+    title,
+    description: post.excerpt || undefined,
+    alternates: { canonical: path },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || undefined,
+      url: path,
+      type: 'article',
+      // Пост без обложки → общий брендовый баннер: child-openGraph целиком
+      // заменяет корневой из layout, без явного fallback карточка без картинки.
+      images: cover ? [{ url: cover, alt: img?.alt || post.title }] : [{ url: '/og.jpg', width: 1200, height: 630 }],
+    },
   }
 }

@@ -947,6 +947,172 @@ a.feature-card--cover:hover .feature-cover img {
   font-size: 0.92rem;
   color: var(--muted);
 }
+/* ── Компактная кнопка «Поделиться» с раскрывающимся списком ─────────────────── */
+.sharemenu {
+  position: relative;
+  display: inline-block;
+}
+/* Список рендерится ПОРТАЛОМ в body (fixed) — поверх ВСЕХ слоёв сайта
+   (секции создают stacking-контексты, внутри них меню перекрывалось следующими
+   слоями). z-index 500 > модалки (200) и лайтбокса (100). Цвета жёсткие:
+   светлый фон + тёмные буквы независимо от фото-секций и их стилей ссылок. */
+.sharemenu-pop {
+  position: fixed;
+  z-index: 500;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
+  display: grid;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 82, 52, 0.25);
+  background: #fffdf6;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+.sharemenu-pop .sharemenu-item {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #22323f;
+  text-decoration: none;
+  text-shadow: none;
+  display: block;
+}
+.sharemenu-pop a.sharemenu-item,
+.sharemenu-pop a.sharemenu-item:visited,
+.sharemenu-pop a.sharemenu-item:hover {
+  color: #22323f;
+  text-decoration: none;
+}
+.sharemenu-pop .sharemenu-item:hover {
+  background: rgba(31, 82, 52, 0.1);
+}
+
+/* ── Медиатека сайта (/mediateka) ────────────────────────────────────────────── */
+.medialib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+.medialib-cell {
+  padding: 0;
+  border: 0;
+  cursor: zoom-in;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(31, 82, 52, 0.08);
+  aspect-ratio: 1;
+}
+.medialib-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.15s;
+}
+.medialib-cell:hover img {
+  transform: scale(1.04);
+}
+/* Ссылка-действие в лайтбоксе (переход в медиатеку) */
+.lightbox-act--link {
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ── «Поделиться мероприятием» (модалка из программы) ───────────────────────── */
+.evshare {
+  display: grid;
+  gap: 0.7rem;
+}
+.evshare-hint,
+.evshare-url {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted, #5a5a50);
+}
+.evshare-presets {
+  display: grid;
+  gap: 0.45rem;
+}
+.evshare-preset {
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 82, 52, 0.25);
+  background: rgba(255, 250, 238, 0.7);
+  color: inherit;
+}
+.evshare-preset.active {
+  border-color: var(--c-gold);
+  background: #fdf3d7;
+  box-shadow: 0 0 0 1px var(--c-gold);
+}
+.evshare-label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--brand-green-dark);
+}
+.evshare-text {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 82, 52, 0.35);
+  resize: vertical;
+}
+.evshare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* ── «Поделись отсчётом» (челлендж-открытка, главная + /otschet) ─────────────── */
+.cdshare {
+  margin-top: 1.4rem;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+}
+.cdshare-lead {
+  margin: 0;
+  max-width: 620px;
+  font-size: 0.95rem;
+}
+.cdshare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.cdshare-preview {
+  margin: 0.6rem auto 0;
+  max-width: 320px;
+}
+.cdshare-preview img {
+  width: 100%;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.cdshare-preview figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
 .myprog-actions {
   display: flex;
   align-items: center;

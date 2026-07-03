@@ -41,6 +41,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entryFor('/map', { changeFrequency: 'monthly', priority: 0.5 }),
     entryFor('/gallery', { changeFrequency: 'weekly', priority: 0.6 }),
     entryFor('/novosti', { changeFrequency: 'daily', priority: 0.7 }),
+    entryFor('/otschet', { changeFrequency: 'daily', priority: 0.4 }),
+    entryFor('/mediateka', { changeFrequency: 'weekly', priority: 0.3 }),
     entryFor('/lenta', { changeFrequency: 'daily', priority: 0.6 }),
     entryFor('/lenta/fotobitva', { changeFrequency: 'weekly', priority: 0.4 }),
     entryFor('/efir', { changeFrequency: 'daily', priority: 0.5 }),

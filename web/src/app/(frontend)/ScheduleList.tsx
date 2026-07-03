@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CATEGORY_COVER, CATEGORY_LABELS, EVENT_COVER, categoryLabel } from '../../lib/categories'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
+import { EventShare, type ShareEvent } from './components/EventShare'
 import { MyProgramActions } from './components/MyProgramActions'
 
 export type ScheduleItem = {
@@ -59,6 +60,8 @@ const STAR_KEY = 'sabantuy:my-program'
 
 export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; locale?: Locale }) {
   const [activeCat, setActiveCat] = useState<string | null>(null)
+  // «Поделиться мероприятием»: событие, открытое в модалке шеринга (null — закрыто).
+  const [shareEvent, setShareEvent] = useState<ShareEvent | null>(null)
   const [activeDay, setActiveDay] = useState<string | null>(null)
   const [onlyStarred, setOnlyStarred] = useState(false)
 
@@ -331,6 +334,23 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
                           {starred.has(event.id) ? t(locale, 'schedule.starInProgram') : t(locale, 'schedule.starAddTitle')}
                         </span>
                       </button>
+                      <button
+                        type="button"
+                        className="star-btn share-btn"
+                        aria-label={t(locale, 'evshare.button')}
+                        title={t(locale, 'evshare.button')}
+                        onClick={() =>
+                          setShareEvent({
+                            slug: event.slug,
+                            title: event.title,
+                            venue: event.venue,
+                            startDate: event.startDate,
+                          })
+                        }
+                      >
+                        <span className="star-btn-icon" aria-hidden="true">📤</span>
+                        <span className="star-btn-label">{t(locale, 'evshare.button')}</span>
+                      </button>
                     </div>
                     <h4 className="schedule-item-title">
                       {href ? <Link href={href}>{event.title}</Link> : event.title}
@@ -356,6 +376,8 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
           {onlyStarred ? t(locale, 'schedule.emptyStarred') : t(locale, 'schedule.emptyFilter')}
         </div>
       )}
+
+      <EventShare event={shareEvent} locale={locale} onClose={() => setShareEvent(null)} />
     </>
   )
 }
