@@ -90,7 +90,7 @@ jobs:
           DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
             corepack pnpm -C web payload run src/seed/seedPrepPosts.ts
 
-          echo "посты в БД: $(psql "$DB" -tAc "SELECT count(*) FROM news WHERE slug IN ('chto-nadet-na-sabantuy','chto-vzyat-s-soboy-na-sabantuy','top-10-ugoshcheniy-sabantuya','istoriya-sabantuya-v-malmyzhe','koresh-borba-na-poyasakh');")"
+          echo "посты в БД: $(psql "$DB" -tAc "SELECT count(*) FROM news WHERE slug IN ('chto-nadet-na-sabantuy','chto-vzyat-s-soboy-na-sabantuy','top-10-ugoshcheniy-sabantuya','istoriya-sabantuya-v-malmyzhe','podgotovka-idet-polnym-hodom','koresh-borba-na-poyasakh');")"
           REMOTE
 
       - name: Smoke — посты
