@@ -85,6 +85,7 @@ export interface Config {
     'submission-comments': SubmissionComment;
     'content-reports': ContentReport;
     'photo-battles': PhotoBattle;
+    'push-subscriptions': PushSubscription;
     visitors: Visitor;
     users: User;
     'payload-kv': PayloadKv;
@@ -112,6 +113,7 @@ export interface Config {
     'submission-comments': SubmissionCommentsSelect<false> | SubmissionCommentsSelect<true>;
     'content-reports': ContentReportsSelect<false> | ContentReportsSelect<true>;
     'photo-battles': PhotoBattlesSelect<false> | PhotoBattlesSelect<true>;
+    'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
     visitors: VisitorsSelect<false> | VisitorsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -690,6 +692,23 @@ export interface PhotoBattle {
   createdAt: string;
 }
 /**
+ * Браузеры, подписанные на push-уведомления (создаются с сайта).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions".
+ */
+export interface PushSubscription {
+  id: number;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  topicNews?: boolean | null;
+  topicLenta?: boolean | null;
+  locale?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Посетители, вошедшие через ВКонтакте. Содержат vkId/имя/аватар (152-ФЗ) — доступ только у персонала. Закрепляют «своё» в «Народной ленте».
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -829,6 +848,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'photo-battles';
         value: number | PhotoBattle;
+      } | null)
+    | ({
+        relationTo: 'push-subscriptions';
+        value: number | PushSubscription;
       } | null)
     | ({
         relationTo: 'visitors';
@@ -1235,6 +1258,20 @@ export interface PhotoBattlesSelect<T extends boolean = true> {
   loser?: T;
   loserIndex?: T;
   ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions_select".
+ */
+export interface PushSubscriptionsSelect<T extends boolean = true> {
+  endpoint?: T;
+  p256dh?: T;
+  auth?: T;
+  topicNews?: T;
+  topicLenta?: T;
+  locale?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 import { t, type Locale } from '../../../lib/i18n'
 import { publicUrl } from '../../../lib/s3'
 import { withRetry } from '../../../lib/withRetry'
+import { PushSubscribe } from '../components/PushSubscribe'
 import { SectionHeading } from '../components/SectionHeading'
 import { LentaFeed } from '../components/LentaFeed'
 import type {
@@ -231,6 +232,7 @@ export async function LentaView({ locale }: { locale: Locale }) {
             tulip
           />
           <p className="section-lead">{t(locale, 'lenta.lead')}</p>
+          <PushSubscribe locale={locale} accent="lenta" />
         </div>
       </section>
 
