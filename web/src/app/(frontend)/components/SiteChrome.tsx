@@ -7,6 +7,7 @@ import React from 'react'
 import { t } from '../../../lib/i18n'
 import { localeHref, pathLocale } from '../../../lib/localeHref'
 import { getCultureSections } from '../../../lib/cultureSections'
+import { EventTracker } from './EventTracker'
 import { InstallAppButton } from './InstallAppButton'
 import { LanguageToggle } from './LanguageToggle'
 import { VisitorAuth } from './VisitorAuth'
@@ -133,6 +134,9 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
         <FooterEditor locale={locale} />
         <LiveInternetCounter />
       </footer>
+      {/* Живой трекер программы: плавающая кнопка «Сейчас и далее» на всех
+          страницах; сам решает, показываться ли (праздник идёт или <24ч до него). */}
+      <EventTracker locale={locale} />
     </>
   )
 }

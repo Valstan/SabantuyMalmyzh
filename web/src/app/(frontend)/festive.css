@@ -2980,6 +2980,175 @@ a.feature-card--cover:hover .feature-cover img {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
 }
 
+/* ── Трекер «Сейчас и далее»: плавающая кнопка + модалка ────────────────────── */
+.tracker-fab {
+  position: fixed;
+  right: calc(0.9rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--c-gold);
+  background: var(--brand-green-dark);
+  color: #fff7e6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
+  max-width: min(78vw, 320px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tracker-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+}
+.tracker-fab.is-live {
+  background: #7d1128;
+}
+.tracker-fab-dot {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--c-gold);
+  animation: tracker-pulse 1.6s ease-in-out infinite;
+}
+.tracker-fab.is-live .tracker-fab-dot {
+  background: #ffd7e0;
+}
+@keyframes tracker-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0.55;
+  }
+}
+
+.tracker-panel {
+  display: grid;
+  gap: 1.1rem;
+}
+.tracker-section {
+  display: grid;
+  gap: 0.55rem;
+}
+.tracker-heading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-green-dark);
+}
+.tracker-heading.live {
+  color: #a3132f;
+}
+.tracker-countdown {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--brand-green-dark);
+  font-variant-numeric: tabular-nums;
+}
+.tracker-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(31, 82, 52, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 250, 238, 0.75);
+}
+.tracker-item.is-live {
+  border-color: rgba(163, 19, 47, 0.35);
+  background: rgba(255, 240, 243, 0.8);
+}
+.tracker-item-time {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-green-dark);
+  min-width: 4.4rem;
+}
+.tracker-item.is-live .tracker-item-time {
+  color: #a3132f;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.tracker-live-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #a3132f;
+  animation: tracker-pulse 1.6s ease-in-out infinite;
+}
+.tracker-item-delta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(31, 82, 52, 0.75);
+}
+.tracker-item-body {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.tracker-item-title {
+  font-weight: 700;
+  line-height: 1.25;
+}
+.tracker-item-title a {
+  color: inherit;
+}
+.tracker-item-place {
+  font-size: 0.85rem;
+  color: rgba(40, 40, 34, 0.75);
+}
+.tracker-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+.tracker-mini-btn {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 82, 52, 0.35);
+  background: #fff;
+  color: var(--brand-green-dark);
+}
+.tracker-mini-btn.on {
+  background: var(--brand-green-dark);
+  color: #fff7e6;
+  border-color: var(--brand-green-dark);
+}
+.tracker-empty,
+.tracker-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(40, 40, 34, 0.75);
+}
+
 /* ── Игра «Фотобитва»: оверлей ──────────────────────────────────────────────── */
 .battle {
   position: fixed;
