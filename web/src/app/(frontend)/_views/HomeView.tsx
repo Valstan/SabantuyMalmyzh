@@ -20,6 +20,7 @@ import { FeatureRow } from '../components/FeatureRow'
 import { FestivalNotice } from '../components/FestivalNotice'
 import { PhotoStripDivider } from '../components/PhotoStripDivider'
 import { Poll } from '../components/Poll'
+import { PushSubscribe } from '../components/PushSubscribe'
 import { RaffleForm } from '../components/RaffleForm'
 import { SectionDivider } from '../components/SectionDivider'
 import { GalleryPreview, type PreviewAlbum, type PreviewPhoto } from '../components/GalleryPreview'
@@ -428,6 +429,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
         <div className="section-inner">
           <SectionHeading eyebrow={t(locale, 'nav.schedule')} title={t(locale, 'home.schedule.eyebrow')} />
           {items.length > 0 && <FestivalNotice locale={locale} />}
+          <PushSubscribe locale={locale} />
           {items.length > 0 ? (
             <>
               <ScheduleList items={items} locale={locale} />

@@ -8,6 +8,7 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { NewsEditor } from '../components/edit/NewsEditor'
+import { PushSubscribe } from '../components/PushSubscribe'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Лента новостей праздника (ru: /novosti, tt: /tt/novosti) — блог-карточки:
@@ -49,6 +50,7 @@ export async function NewsView({ locale }: { locale: Locale }) {
         <div className="section-inner">
           <SectionHeading eyebrow={t(locale, 'news.eyebrow')} title={t(locale, 'nav.news')} />
           <p className="section-lead">{t(locale, 'news.lead')}</p>
+          <PushSubscribe locale={locale} />
         </div>
       </section>
 

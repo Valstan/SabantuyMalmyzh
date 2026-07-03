@@ -23,9 +23,11 @@ import { SubmissionViews } from './collections/SubmissionViews'
 import { SubmissionComments } from './collections/SubmissionComments'
 import { ContentReports } from './collections/ContentReports'
 import { PhotoBattles } from './collections/PhotoBattles'
+import { PushSubscriptions } from './collections/PushSubscriptions'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { Visitors } from './collections/Visitors'
+import { startPushTicker } from './lib/pushTick'
 import { FestivalMap } from './globals/FestivalMap'
 import { HomeContent } from './globals/HomeContent'
 import { LiveStream } from './globals/LiveStream'
@@ -54,7 +56,7 @@ export default buildConfig({
     // на этапе деплоя (web/src/migrations/), как у GONBA.
     push: true,
   }),
-  collections: [Pages, Events, Gallery, News, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, Visitors, Users],
+  collections: [Pages, Events, Gallery, News, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, PushSubscriptions, Visitors, Users],
   globals: [FestivalMap, HomeContent, LiveStream, SiteHeader, SiteFooter],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)
@@ -81,6 +83,12 @@ export default buildConfig({
         },
       })
     : undefined,
+  // Тикер push-уведомлений программы («скоро начнётся событие», lib/pushTick):
+  // один setInterval на процесс, no-op без VAPID-ключей (dev/CI). Payload
+  // инициализируется первым запросом после старта — деплой-смоук бьёт «/».
+  onInit: (payload) => {
+    startPushTicker(payload)
+  },
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,

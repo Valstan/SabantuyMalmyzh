@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { adminOrEditor } from '../access/adminOrEditor'
 import { authenticatedOrPublished } from '../access/authenticatedOrPublished'
 import { populatePublishedAt } from '../hooks/populatePublishedAt'
+import { notifyPushNews } from '../hooks/notifyPush'
 import { revalidateNews, revalidateNewsDelete } from '../hooks/revalidateNews'
 import { slugField } from '../fields/slug'
 
@@ -86,7 +87,7 @@ export const News: CollectionConfig<'news'> = {
   ],
   hooks: {
     beforeChange: [populatePublishedAt],
-    afterChange: [revalidateNews],
+    afterChange: [revalidateNews, notifyPushNews],
     afterDelete: [revalidateNewsDelete],
   },
   versions: {
