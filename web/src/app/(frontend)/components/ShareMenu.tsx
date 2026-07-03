@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { t, type Locale } from '../../../lib/i18n'
-import { SITE_NAME } from '../../../lib/site'
+import { asciiUrl, SITE_NAME } from '../../../lib/site'
 
 // Единая компактная кнопка «Поделиться» (заявка владельца: не захламлять сайт
 // рядами кнопок): одна кнопка → раскрывающийся список вариантов — системное
@@ -129,14 +129,20 @@ export function ShareMenu({
   }
 
   const enc = encodeURIComponent
+  // В соцсети URL уходит в ASCII-форме (punycode-хост): юникод-домен ВК/ОК
+  // рисуют как «?4??4?…» в карточке репоста. Punycode они декодируют сами и
+  // показывают домен нормально; ссылка кликабельна.
   const links = open
     ? [
-        { label: 'Telegram', href: `https://t.me/share/url?url=${enc(theUrl())}&text=${enc(theText())}` },
+        { label: 'Telegram', href: `https://t.me/share/url?url=${enc(asciiUrl(theUrl()))}&text=${enc(theText())}` },
         {
           label: 'ВКонтакте',
-          href: `https://vk.com/share.php?url=${enc(theUrl())}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
+          href: `https://vk.com/share.php?url=${enc(asciiUrl(theUrl()))}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
         },
-        { label: 'Одноклассники', href: `https://connect.ok.ru/offer?url=${enc(theUrl())}&title=${enc(theText())}` },
+        {
+          label: 'Одноклассники',
+          href: `https://connect.ok.ru/offer?url=${enc(asciiUrl(theUrl()))}&title=${enc(theText())}`,
+        },
       ]
     : []
 
