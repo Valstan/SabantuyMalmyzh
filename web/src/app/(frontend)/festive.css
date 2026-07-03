@@ -947,6 +947,40 @@ a.feature-card--cover:hover .feature-cover img {
   font-size: 0.92rem;
   color: var(--muted);
 }
+/* ── Медиатека сайта (/mediateka) ────────────────────────────────────────────── */
+.medialib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+.medialib-cell {
+  padding: 0;
+  border: 0;
+  cursor: zoom-in;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(31, 82, 52, 0.08);
+  aspect-ratio: 1;
+}
+.medialib-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.15s;
+}
+.medialib-cell:hover img {
+  transform: scale(1.04);
+}
+/* Ссылка-действие в лайтбоксе (переход в медиатеку) */
+.lightbox-act--link {
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 /* ── «Поделиться мероприятием» (модалка из программы) ───────────────────────── */
 .evshare {
   display: grid;

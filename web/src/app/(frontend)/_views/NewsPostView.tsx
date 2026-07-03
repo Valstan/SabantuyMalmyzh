@@ -10,6 +10,7 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { videoEmbedSrc } from '../../../lib/videoEmbed'
 import { withRetry } from '../../../lib/withRetry'
+import { ArticleLightbox } from '../components/ArticleLightbox'
 import { NewsEditor } from '../components/edit/NewsEditor'
 import { SectionHeading } from '../components/SectionHeading'
 
@@ -55,20 +56,24 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
           <SectionHeading eyebrow={t(locale, 'news.eyebrow')} title={post.title} />
           {fmtDate(post.publishedAt) && <p className="meta">{fmtDate(post.publishedAt)}</p>}
 
-          {coverSrc && (
-            <figure className="news-post-cover">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverSrc} alt={img?.alt || post.title} />
-            </figure>
-          )}
+          {/* Обложка + тело — под единым лайтбоксом сайта (клик по фото →
+              пролистывание/шаринг как в «Народной ленте» + переход в медиатеку). */}
+          <ArticleLightbox locale={locale}>
+            {coverSrc && (
+              <figure className="news-post-cover">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverSrc} alt={img?.alt || post.title} />
+              </figure>
+            )}
 
-          <NewsEditor id={post.id} locale={locale} />
+            <NewsEditor id={post.id} locale={locale} />
 
-          <article className="page">
-            <div className="page-prose">
-              {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
-            </div>
-          </article>
+            <article className="page">
+              <div className="page-prose">
+                {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
+              </div>
+            </article>
+          </ArticleLightbox>
 
           {Array.isArray(post.videos) && post.videos.length > 0 && (
             <div className="news-videos">
