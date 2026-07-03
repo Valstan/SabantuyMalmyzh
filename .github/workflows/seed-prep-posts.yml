@@ -83,11 +83,13 @@ jobs:
           ENVF=/etc/sabantuy/sabantuy.env
           DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
           SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          MEDIA=$(grep '^MEDIA_DIR=' "$ENVF" | head -1 | sed 's/^MEDIA_DIR=//;s/^"//;s/"$//')
           if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+          if [ -z "$MEDIA" ]; then echo "::error::нет MEDIA_DIR в $ENVF — фото легли бы в чекаут"; exit 1; fi
 
           echo "Запускаю seedPrepPosts на проде (force=$FORCE) ..."
           NODE_ENV=production SEED_FORCE="$FORCE" \
-          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" MEDIA_DIR="$MEDIA" \
             corepack pnpm -C web payload run src/seed/seedPrepPosts.ts
 
           echo "посты в БД: $(psql "$DB" -tAc "SELECT count(*) FROM news WHERE slug IN ('chto-nadet-na-sabantuy','chto-vzyat-s-soboy-na-sabantuy','top-10-ugoshcheniy-sabantuya','istoriya-sabantuya-v-malmyzhe','podgotovka-idet-polnym-hodom','koresh-borba-na-poyasakh');")"

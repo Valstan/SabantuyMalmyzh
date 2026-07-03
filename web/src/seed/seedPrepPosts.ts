@@ -12,8 +12,11 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- seed-утилита: Payload data untyped */
 import config from '@payload-config'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { getPayload } from 'payload'
 
+const dirname = path.dirname(fileURLToPath(import.meta.url))
 const log = (m: string) => console.log(m)
 
 // ─── Lexical-конструктор (как в seedNews) ────────────────────────────────────
@@ -55,6 +58,17 @@ const ul = (items: string[]): LexNode =>
   )
 const doc = (...children: LexNode[]): unknown => ({
   root: { type: 'root', version: 1, format: '', indent: 0, direction: 'ltr', children },
+})
+// Upload-узел (картинка из Media в теле поста) — формат как у on-site редактора
+// (lexical-lite): value = числовой PK media, version 3.
+const up = (mediaId: number | string): LexNode => ({
+  type: 'upload',
+  version: 3,
+  relationTo: 'media',
+  value: mediaId,
+  id: `seed-up-${mediaId}`,
+  fields: {},
+  format: '',
 })
 
 // ─── Посты ────────────────────────────────────────────────────────────────────
@@ -190,6 +204,53 @@ const POSTS: Post[] = [
   },
 ]
 
+// ─── Фото «подготовка идёт полным ходом» (от владельца, 2026-07-03) ──────────
+// Оригиналы обработаны scripts/process-podgotovka.mjs (≤1920px, q80) →
+// src/seed/assets/podgotovka/. Загружаются в Media (идемпотентно по filename),
+// расставляются в теле поста ПО СМЫСЛУ (см. сборку тела ниже).
+const PHOTOS: { file: string; alt: string }[] = [
+  { file: 'podgotovka-01-vorota.jpg', alt: 'Праздничные ворота с флажками на въезде на майдан Сабантуя' },
+  { file: 'podgotovka-02-zabor.jpg', alt: 'Волонтёры собирают праздничную ограду майдана' },
+  { file: 'podgotovka-03-kryltso.jpg', alt: 'Строится крыльцо деревянного дома национального подворья' },
+  { file: 'podgotovka-04-karkas.jpg', alt: 'Монтаж каркаса торговых рядов на майдане' },
+  { file: 'podgotovka-05-domiki.jpg', alt: 'Ряды торговых домиков города мастеров готовы встречать гостей' },
+  { file: 'podgotovka-06-maydan.jpg', alt: 'Майдан с беседкой и домом национального подворья в флажках' },
+  { file: 'podgotovka-07-scena.jpg', alt: 'Главная сцена Сабантуя собрана на майдане' },
+  { file: 'podgotovka-08-repetitsiya.jpg', alt: 'Репетиция творческих коллективов в национальных костюмах у сцены' },
+]
+
+// Тело поста «Уважаемые земляки!» с фото по смыслу: ворота — после вступления,
+// стройка — после абзаца про организаторов, домики/майдан — после списка
+// площадок, сцена и репетиция — после концертного абзаца, остальное — под текстом.
+function podgotovkaBody(img: Record<string, number | string>): unknown {
+  return doc(
+    p('✍ 📣 Подготовка к региональному Сабантую в Малмыже идёт полным ходом! 🎉'),
+    p('☀️ Друзья, чувствуете это предвкушение праздника? В воздухе уже витает дух приближающегося торжества, а в Малмыже вовсю кипит работа — мы готовимся к одному из самых ярких событий года! ☀️'),
+    up(img['podgotovka-01-vorota.jpg']),
+    p('Уже совсем скоро, 🔥 а именно в субботу, **4 июля**, наш Малмыжский район превратится в центр гостеприимства и радости: будут звучать зажигательные мелодии, разноситься ароматы традиционных угощений, а площадки наполнятся смехом и аплодисментами. 😍'),
+    p('Сейчас команда организаторов трудится без устали: продумываются детали программы, монтируются площадки, согласуются выступления артистов и спортивные состязания. Каждая мелочь важна — ведь мы хотим, чтобы праздник запомнился надолго! 💪'),
+    up(img['podgotovka-02-zabor.jpg']),
+    up(img['podgotovka-04-karkas.jpg']),
+    p('В этом году Сабантуй развернётся сразу на нескольких площадках — будет по-настоящему масштабно:'),
+    ul([
+      '🔸 **«Национальное подворье»** — окунитесь в атмосферу традиций, познакомьтесь с бытом и культурой, попробуйте любимые угощения.',
+      '🔸 **«Город мастеров»** — здесь ремесленники покажут своё искусство и проведут мастер-классы для всех желающих.',
+      '🔸 **«Детский Сабантуй»** — специальная программа для самых юных гостей: весёлые игры, конкурсы и море радости.',
+      '🔸 **Площадка волейбольных баталий** — соревнования для любителей спорта и зрелищных матчей.',
+      '🔸 **Конные скачки** — захватывающие состязания, где покажут удаль и мастерство наездники.',
+      '🔸 **Главный майдан** — сердце праздника: здесь пройдут основные торжества, выступления и самые яркие моменты дня.',
+    ]),
+    up(img['podgotovka-05-domiki.jpg']),
+    up(img['podgotovka-06-maydan.jpg']),
+    p('🔥 А ещё нас ждёт грандиозная концертная программа: в празднике задействовано более **1000 участников творческих коллективов**! Особое событие — выступление творческой команды дуэта звёзд татарской эстрады **Зиниры и Ризата Рамазановых**. Их песни станут настоящим украшением Сабантуя! 🎶'),
+    up(img['podgotovka-07-scena.jpg']),
+    up(img['podgotovka-08-repetitsiya.jpg']),
+    p('Сабантуй — это не просто гуляния, это дань традициям, возможность собраться вместе, почувствовать единство и отдать должное труду земледельцев. И в этом году мы приготовили для вас немало сюрпризов — обещаем, будет по-настоящему здорово! 🤩'),
+    p('Следите за новостями — скоро раскроем все секреты программы! А пока поделитесь любимым мероприятием прямо из программы на главной странице — кнопка «Поделиться» есть у каждого пункта! 👇'),
+    up(img['podgotovka-03-kryltso.jpg']),
+  )
+}
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
 const payload = await getPayload({ config })
 const force = process.env.SEED_FORCE === '1'
@@ -230,6 +291,54 @@ for (const post of POSTS) {
     overrideAccess: true,
   })
   log(`✓ /novosti/${post.slug} создан`)
+}
+
+// ─── Фото в пост «Уважаемые земляки!» ────────────────────────────────────────
+// Загружаем 8 кадров в Media (идемпотентно по filename) и пересобираем тело
+// поста с картинками по смыслу + ставим обложку (репетиция — самый живой кадр).
+// Тело этого поста перезаписывается ВСЕГДА (наш сегодняшний пост серии; правки
+// текста делать в сиде). Остальных постов это не касается.
+const imgIds: Record<string, number | string> = {}
+for (const ph of PHOTOS) {
+  const found = await payload.find({
+    collection: 'media',
+    where: { filename: { equals: ph.file } },
+    limit: 1,
+    overrideAccess: true,
+  })
+  if (found.totalDocs > 0) {
+    imgIds[ph.file] = found.docs[0].id
+    log(`= фото ${ph.file} уже в Media (id=${found.docs[0].id})`)
+  } else {
+    const created = await payload.create({
+      collection: 'media',
+      data: { alt: ph.alt } as any,
+      filePath: path.resolve(dirname, 'assets', 'podgotovka', ph.file),
+      overrideAccess: true,
+    })
+    imgIds[ph.file] = created.id
+    log(`✓ фото ${ph.file} загружено в Media (id=${created.id})`)
+  }
+}
+
+const podg = await payload.find({
+  collection: 'news',
+  where: { slug: { equals: 'podgotovka-idet-polnym-hodom' } },
+  limit: 1,
+  overrideAccess: true,
+})
+if (podg.totalDocs > 0) {
+  await payload.update({
+    collection: 'news',
+    id: podg.docs[0].id,
+    data: {
+      body: podgotovkaBody(imgIds),
+      cover: imgIds['podgotovka-08-repetitsiya.jpg'],
+    } as any,
+    locale: 'ru',
+    overrideAccess: true,
+  })
+  log('↻ пост «Уважаемые земляки!» — фото расставлены по тексту, обложка задана')
 }
 
 log('Готово: серия «Готовимся к Сабантую».')

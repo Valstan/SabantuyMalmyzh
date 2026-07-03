@@ -66,7 +66,7 @@ export async function AlbumView({ slug, locale }: { slug: string; locale: Locale
           <GalleryEditor id={album.id} title={album.title} locale={locale} />
 
           {photos.length > 0 ? (
-            <AlbumGallery photos={photos} />
+            <AlbumGallery photos={photos} locale={locale} />
           ) : (
             <div className="placeholder">{t(locale, 'gallery.empty')}</div>
           )}
