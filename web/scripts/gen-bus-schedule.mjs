@@ -5,10 +5,13 @@
  *   node scripts/gen-bus-schedule.mjs
  *
  * Рисует брендовые таблицы (зелёный/золото, как genOgImage) SVG→JPG:
- *   src/seed/assets/bus/bus-1-vyezd.jpg — 1-й выезд (утро)
- *   src/seed/assets/bus/bus-2-vyezd.jpg — 2-й выезд (день/вечер)
- *   src/seed/assets/bus/bus-cover.jpg   — обложка поста (баннер 1200×630)
+ *   src/seed/assets/bus/bus-1-vyezd-v2.jpg — 1-й выезд (утро)
+ *   src/seed/assets/bus/bus-2-vyezd-v2.jpg — 2-й выезд (день/вечер)
+ *   src/seed/assets/bus/bus-cover-v2.jpg   — обложка поста (баннер 1200×630)
  * Кириллица растеризуется системным шрифтом (паттерн genOgImage).
+ * v2: майдан праздника — у ПОСТА ГАИ (не у РМЗ!), подписи направлений и
+ * акценты колонок исправлены; имена файлов версионные (Media идемпотентен
+ * по filename — иначе прод не подхватил бы новую картинку).
  */
 import { promises as fs } from 'fs'
 import path from 'path'
@@ -72,7 +75,6 @@ function tableSvg(title, trips) {
   const legendH = 96
   const H = bodyTop + trips.length * rowH + legendH + M
 
-  const rmzX = xs[5]
   const parts = []
 
   parts.push(`<rect width="${W}" height="${H}" fill="${CREAM}"/>`)
@@ -84,28 +86,36 @@ function tableSvg(title, trips) {
   </g>`)
   parts.push(`<text x="${W / 2}" y="102" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="bold" fill="${GREEN_DARK}">${esc(title)}</text>`)
 
-  // группы направлений
+  // группы направлений (майдан праздника — у ПОСТА ГАИ; РМЗ — разворотная
+  // точка на другом конце города)
   const gTo = { x: xs[0], w: xs[5] + rmzW - xs[0] }
   const gBack = { x: xs[6], w: xs[10] + colW - xs[6] }
-  parts.push(`<rect x="${gTo.x}" y="${headTop}" width="${gTo.w}" height="${groupH}" fill="${GREEN}"/>`)
-  parts.push(`<rect x="${gBack.x}" y="${headTop}" width="${gBack.w}" height="${groupH}" fill="${GREEN_DARK}"/>`)
-  parts.push(`<text x="${gTo.x + gTo.w / 2}" y="${headTop + 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#fff">→  НА САБАНТУЙ (к майдану у РМЗ)</text>`)
-  parts.push(`<text x="${gBack.x + gBack.w / 2}" y="${headTop + 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#fff">←  ОБРАТНО</text>`)
+  parts.push(`<rect x="${gTo.x}" y="${headTop}" width="${gTo.w}" height="${groupH}" fill="${GREEN_DARK}"/>`)
+  parts.push(`<rect x="${gBack.x}" y="${headTop}" width="${gBack.w}" height="${groupH}" fill="${GREEN}"/>`)
+  parts.push(`<text x="${gTo.x + gTo.w / 2}" y="${headTop + 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#fff">→  С ПРАЗДНИКА (Пост ГАИ → РМЗ)</text>`)
+  parts.push(`<text x="${gBack.x + gBack.w / 2}" y="${headTop + 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#fff">←  НА ПРАЗДНИК (РМЗ → Пост ГАИ)</text>`)
 
-  // шапка остановок
+  // шапка остановок: Пост ГАИ (майдан) — золотые крайние колонки
   for (let i = 0; i < STOPS.length; i++) {
-    const fill = i === 5 ? GOLD : i < 5 ? GREEN : GREEN_DARK
-    const tfill = i === 5 ? GREEN_DARK : '#fff'
+    const isMaydan = i === 0 || i === 10
+    const fill = isMaydan ? GOLD : i < 6 ? GREEN_DARK : GREEN
+    const tfill = isMaydan ? GREEN_DARK : '#fff'
     parts.push(`<rect x="${xs[i]}" y="${headTop + groupH}" width="${cols[i]}" height="${headH}" fill="${fill}" stroke="#ffffff" stroke-opacity="0.25"/>`)
-    parts.push(`<text x="${xs[i] + cols[i] / 2}" y="${headTop + groupH + 35}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${i === 5 ? 24 : 20}" font-weight="bold" fill="${tfill}">${esc(STOPS[i])}</text>`)
+    if (isMaydan) {
+      parts.push(`<text x="${xs[i] + cols[i] / 2}" y="${headTop + groupH + 26}" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="${tfill}">${esc(STOPS[i])}</text>`)
+      parts.push(`<text x="${xs[i] + cols[i] / 2}" y="${headTop + groupH + 47}" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="${RED}">майдан</text>`)
+    } else {
+      parts.push(`<text x="${xs[i] + cols[i] / 2}" y="${headTop + groupH + 35}" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${tfill}">${esc(STOPS[i])}</text>`)
+    }
   }
 
   // строки
   trips.forEach((row, r) => {
     const y = bodyTop + r * rowH
     parts.push(`<rect x="${x0}" y="${y}" width="${tableW}" height="${rowH}" fill="${r % 2 ? ROW_ALT : CREAM}"/>`)
-    // подсветка колонки РМЗ
-    parts.push(`<rect x="${rmzX}" y="${y}" width="${rmzW}" height="${rowH}" fill="${GOLD}" fill-opacity="0.16"/>`)
+    // подсветка колонок майдана (Пост ГАИ — крайние)
+    parts.push(`<rect x="${xs[0]}" y="${y}" width="${cols[0]}" height="${rowH}" fill="${GOLD}" fill-opacity="0.16"/>`)
+    parts.push(`<rect x="${xs[10]}" y="${y}" width="${cols[10]}" height="${rowH}" fill="${GOLD}" fill-opacity="0.16"/>`)
     row.forEach((cell, i) => {
       if (!cell) return
       const cx = xs[i] + cols[i] / 2
@@ -135,7 +145,7 @@ function tableSvg(title, trips) {
 
   // легенда
   const ly = bodyTop + bodyH + 40
-  parts.push(`<text x="${x0}" y="${ly}" font-family="Arial, sans-serif" font-size="20" fill="${INK}"><tspan font-weight="bold" fill="${RED}">верх / низ</tspan> — посадка и высадка на верхней или нижней площадке у РМЗ (майдана).</text>`)
+  parts.push(`<text x="${x0}" y="${ly}" font-family="Arial, sans-serif" font-size="20" fill="${INK}"><tspan font-weight="bold" fill="${RED}">Праздник — у Поста ГАИ.</tspan>  <tspan font-weight="bold" fill="${RED}">верх / низ</tspan> — верхняя или нижняя посадочная площадка у РМЗ.</text>`)
   parts.push(`<text x="${x0}" y="${ly + 32}" font-family="Arial, sans-serif" font-size="20" fill="${INK}">Время московское. График движения АТП на 4 июля 2026 года.</text>`)
 
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join('\n')}</svg>`, W, H }
@@ -164,19 +174,19 @@ async function renderCover() {
   <rect x="26" y="26" width="1148" height="578" fill="none" stroke="${GOLD}" stroke-width="6" rx="20"/>
   <text x="600" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" filter="url(#sh)">🚌 Автобусы на Сабантуй</text>
   <text x="600" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="72" font-weight="bold" fill="${GOLD}" filter="url(#sh)">4 июля 2026</text>
-  <text x="600" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#ffffff" filter="url(#sh)">маршрут Калинино — РМЗ (майдан)</text>
-  <text x="600" y="465" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#f3e6c2" filter="url(#sh)">Пост ГАИ · Калинино · АТП · Центр · Чехова · РМЗ</text>
+  <text x="600" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#ffffff" filter="url(#sh)">до майдана у Поста ГАИ — со всего города</text>
+  <text x="600" y="465" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#f3e6c2" filter="url(#sh)">РМЗ · Чехова · Центр · АТП · Калинино · Пост ГАИ</text>
 </svg>`
   await sharp(bg)
     .resize(1200, 630, { fit: 'cover' })
     .composite([{ input: Buffer.from(overlay) }])
     .jpeg({ quality: 88 })
-    .toFile(path.join(outDir, 'bus-cover.jpg'))
-  console.log('✓ bus-cover.jpg')
+    .toFile(path.join(outDir, 'bus-cover-v2.jpg'))
+  console.log('✓ bus-cover-v2.jpg')
 }
 
 await fs.mkdir(outDir, { recursive: true })
-await renderTable('bus-1-vyezd.jpg', 'Расписание автобусов · 4 июля · 1-й выезд (утро)', TRIPS1)
-await renderTable('bus-2-vyezd.jpg', 'Расписание автобусов · 4 июля · 2-й выезд (день и вечер)', TRIPS2)
+await renderTable('bus-1-vyezd-v2.jpg', 'Расписание автобусов · 4 июля · 1-й выезд (утро)', TRIPS1)
+await renderTable('bus-2-vyezd-v2.jpg', 'Расписание автобусов · 4 июля · 2-й выезд (день и вечер)', TRIPS2)
 await renderCover()
 console.log('Готово →', outDir)
