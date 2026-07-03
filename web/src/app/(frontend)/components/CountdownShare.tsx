@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { SITE_NAME, SITE_URL } from '../../../lib/site'
+import { ShareMenu } from './ShareMenu'
 
 // «Поделись отсчётом» — вирусная открытка обратного отсчёта до Сабантуя.
 // Механика челленджа: открытка PNG с ЖИВЫМИ цифрами на момент создания
@@ -36,20 +37,15 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function CountdownShare({ targetIso, locale }: { targetIso: string; locale: Locale }) {
-  const [copied, setCopied] = useState(false)
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const target = new Date(targetIso).getTime()
   // Каждая шара — со свежим cache-buster: соцсети кэшируют превью по URL,
-  // уникальный параметр даёт свежий снимок в превью ссылки. Значение — в state
-  // ПОСЛЕ монтирования: Date.now() в href при SSR-рендере дал бы hydration-mismatch.
-  const [buster, setBuster] = useState('')
-  useEffect(() => {
-    setBuster(Date.now().toString(36))
-  }, [])
-  const shareUrl = () => `${SITE_URL}${SHARE_PATH}${buster ? `?s=${buster}` : ''}`
+  // уникальный параметр даёт свежий снимок в превью ссылки. Считается ЛЕНИВО
+  // (внутри раскрытого списка ShareMenu, client-only) → hydration не страдает.
+  const shareUrl = () => `${SITE_URL}${SHARE_PATH}?s=${Date.now().toString(36)}`
 
   const buildText = () => {
     const r = split(target - Date.now())
@@ -173,22 +169,6 @@ export function CountdownShare({ targetIso, locale }: { targetIso: string; local
     if (blob) downloadBlob(blob, 'sabantuy-otschet.png')
   }
 
-  const doCopy = async () => {
-    const full = `${buildText()}\n${shareUrl()}`
-    try {
-      await navigator.clipboard.writeText(full)
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = full
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      ta.remove()
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const doNativeShare = async () => {
     const text = buildText()
     const url = shareUrl()
@@ -208,45 +188,25 @@ export function CountdownShare({ targetIso, locale }: { targetIso: string; local
     } catch {
       return // отмена пользователем — не ошибка
     }
-    doCopy()
   }
 
-  const enc = encodeURIComponent
-  const shareTg = () => `https://t.me/share/url?url=${enc(shareUrl())}&text=${enc(buildText())}`
-  const shareVk = () => `https://vk.com/share.php?url=${enc(shareUrl())}&title=${enc(t(locale, 'share.cd.cardHeading'))}&comment=${enc(buildText())}`
-  const shareOk = () => `https://connect.ok.ru/offer?url=${enc(shareUrl())}&title=${enc(buildText())}`
-
+  // Все варианты — в компактной кнопке-списке; «системный» пункт отдаёт
+  // открытку PNG файлом (Web Share files) — переопределён через onSystemShare.
   return (
     <div className="cdshare" role="group" aria-label={t(locale, 'share.cd.label')}>
       <p className="cdshare-lead">{t(locale, 'share.cd.lead')}</p>
       <div className="cdshare-actions">
-        <button type="button" className="chip myprog-chip" onClick={doNativeShare}>
-          📲 {t(locale, 'share.cd.share')}
-        </button>
-        <button type="button" className="chip myprog-chip" onClick={doPng}>
-          🖼 {t(locale, 'share.cd.png')}
-        </button>
-        <button type="button" className="chip myprog-chip" onClick={() => fileRef.current?.click()}>
-          📷 {t(locale, 'share.cd.withPhoto')}
-        </button>
-        <button type="button" className="chip myprog-chip" onClick={doCopy}>
-          {copied ? `✓ ${t(locale, 'share.cd.copied')}` : `📋 ${t(locale, 'share.cd.copy')}`}
-        </button>
-        {/* Соц-ссылки — только после монтирования: их href содержит живые минуты
-            и cache-buster (Date.now()), при SSR это дало бы hydration-mismatch. */}
-        {buster && (
-          <>
-            <a className="chip myprog-chip" href={shareTg()} target="_blank" rel="noopener noreferrer">
-              Telegram
-            </a>
-            <a className="chip myprog-chip" href={shareVk()} target="_blank" rel="noopener noreferrer">
-              ВКонтакте
-            </a>
-            <a className="chip myprog-chip" href={shareOk()} target="_blank" rel="noopener noreferrer">
-              Одноклассники
-            </a>
-          </>
-        )}
+        <ShareMenu
+          locale={locale}
+          title={t(locale, 'share.cd.cardHeading')}
+          getText={buildText}
+          getUrl={shareUrl}
+          onSystemShare={doNativeShare}
+          extra={[
+            { label: `🖼 ${t(locale, 'share.cd.png')}`, onClick: () => void doPng() },
+            { label: `📷 ${t(locale, 'share.cd.withPhoto')}`, onClick: () => fileRef.current?.click() },
+          ]}
+        />
       </div>
       <input
         ref={fileRef}

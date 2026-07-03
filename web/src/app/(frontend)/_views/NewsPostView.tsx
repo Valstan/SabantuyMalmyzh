@@ -10,8 +10,10 @@ import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { videoEmbedSrc } from '../../../lib/videoEmbed'
 import { withRetry } from '../../../lib/withRetry'
+import { abs } from '../../../lib/site'
 import { ArticleLightbox } from '../components/ArticleLightbox'
 import { NewsEditor } from '../components/edit/NewsEditor'
+import { ShareMenu } from '../components/ShareMenu'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Пост новостей (ru: /novosti/[slug], tt: /tt/novosti/[slug]).
@@ -55,6 +57,15 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
           </p>
           <SectionHeading eyebrow={t(locale, 'news.eyebrow')} title={post.title} />
           {fmtDate(post.publishedAt) && <p className="meta">{fmtDate(post.publishedAt)}</p>}
+          {/* Компактный «Поделиться» новостью — одна кнопка со списком вариантов. */}
+          <div style={{ margin: '0.5rem 0 0.75rem' }}>
+            <ShareMenu
+              locale={locale}
+              title={post.title}
+              text={[post.title, post.excerpt].filter(Boolean).join(' — ')}
+              url={abs(localeHref(locale, `/novosti/${post.slug}`))}
+            />
+          </div>
 
           {/* Обложка + тело — под единым лайтбоксом сайта (клик по фото →
               пролистывание/шаринг как в «Народной ленте» + переход в медиатеку). */}
