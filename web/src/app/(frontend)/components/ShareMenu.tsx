@@ -53,7 +53,13 @@ export function ShareMenu({
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   const theText = () => (getText ? getText() : text || '')
-  const theUrl = () => (getUrl ? getUrl() : url || (typeof window !== 'undefined' ? window.location.href : ''))
+  // ASCII (punycode) — ВЕЗДЕ, не только в соцссылках: юникод-домен ВК
+  // «запекает» в опубликованный пост кашей «?4??4?…» (проверено на живом
+  // посте сообщества 2026-07-03), а punycode рендерит красивой кириллицей.
+  // Сюда же попадает fallback location.href — мобильные браузеры могут
+  // отдавать его в юникод-форме.
+  const theUrl = () =>
+    asciiUrl(getUrl ? getUrl() : url || (typeof window !== 'undefined' ? window.location.href : ''))
 
   const toggle = () => {
     if (open) {
@@ -129,20 +135,14 @@ export function ShareMenu({
   }
 
   const enc = encodeURIComponent
-  // В соцсети URL уходит в ASCII-форме (punycode-хост): юникод-домен ВК/ОК
-  // рисуют как «?4??4?…» в карточке репоста. Punycode они декодируют сами и
-  // показывают домен нормально; ссылка кликабельна.
   const links = open
     ? [
-        { label: 'Telegram', href: `https://t.me/share/url?url=${enc(asciiUrl(theUrl()))}&text=${enc(theText())}` },
+        { label: 'Telegram', href: `https://t.me/share/url?url=${enc(theUrl())}&text=${enc(theText())}` },
         {
           label: 'ВКонтакте',
-          href: `https://vk.com/share.php?url=${enc(asciiUrl(theUrl()))}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
+          href: `https://vk.com/share.php?url=${enc(theUrl())}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
         },
-        {
-          label: 'Одноклассники',
-          href: `https://connect.ok.ru/offer?url=${enc(asciiUrl(theUrl()))}&title=${enc(theText())}`,
-        },
+        { label: 'Одноклассники', href: `https://connect.ok.ru/offer?url=${enc(theUrl())}&title=${enc(theText())}` },
       ]
     : []
 
