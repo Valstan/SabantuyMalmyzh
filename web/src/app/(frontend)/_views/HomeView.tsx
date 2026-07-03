@@ -13,6 +13,7 @@ import { mapTypeMeta } from '../../../lib/mapTypes'
 import { POLL_OPTIONS } from '../../../lib/pollOptions'
 import { withRetry } from '../../../lib/withRetry'
 import { Countdown } from '../components/Countdown'
+import { CountdownShare } from '../components/CountdownShare'
 import { CtaBand } from '../components/CtaBand'
 import { FeatureCard } from '../components/FeatureCard'
 import { FeatureRow } from '../components/FeatureRow'
@@ -323,6 +324,9 @@ export async function HomeView({ locale }: { locale: Locale }) {
             />
             <Countdown targetIso={festivalStartIso} locale={locale} />
             <FestivalNotice locale={locale} />
+            {/* Челлендж «поделись отсчётом»: открытка PNG (можно со своим фото)
+                + живая ссылка /otschet. Виральная механика к празднику. */}
+            <CountdownShare targetIso={festivalStartIso} locale={locale} />
           </div>
         </section>
       )}
