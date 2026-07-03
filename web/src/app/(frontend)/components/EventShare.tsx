@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
-import { SITE_NAME, SITE_URL } from '../../../lib/site'
+import { SITE_URL } from '../../../lib/site'
 import { Modal } from './edit/Modal'
+import { ShareMenu } from './ShareMenu'
 
 // «Поделиться мероприятием» из программы праздника: модалка с заготовками
 // подписей (на выбор) и свободным редактированием текста — посетитель шарит
@@ -58,7 +59,6 @@ export function EventShare({
   const presets = locale === 'tt' ? PRESETS_TT : PRESETS_RU
   const [text, setText] = useState('')
   const [picked, setPicked] = useState(0)
-  const [copied, setCopied] = useState(false)
 
   // Новое событие → первая заготовка в редактор.
   useEffect(() => {
@@ -75,44 +75,11 @@ export function EventShare({
   const url = event.slug
     ? `${SITE_URL}${localeHref(locale, `/events/${encodeURIComponent(event.slug)}`)}`
     : `${SITE_URL}${localeHref(locale, '/#program')}`
-  const fullText = () => `${text.trim()}\n${url}`
 
   const pick = (i: number) => {
     setPicked(i)
     setText(fill(presets[i], event))
   }
-
-  const doCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(fullText())
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = fullText()
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      ta.remove()
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const doNativeShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: SITE_NAME, text: text.trim(), url })
-        return
-      }
-    } catch {
-      return // отмена пользователем — не ошибка
-    }
-    doCopy()
-  }
-
-  const enc = encodeURIComponent
-  const shareTg = `https://t.me/share/url?url=${enc(url)}&text=${enc(text.trim())}`
-  const shareVk = `https://vk.com/share.php?url=${enc(url)}&title=${enc(event.title)}&comment=${enc(text.trim())}`
-  const shareOk = `https://connect.ok.ru/offer?url=${enc(url)}&title=${enc(text.trim())}`
 
   return (
     <Modal open onClose={onClose} title={t(locale, 'evshare.title')} description={event.title}>
@@ -143,21 +110,7 @@ export function EventShare({
         </label>
         <p className="evshare-url">🔗 {url.replace(/^https?:\/\//, '')}</p>
         <div className="evshare-actions">
-          <button type="button" className="chip myprog-chip" onClick={doNativeShare}>
-            📲 {t(locale, 'evshare.share')}
-          </button>
-          <button type="button" className="chip myprog-chip" onClick={doCopy}>
-            {copied ? `✓ ${t(locale, 'evshare.copied')}` : `📋 ${t(locale, 'evshare.copy')}`}
-          </button>
-          <a className="chip myprog-chip" href={shareTg} target="_blank" rel="noopener noreferrer">
-            Telegram
-          </a>
-          <a className="chip myprog-chip" href={shareVk} target="_blank" rel="noopener noreferrer">
-            ВКонтакте
-          </a>
-          <a className="chip myprog-chip" href={shareOk} target="_blank" rel="noopener noreferrer">
-            Одноклассники
-          </a>
+          <ShareMenu locale={locale} title={event.title} getText={() => text.trim()} url={url} />
         </div>
       </div>
     </Modal>

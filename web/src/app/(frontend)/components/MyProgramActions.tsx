@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-
 import { t, type Locale } from '../../../lib/i18n'
 import { SITE_NAME, SITE_URL } from '../../../lib/site'
+import { ShareMenu } from './ShareMenu'
 
 // Панель «Моя программа»: подсказка + экспорт отмеченных событий.
 // Все выводы строятся из одного текстового представления (buildText):
@@ -65,25 +64,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function MyProgramActions({ items, locale }: { items: MyProgramItem[]; locale: Locale }) {
-  const [copied, setCopied] = useState(false)
-
   const text = () => buildText(items, locale)
-
-  const doCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text())
-    } catch {
-      // старые браузеры / http — фолбэк через скрытую textarea
-      const ta = document.createElement('textarea')
-      ta.value = text()
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      ta.remove()
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   const doTxt = () => {
     downloadBlob(new Blob([text()], { type: 'text/plain;charset=utf-8' }), 'moya-programma-sabantuy.txt')
@@ -156,52 +137,21 @@ export function MyProgramActions({ items, locale }: { items: MyProgramItem[]; lo
     setTimeout(() => w.print(), 300)
   }
 
-  const doNativeShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: heading(items, locale), text: text(), url: SITE_URL })
-        return
-      }
-    } catch {
-      /* отмена пользователем — не ошибка */
-      return
-    }
-    // нет Web Share (десктоп) → копируем в буфер как фолбэк
-    doCopy()
-  }
-
-  const enc = encodeURIComponent
-  const shareTg = `https://t.me/share/url?url=${enc(SITE_URL)}&text=${enc(text())}`
-  const shareVk = `https://vk.com/share.php?url=${enc(SITE_URL)}&title=${enc(heading(items, locale))}&comment=${enc(text())}`
-  const shareOk = `https://connect.ok.ru/offer?url=${enc(SITE_URL)}&title=${enc(heading(items, locale))}`
-
+  // Все варианты — в компактной кнопке-списке (не захламляем панель рядом кнопок).
   return (
     <div className="myprog-actions" role="group" aria-label={t(locale, 'schedule.exportLabel')}>
       <span className="myprog-actions-label">{t(locale, 'schedule.exportLabel')}:</span>
-      <button type="button" className="chip myprog-chip" onClick={doNativeShare}>
-        📲 {t(locale, 'schedule.exportShare')}
-      </button>
-      <button type="button" className="chip myprog-chip" onClick={doCopy}>
-        {copied ? `✓ ${t(locale, 'schedule.exportCopied')}` : `📋 ${t(locale, 'schedule.exportCopy')}`}
-      </button>
-      <button type="button" className="chip myprog-chip" onClick={doPrint}>
-        🖨 {t(locale, 'schedule.exportPrint')}
-      </button>
-      <button type="button" className="chip myprog-chip" onClick={doPng}>
-        🖼 {t(locale, 'schedule.exportPng')}
-      </button>
-      <button type="button" className="chip myprog-chip" onClick={doTxt}>
-        📄 {t(locale, 'schedule.exportTxt')}
-      </button>
-      <a className="chip myprog-chip" href={shareTg} target="_blank" rel="noopener noreferrer">
-        Telegram
-      </a>
-      <a className="chip myprog-chip" href={shareVk} target="_blank" rel="noopener noreferrer">
-        ВКонтакте
-      </a>
-      <a className="chip myprog-chip" href={shareOk} target="_blank" rel="noopener noreferrer">
-        Одноклассники
-      </a>
+      <ShareMenu
+        locale={locale}
+        title={heading(items, locale)}
+        getText={text}
+        url={SITE_URL}
+        extra={[
+          { label: `🖨 ${t(locale, 'schedule.exportPrint')}`, onClick: doPrint },
+          { label: `🖼 ${t(locale, 'schedule.exportPng')}`, onClick: doPng },
+          { label: `📄 ${t(locale, 'schedule.exportTxt')}`, onClick: doTxt },
+        ]}
+      />
     </div>
   )
 }

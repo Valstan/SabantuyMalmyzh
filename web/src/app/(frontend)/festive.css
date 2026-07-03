@@ -947,6 +947,41 @@ a.feature-card--cover:hover .feature-cover img {
   font-size: 0.92rem;
   color: var(--muted);
 }
+/* ── Компактная кнопка «Поделиться» с раскрывающимся списком ─────────────────── */
+.sharemenu {
+  position: relative;
+  display: inline-block;
+}
+.sharemenu-pop {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  display: grid;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 82, 52, 0.25);
+  background: #fffdf6;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+.sharemenu-item {
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #22323f;
+  text-decoration: none;
+  display: block;
+}
+.sharemenu-item:hover {
+  background: rgba(31, 82, 52, 0.08);
+}
+
 /* ── Медиатека сайта (/mediateka) ────────────────────────────────────────────── */
 .medialib-grid {
   display: grid;
