@@ -138,7 +138,9 @@ export async function newsPostMeta(slug: string, locale: Locale): Promise<Metada
       description: post.excerpt || undefined,
       url: path,
       type: 'article',
-      ...(cover ? { images: [{ url: cover, alt: img?.alt || post.title }] } : {}),
+      // Пост без обложки → общий брендовый баннер: child-openGraph целиком
+      // заменяет корневой из layout, без явного fallback карточка без картинки.
+      images: cover ? [{ url: cover, alt: img?.alt || post.title }] : [{ url: '/og.jpg', width: 1200, height: 630 }],
     },
   }
 }
