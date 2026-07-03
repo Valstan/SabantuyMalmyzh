@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { SITE_NAME } from '../../../lib/site'
@@ -44,24 +45,50 @@ export function ShareMenu({
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
+  // Позиция списка (fixed, от кнопки). Список рендерится ПОРТАЛОМ в body:
+  // секции сайта создают свои stacking-контексты и стили ссылок (фото-секции) —
+  // внутри них меню перекрывалось следующими слоями и теряло цвета. Портал
+  // выносит список поверх ВСЕХ слоёв с собственными цветами.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   const theText = () => (getText ? getText() : text || '')
   const theUrl = () => (getUrl ? getUrl() : url || (typeof window !== 'undefined' ? window.location.href : ''))
 
-  // Закрытие по клику вне списка и по Esc.
+  const toggle = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    const r = rootRef.current?.getBoundingClientRect()
+    if (r) {
+      // не выпускаем список за правый край экрана
+      const left = Math.min(r.left, Math.max(8, window.innerWidth - 244))
+      setPos({ top: r.bottom + 6, left })
+    }
+    setOpen(true)
+  }
+
+  // Закрытие по клику вне списка, Esc, прокрутке и ресайзу (позиция fixed).
   useEffect(() => {
     if (!open) return
     const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      const tgt = e.target as Node
+      if (!rootRef.current?.contains(tgt) && !popRef.current?.contains(tgt)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
     }
+    const onScroll = () => setOpen(false)
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
     return () => {
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
     }
   }, [open])
 
@@ -120,12 +147,19 @@ export function ShareMenu({
         className="chip myprog-chip sharemenu-btn"
         aria-expanded={open}
         aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
       >
         📤 {buttonLabel || t(locale, 'sharemenu.button')} {open ? '▴' : '▾'}
       </button>
-      {open && (
-        <div className="sharemenu-pop" role="menu">
+      {open &&
+        pos &&
+        createPortal(
+          <div
+            className="sharemenu-pop"
+            role="menu"
+            ref={popRef}
+            style={{ top: pos.top, left: pos.left }}
+          >
           <button type="button" className="sharemenu-item" role="menuitem" onClick={doSystem}>
             📲 {t(locale, 'sharemenu.system')}
           </button>
@@ -159,8 +193,9 @@ export function ShareMenu({
               {x.label}
             </button>
           ))}
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
