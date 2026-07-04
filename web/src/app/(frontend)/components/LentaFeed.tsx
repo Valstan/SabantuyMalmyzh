@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { t, type Locale } from '../../../lib/i18n'
 import { ugcHeaders, unlikeSubmission } from '../../../lib/ugcClient'
 import { LentaCard } from './LentaCard'
+import { LentaFlow } from './LentaFlow'
 import { LentaLightbox } from './LentaLightbox'
 import { LentaRatings } from './LentaRatings'
 import { LentaUpload } from './LentaUpload'
@@ -38,6 +39,22 @@ export function LentaFeed({
   const [phase, setPhase] = useState<PhaseFilter>('all')
   // Открытый в лайтбоксе пост и активный кадр его галереи (null — закрыт).
   const [open, setOpen] = useState<OpenMedia | null>(null)
+  // Режим «Смотреть подряд» (вертикальный свайп-просмотр в стиле клипов).
+  const [flowOpen, setFlowOpen] = useState(false)
+  // Сигнал «открой форму загрузки» (deep-link с главной: /lenta#upload).
+  const [uploadSignal, setUploadSignal] = useState(0)
+
+  // Deep-links с главной/шаринга: #flow → просмотр подряд, #upload → форма загрузки.
+  // Хэш (не searchParams) — роут остаётся статически кэшируемым (ISR force-static).
+  useEffect(() => {
+    const apply = () => {
+      if (window.location.hash === '#flow') setFlowOpen(true)
+      else if (window.location.hash === '#upload') setUploadSignal((s) => s + 1)
+    }
+    apply()
+    window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  }, [])
   // Лайки (id постов) — состояние поднято сюда, чтобы карточка и лайтбокс показывали
   // ОДИН лайк синхронно. Гидрируем из localStorage после монтирования (анти-SSR-расхож.).
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set())
@@ -158,7 +175,16 @@ export function LentaFeed({
       ) : (
       <>
       <div className="lenta-top">
-        <LentaUpload locale={locale} onUploaded={(item) => setItems((prev) => [item, ...prev])} />
+        <LentaUpload
+          locale={locale}
+          openSignal={uploadSignal}
+          onUploaded={(item) => setItems((prev) => [item, ...prev])}
+        />
+        {items.length > 0 && (
+          <button type="button" className="lenta-flow-open" onClick={() => setFlowOpen(true)}>
+            ▶ {t(locale, 'lenta.flow.open')}
+          </button>
+        )}
         {items.length > 0 && (
           <div className="lenta-controls" role="group" aria-label={t(locale, 'lenta.title')}>
             <div className="lenta-filter">
@@ -226,6 +252,21 @@ export function LentaFeed({
         />
       )}
       </>
+      )}
+
+      {/* «Смотреть подряд»: вертикальный свайп-просмотр (лайки общие с лентой). */}
+      {flowOpen && view.length > 0 && (
+        <LentaFlow
+          items={view}
+          likedIds={likedIds}
+          locale={locale}
+          onToggleLike={toggleLike}
+          onClose={() => {
+            setFlowOpen(false)
+            // снять #flow, чтобы повторный переход с главной снова открыл просмотр
+            if (window.location.hash === '#flow') history.replaceState(null, '', window.location.pathname)
+          }}
+        />
       )}
 
       {/* Плавающая кнопка «Фотобитвы» — всегда на виду (fixed), даже при прокрутке. */}

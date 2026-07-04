@@ -11,6 +11,7 @@ import { JsonLd } from '../components/JsonLd'
 import { excerpt } from '../../../lib/lexicalExcerpt'
 import { mapTypeMeta } from '../../../lib/mapTypes'
 import { POLL_OPTIONS } from '../../../lib/pollOptions'
+import { publicUrl } from '../../../lib/s3'
 import { withRetry } from '../../../lib/withRetry'
 import { Countdown } from '../components/Countdown'
 import { CountdownShare } from '../components/CountdownShare'
@@ -178,6 +179,44 @@ async function getPollTallies(): Promise<Record<string, number> | null> {
   }
 }
 
+// Живой тизер «Народной ленты» на главной: свежие кадры + счётчик публикаций.
+// Видео представлено постером (без постера — пропускаем: пустой квадрат не зовёт).
+type LentaTeaser = { total: number; thumbs: { id: number; url: string; kind: 'photo' | 'video'; likes: number }[] }
+async function getLentaTeaser(): Promise<LentaTeaser | null> {
+  try {
+    return await withRetry(async () => {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: 'submissions',
+        where: { status: { equals: 'visible' } },
+        sort: '-createdAt',
+        depth: 0,
+        limit: 12,
+        overrideAccess: true,
+      })
+      const thumbs = res.docs
+        .map((d) => {
+          const doc = d as unknown as {
+            id: number
+            kind?: string | null
+            objectKey?: string | null
+            posterKey?: string | null
+            likeCount?: number | null
+          }
+          const kind = doc.kind === 'video' ? ('video' as const) : ('photo' as const)
+          const key = kind === 'video' ? doc.posterKey : doc.objectKey
+          if (!key) return null
+          return { id: doc.id, url: publicUrl(key), kind, likes: Number(doc.likeCount) || 0 }
+        })
+        .filter((x): x is LentaTeaser['thumbs'][number] => x !== null)
+        .slice(0, 8)
+      return { total: res.totalDocs, thumbs }
+    })
+  } catch {
+    return null
+  }
+}
+
 async function getOpenRaffle(locale: Locale) {
   try {
     return await withRetry(async () => {
@@ -199,7 +238,7 @@ async function getOpenRaffle(locale: Locale) {
 
 export async function HomeView({ locale }: { locale: Locale }) {
   const h = (path: string) => localeHref(locale, path)
-  const [events, albums, about, map, pollTallies, openRaffle, home, announcement] = await Promise.all([
+  const [events, albums, about, map, pollTallies, openRaffle, home, announcement, lenta] = await Promise.all([
     getPublishedEvents(locale),
     getRecentAlbums(locale),
     getAboutTeaser(locale),
@@ -208,6 +247,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
     getOpenRaffle(locale),
     getHome(locale),
     getAnnouncement(locale),
+    getLentaTeaser(),
   ])
 
   // Overlay редактируемого текста из глобала home (по ключу карточки); фолбэк — код.
@@ -486,9 +526,10 @@ export async function HomeView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      {/* Тизер «Народной ленты» (UGC): зовём гостей выкладывать фото/видео праздника.
-          Discoverability к сезону; чистый CTA без БД-запроса (лента — на /lenta). */}
-      <section className="section section--tint">
+      {/* Живой тизер «Народной ленты» (UGC): свежие кадры гостей + счётчик + призыв
+          выложить своё (deep-link /lenta#upload — сразу форма) и «смотреть подряд»
+          (/lenta#flow — свайп-просмотр как в клипах). Пустая лента → чистый CTA. */}
+      <section className="section section--tint home-lenta">
         <div className="section-inner" style={{ textAlign: 'center' }}>
           <SectionHeading
             eyebrow={t(locale, 'home.lenta.eyebrow')}
@@ -497,11 +538,33 @@ export async function HomeView({ locale }: { locale: Locale }) {
             tulip
           />
           <p className="section-lead" style={{ margin: '0 auto', maxWidth: 620 }}>
-            {t(locale, 'home.lenta.lead')}
+            {lenta && lenta.total > 0
+              ? t(locale, 'home.lenta.count').replace('{n}', String(lenta.total))
+              : t(locale, 'home.lenta.lead')}
           </p>
-          <div style={{ marginTop: '1.75rem' }}>
-            <Link className="btn btn-gold" href={h('/lenta')}>
-              {t(locale, 'home.lenta.cta')}
+          {lenta && lenta.thumbs.length > 0 && (
+            <Link className="home-lenta-strip" href={h('/lenta#flow')} aria-label={t(locale, 'lenta.flow.open')}>
+              {lenta.thumbs.map((th, i) => (
+                <span className={`home-lenta-thumb ${i % 2 ? 'tilt-b' : 'tilt-a'}`} key={th.id}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={th.url} alt="" loading="lazy" />
+                  {th.kind === 'video' && <span className="home-lenta-play" aria-hidden="true">▶</span>}
+                  {th.likes > 0 && <span className="home-lenta-likes">🌷 {th.likes}</span>}
+                </span>
+              ))}
+            </Link>
+          )}
+          <div className="home-lenta-actions">
+            <Link className="btn btn-gold" href={h('/lenta#upload')}>
+              📸 {t(locale, 'home.lenta.upload')}
+            </Link>
+            {lenta && lenta.thumbs.length > 0 && (
+              <Link className="btn btn-outline" href={h('/lenta#flow')}>
+                ▶ {t(locale, 'lenta.flow.open')}
+              </Link>
+            )}
+            <Link className="home-lenta-all" href={h('/lenta')}>
+              {t(locale, 'home.lenta.cta')} →
             </Link>
           </div>
         </div>
