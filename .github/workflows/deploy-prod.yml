@@ -205,6 +205,15 @@ jobs:
           # /admin без сессии отдаёт экран входа (на этом сетапе 200); допускаем и
           # редирект на /admin/login — главное, что не 5xx/000.
           check "/admin" "200 302 307 308"
+          # SEO-переезд: старый домен должен отдавать 301 на новый (middleware по Host)
+          old_host="xn--80aaac1aqpgcf4bqn1j.xn--p1ai"
+          new_host="xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai"
+          redir=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 -H "Host: $old_host" "http://127.0.0.1:3000/map" || true)
+          echo "old-domain /map → $redir"
+          case "$redir" in
+            301\ https://$new_host/map*) ;;
+            *) echo "::error::старый домен /map = '$redir', ожидалось '301 https://$new_host/map'"; fail=1 ;;
+          esac
           exit $fail
           REMOTE
 
