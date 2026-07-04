@@ -3146,6 +3146,261 @@ a.feature-card--cover:hover .feature-cover img {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
 }
 
+/* ── «Смотреть подряд» — вертикальный свайп-просмотр ленты (стиль клипов) ───── */
+.lenta-flow {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #0a1c12;
+}
+.lenta-flow-scroll {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.lenta-flow-scroll::-webkit-scrollbar {
+  display: none;
+}
+.lenta-flow-slide {
+  position: relative;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.lenta-flow-media {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lenta-flow-media img,
+.lenta-flow-media video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* «Взрыв» тюльпана при двойном тапе — как лайк в клипах */
+.lenta-flow-burst {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #c8203f;
+  animation: flow-burst 0.7s ease forwards;
+}
+@keyframes flow-burst {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+.lenta-flow-meta {
+  position: absolute;
+  left: 1rem;
+  right: 5rem;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  color: #fff7e6;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+.lenta-flow-meta strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.lenta-flow-meta p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lenta-flow-rail {
+  position: absolute;
+  right: 0.75rem;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+.lenta-flow-act {
+  font: inherit;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.55rem;
+  min-width: 52px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  background: rgba(10, 28, 18, 0.55);
+  color: #fff7e6;
+  font-size: 1.25rem;
+}
+.lenta-flow-act span {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.lenta-flow-act.is-on {
+  color: #ffd9df;
+}
+.lenta-flow-close {
+  position: absolute;
+  top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  right: 0.75rem;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: rgba(10, 28, 18, 0.6);
+  color: #fff7e6;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.lenta-flow-counter {
+  position: absolute;
+  top: calc(1.35rem + env(safe-area-inset-top, 0px));
+  left: 1rem;
+  z-index: 2;
+  color: rgba(255, 247, 230, 0.85);
+  font-size: 0.85rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.lenta-flow-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 2;
+  color: rgba(255, 247, 230, 0.9);
+  font-size: 0.85rem;
+  pointer-events: none;
+  animation: flow-hint 1.6s ease infinite;
+}
+@keyframes flow-hint {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-6px);
+    opacity: 0.5;
+  }
+}
+/* Кнопка входа в просмотр на /lenta — заметная, гранатово-золотая */
+.lenta-flow-open {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--c-gold);
+  background: linear-gradient(120deg, #a11031, #c8203f);
+  color: #fff7e6;
+  box-shadow: 0 4px 14px rgba(161, 16, 49, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.lenta-flow-open:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(161, 16, 49, 0.45);
+}
+
+/* ── Живой тизер «Народной ленты» на главной ────────────────────────────────── */
+.home-lenta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin: 1.5rem auto 0;
+  max-width: 720px;
+  text-decoration: none;
+}
+.home-lenta-thumb {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s;
+}
+.home-lenta-thumb.tilt-a {
+  transform: rotate(-2.2deg);
+}
+.home-lenta-thumb.tilt-b {
+  transform: rotate(2.2deg);
+}
+.home-lenta-strip:hover .home-lenta-thumb {
+  transform: rotate(0) scale(1.04);
+}
+.home-lenta-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.home-lenta-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.5rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.home-lenta-likes {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(10, 28, 18, 0.65);
+  color: #fff7e6;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.home-lenta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 1.75rem;
+}
+.home-lenta-all {
+  font-weight: 700;
+}
+@media (max-width: 560px) {
+  .home-lenta-thumb {
+    width: 88px;
+    height: 88px;
+  }
+}
+
 /* ── Push-подписка на новый контент (Новости / Народная лента) ──────────────── */
 .push-box {
   margin-top: 1.1rem;

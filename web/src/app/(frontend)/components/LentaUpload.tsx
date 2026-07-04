@@ -30,8 +30,21 @@ const nextPickId = () => `p${++pickSeq}`
 // раз), валидируются и (фото) ужимаются на клиенте, грузятся presigned-PUT'ами НАПРЯМУЮ
 // в Object Storage (минуя наш бокс), затем создаётся ОДНА запись. onUploaded —
 // оптимистично показать новый пост сразу (лента ISR, серверное появление ≤30с).
-export function LentaUpload({ locale, onUploaded }: { locale: Locale; onUploaded: (item: LentaItem) => void }) {
+export function LentaUpload({
+  locale,
+  onUploaded,
+  openSignal = 0,
+}: {
+  locale: Locale
+  onUploaded: (item: LentaItem) => void
+  /** Инкремент извне (deep-link /lenta#upload) — открыть форму загрузки. */
+  openSignal?: number
+}) {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true)
+  }, [openSignal])
   const [status, setStatus] = useState<Status>('idle')
   const [errCode, setErrCode] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
