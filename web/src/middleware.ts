@@ -12,9 +12,14 @@ const OLD_HOSTS = new Set([
 
 const NEW_HOST = 'xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai' // сабантуй.вмалмыже.рф
 
+// Файлы подтверждения прав поисковиков должны быть доступны и на СТАРОМ домене
+// (Вебмастер/GSC читают их до склейки зеркал) — эти пути не редиректим.
+const VERIFICATION_PATH_RE = /^\/(yandex_[0-9a-f]+\.html|google[0-9a-f]+\.html)$/
+
 export function middleware(req: NextRequest) {
   const host = (req.headers.get('host') || '').toLowerCase().split(':')[0]
   if (!OLD_HOSTS.has(host)) return NextResponse.next()
+  if (VERIFICATION_PATH_RE.test(req.nextUrl.pathname)) return NextResponse.next()
 
   const url = req.nextUrl.clone()
   url.protocol = 'https'
