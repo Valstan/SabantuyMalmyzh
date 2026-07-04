@@ -60,6 +60,20 @@ export function ShareMenu({
   // отдавать его в юникод-форме.
   const theUrl = () =>
     asciiUrl(getUrl ? getUrl() : url || (typeof window !== 'undefined' ? window.location.href : ''))
+  // URL для ВК — с маркером ?vk=1: при публикации ВК нормализует punycode-хост
+  // обратно в юникод и берёт сниппет из кэша юникод-формы URL, где у «голого»
+  // адреса застрял битый безкартиночный вариант (первый скрейп) — и починить
+  // его снаружи нечем. Свежий query-вариант создаёт новую кэш-запись, которая
+  // скрейпится уже с og:image (+width/height) — проверено share.php 2026-07-04.
+  const vkUrl = () => {
+    try {
+      const u = new URL(theUrl())
+      u.searchParams.set('vk', '1')
+      return u.href
+    } catch {
+      return theUrl()
+    }
+  }
 
   const toggle = () => {
     if (open) {
@@ -140,7 +154,7 @@ export function ShareMenu({
         { label: 'Telegram', href: `https://t.me/share/url?url=${enc(theUrl())}&text=${enc(theText())}` },
         {
           label: 'ВКонтакте',
-          href: `https://vk.com/share.php?url=${enc(theUrl())}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
+          href: `https://vk.com/share.php?url=${enc(vkUrl())}&title=${enc(title || SITE_NAME)}&comment=${enc(theText())}`,
         },
         { label: 'Одноклассники', href: `https://connect.ok.ru/offer?url=${enc(theUrl())}&title=${enc(theText())}` },
       ]
