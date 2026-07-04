@@ -777,6 +777,19 @@ a {
   display: block;
 }
 
+/* Картинки внутри richText-тела статьи (upload-узлы Lexical рендерятся голым
+   <img> в натуральную величину) — вписываем в колонку текста, стиль как у
+   обложки поста. Кликабельность даёт ArticleLightbox. */
+.page-prose img {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: block;
+  margin: 1.25rem 0;
+}
+
 .news-videos {
   display: grid;
   gap: 1.25rem;
