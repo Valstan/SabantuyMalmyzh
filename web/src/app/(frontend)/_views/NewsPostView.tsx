@@ -17,7 +17,13 @@ import { ShareMenu } from '../components/ShareMenu'
 import { SectionHeading } from '../components/SectionHeading'
 
 // Пост новостей (ru: /novosti/[slug], tt: /tt/novosti/[slug]).
-type MediaLike = { url?: string | null; alt?: string | null; sizes?: Record<string, { url?: string | null }> }
+type MediaLike = {
+  url?: string | null
+  alt?: string | null
+  width?: number | null
+  height?: number | null
+  sizes?: Record<string, { url?: string | null; width?: number | null; height?: number | null }>
+}
 
 // Транзиентный сбой БД → throw (после ретраев): ISR не закэширует ложный 404
 // (паттерн AlbumView). null = поста реально нет.
@@ -127,7 +133,13 @@ export async function newsPostMeta(slug: string, locale: Locale): Promise<Metada
   // корневые метаданные layout — og:url на главную, общий og.jpg вместо обложки.
   const path = localeHref(locale, `/novosti/${encodeURIComponent(post.slug ?? decodeURIComponent(slug))}`)
   const img = post.cover && typeof post.cover === 'object' ? (post.cover as MediaLike) : null
-  const cover = img?.sizes?.wide?.url || img?.url || null
+  const wide = img?.sizes?.wide?.url ? img.sizes.wide : null
+  const cover = wide?.url || img?.url || null
+  // Явные width/height помогают ВК показать картинку с ПЕРВОГО шаринга:
+  // без них первый скрейп свежего URL публикует сниппет раньше, чем докачал
+  // изображение, и кэширует его без картинки (повторный шаринг уже с фото).
+  const coverW = (wide ? wide.width : img?.width) ?? undefined
+  const coverH = (wide ? wide.height : img?.height) ?? undefined
   const title = `${post.title} — ${t(locale, 'nav.news')}`
   return {
     title,
@@ -140,7 +152,9 @@ export async function newsPostMeta(slug: string, locale: Locale): Promise<Metada
       type: 'article',
       // Пост без обложки → общий брендовый баннер: child-openGraph целиком
       // заменяет корневой из layout, без явного fallback карточка без картинки.
-      images: cover ? [{ url: cover, alt: img?.alt || post.title }] : [{ url: '/og.jpg', width: 1200, height: 630 }],
+      images: cover
+        ? [{ url: cover, alt: img?.alt || post.title, width: coverW, height: coverH }]
+        : [{ url: '/og.jpg', width: 1200, height: 630 }],
     },
   }
 }
