@@ -355,6 +355,24 @@ export async function HomeView({ locale }: { locale: Locale }) {
         </Link>
       </Hero>
 
+      {/* Фотостена-баннер: кликабельный коллаж из реальных кадров праздника
+          (public/decor/fotostena-collage.jpg — 8 одобренных фото /fotostena).
+          Сразу под героем — владелец просил заметную «картинку-ссылку». */}
+      <section className="section fotostena-banner-section">
+        <div className="section-inner">
+          <Link href={h('/fotostena')} className="fotostena-banner" aria-label={t(locale, 'fotostena.banner.cta')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/decor/fotostena-collage.jpg" alt={t(locale, 'fotostena.banner.title')} loading="lazy" />
+            <span className="fotostena-banner-overlay">
+              <span className="fotostena-banner-eyebrow">{t(locale, 'fotostena.banner.eyebrow')}</span>
+              <span className="fotostena-banner-title">{t(locale, 'fotostena.banner.title')}</span>
+              <span className="fotostena-banner-sub">{t(locale, 'fotostena.banner.sub')}</span>
+              <span className="btn btn-gold fotostena-banner-cta">{t(locale, 'fotostena.banner.cta')} →</span>
+            </span>
+          </Link>
+        </div>
+      </section>
+
       {festivalStartIso && (
         <section className="section section--photo" style={tulipBg}>
           <div className="section-inner" style={{ textAlign: 'center' }}>

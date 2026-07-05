@@ -1019,6 +1019,71 @@ a.feature-card--cover:hover .feature-cover img {
 .medialib-cell:hover img {
   transform: scale(1.04);
 }
+/* ── Фотостена: баннер-коллаж на главной ────────────────────────────────────── */
+.fotostena-banner-section {
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+.fotostena-banner {
+  position: relative;
+  display: block;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(31, 82, 52, 0.25);
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.fotostena-banner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 38px rgba(31, 82, 52, 0.32);
+}
+.fotostena-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.fotostena-banner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(rgba(15, 46, 28, 0.25), rgba(15, 46, 28, 0.55));
+}
+.fotostena-banner-eyebrow {
+  color: #f4d38a;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.fotostena-banner-title {
+  color: #fff;
+  font-family: var(--font-display, inherit);
+  font-weight: 800;
+  font-size: clamp(1.4rem, 4.5vw, 2.6rem);
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+}
+.fotostena-banner-sub {
+  color: #f3efe2;
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  max-width: 560px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+.fotostena-banner-cta {
+  margin-top: 0.5rem;
+}
+@media (max-width: 560px) {
+  .fotostena-banner-sub {
+    display: none; /* на телефоне коллаж невысокий — оставляем заголовок и кнопку */
+  }
+}
+
 /* ── Фотостена (/fotostena, I8): атрибуция под кадром ───────────────────────── */
 .fotostena-cell {
   margin: 0;
