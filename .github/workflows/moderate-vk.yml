@@ -74,7 +74,12 @@ jobs:
           ENVF=/etc/sabantuy/sabantuy.env
           DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
           SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          # MEDIA_DIR обязателен: approve-хук качает кадр в Media (staticDir).
+          # Без него файлы легли бы в public/media ЧЕКАУТА (эфемерный), а живое
+          # приложение отдаёт из персистентного MEDIA_DIR → битые картинки.
+          MEDIA=$(grep '^MEDIA_DIR=' "$ENVF" | head -1 | sed 's/^MEDIA_DIR=//;s/^"//;s/"$//')
           if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+          if [ -z "$MEDIA" ]; then echo "::error::нет MEDIA_DIR в $ENVF — approve сложил бы кадры в чекаут"; exit 1; fi
 
           if [ "$ACTION" = "list" ]; then
             echo "=== CSV кандидатов (status=new) ==="
@@ -94,7 +99,7 @@ jobs:
           JITI=$(ls -d web/node_modules/.pnpm/jiti@*/node_modules/jiti/lib/jiti-cli.mjs 2>/dev/null | head -1)
           if [ -z "$JITI" ]; then echo "::error::jiti не найден"; exit 1; fi
           NODE_ENV=production \
-          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" MEDIA_DIR="$MEDIA" \
           VK_MODERATE_ACTION="$ACTION" VK_MODERATE_IDS="$IDS" \
             node "$JITI" web/src/seed/moderateVkCandidates.ts
 
