@@ -25,6 +25,7 @@ export function ShareMenu({
   onSystemShare,
   extra,
   buttonLabel,
+  openUp,
 }: {
   locale: Locale
   title?: string
@@ -41,6 +42,8 @@ export function ShareMenu({
   /** Дополнительные пункты списка (печать / PNG / .txt / …). */
   extra?: ShareExtra[]
   buttonLabel?: string
+  /** Раскрывать список ВВЕРХ от кнопки (для плавающих нижних панелей). */
+  openUp?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -50,7 +53,9 @@ export function ShareMenu({
   // секции сайта создают свои stacking-контексты и стили ссылок (фото-секции) —
   // внутри них меню перекрывалось следующими слоями и теряло цвета. Портал
   // выносит список поверх ВСЕХ слоёв с собственными цветами.
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  // `top` ИЛИ `bottom` — при openUp якорим нижний край списка над кнопкой, чтобы
+  // он рос вверх независимо от высоты (для нижних плавающих панелей).
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
 
   const theText = () => (getText ? getText() : text || '')
   // ASCII (punycode) — ВЕЗДЕ, не только в соцссылках: юникод-домен ВК
@@ -70,7 +75,7 @@ export function ShareMenu({
     if (r) {
       // не выпускаем список за правый край экрана
       const left = Math.min(r.left, Math.max(8, window.innerWidth - 244))
-      setPos({ top: r.bottom + 6, left })
+      setPos(openUp ? { bottom: window.innerHeight - r.top + 6, left } : { top: r.bottom + 6, left })
     }
     setOpen(true)
   }
@@ -164,7 +169,7 @@ export function ShareMenu({
             className="sharemenu-pop"
             role="menu"
             ref={popRef}
-            style={{ top: pos.top, left: pos.left }}
+            style={{ top: pos.top, bottom: pos.bottom, left: pos.left }}
           >
           <button type="button" className="sharemenu-item" role="menuitem" onClick={doSystem}>
             📲 {t(locale, 'sharemenu.system')}

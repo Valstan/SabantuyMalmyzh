@@ -30,6 +30,7 @@ async function getApproved(): Promise<FotostenaItem[]> {
       return res.docs
         .map((d) => {
           const doc = d as {
+            id: number
             media?: { url?: string | null; alt?: string | null; sizes?: Record<string, { url?: string | null }> } | number | null
             authorName?: string | null
             postUrl?: string | null
@@ -39,6 +40,7 @@ async function getApproved(): Promise<FotostenaItem[]> {
           const full = m.url ?? null
           if (!full || !doc.postUrl) return null
           return {
+            id: doc.id,
             thumbUrl: m.sizes?.thumbnail?.url || m.sizes?.card?.url || full,
             fullUrl: m.sizes?.wide?.url || full,
             alt: m.alt ?? null,
@@ -46,7 +48,7 @@ async function getApproved(): Promise<FotostenaItem[]> {
             postUrl: doc.postUrl,
           }
         })
-        .filter((x): x is FotostenaItem => x !== null)
+        .filter((x): x is NonNullable<typeof x> => x !== null)
     })
   } catch {
     return []
@@ -68,7 +70,7 @@ export async function FotostenaView({ locale }: { locale: Locale }) {
         <div className="section-inner">
           {items.length > 0 ? (
             <>
-              <FotostenaGallery items={items} locale={locale} />
+              <FotostenaGallery items={items} locale={locale} manageable />
               <p className="fotostena-disclaimer">{t(locale, 'fotostena.disclaimer')}</p>
             </>
           ) : (
