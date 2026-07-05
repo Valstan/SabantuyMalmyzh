@@ -69,6 +69,10 @@ ref:
 - ❌ Писать письма другим проектам напрямую — идея в pool идёт письмом в свой `mailbox/to-brain/` с `kind=idea`.
 - ❌ Пропускать mailbox-check в начале сессии.
 
+### Sibling-репо: тактика — напрямую (ADR-0007 мозга, 2026-07-05)
+
+Любой sibling-репо (`../<project>/`) можно **читать read-only напрямую** без письма мозгу (API-контракты, docs, SESSION_HANDOFF соседа; перед чтением `git pull --ff-only`). Писать/коммитить в чужой репо по-прежнему нельзя; «пусть сосед сделает X» — только через мозг. **Построил зависимость от чужого API/формата → сообщить мозгу письмом** (прочитанное ≠ контракт).
+
 ### Consult-library reflex (pool #014) — по условному триггеру, не на каждый /start
 
 Перед вводом нового инструмента/паттерна или при незнакомой грабле — заглянуть в библиотеку Мозга: [`cross-project-ideas/INDEX.md`](../brain_matrica/cross-project-ideas/INDEX.md) (pool), [`GOTCHAS.md`](../brain_matrica/cross-project-ideas/GOTCHAS.md) (грабли по симптому), [`REFERENCE.md`](../brain_matrica/cross-project-ideas/REFERENCE.md) (рецепты Payload+Next от GONBA — R2 on-site editing, R3 push-inspect миграции). **Особенно** GOTCHAS G6/G7 (Payload-миграции) — мы второй Payload-проект.
