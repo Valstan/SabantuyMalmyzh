@@ -107,11 +107,13 @@ jobs:
           VKTOKEN=$(grep '^VK_SERVICE_TOKEN=' /tmp/vk-collect.env | sed 's/^VK_SERVICE_TOKEN=//')
 
           # 4. Коллектор (NODE_ENV=production → push выключен, G128).
+          # jiti, НЕ `payload run`: последний на этом скрипте молча выходит,
+          # не выполнив его (0 вывода/0 записей; и на Windows-dev, и здесь).
           echo "Запускаю collectVkCandidates (queries='${QUERIES:-default}', since='${SINCE:-default}') ..."
           NODE_ENV=production \
           DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
           VK_SERVICE_TOKEN="$VKTOKEN" VK_QUERIES="$QUERIES" VK_SINCE="$SINCE" \
-            corepack pnpm -C web payload run src/seed/collectVkCandidates.ts
+            web/node_modules/.bin/jiti web/src/seed/collectVkCandidates.ts
 
           # 5. Сводка (read-only)
           echo "кандидатов по статусам: $(psql "$DB" -tAc "SELECT status || '=' || count(*) FROM vk_candidates GROUP BY status ORDER BY status;" | tr '\n' ' ')"

@@ -3,7 +3,11 @@
  * складывает их фото кандидатами в коллекцию vk-candidates (status=new) на
  * модерацию в /admin. Публикацией НЕ занимается — только сбор (полуавтомат).
  *
- *   VK_SERVICE_TOKEN=... corepack pnpm -C web payload run src/seed/collectVkCandidates.ts
+ *   VK_SERVICE_TOKEN=... web/node_modules/.bin/jiti web/src/seed/collectVkCandidates.ts
+ *
+ * ⚠️ НЕ `payload run`: он на этом скрипте молча выходит без выполнения
+ * (10 с, ноль вывода, ноль записей — воспроизведено и на Windows-dev, и на
+ * Linux-боксе), поэтому запуск через jiti + relative-импорт конфига.
  *
  * Env:
  *   VK_SERVICE_TOKEN — сервисный ключ VK-приложения 54656174 (обязателен;
@@ -20,8 +24,10 @@
  * нужен пользовательский токен (см. сообщение об ошибке ниже).
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- seed-утилита: ответы VK API untyped */
-import config from '@payload-config'
+// relative-импорт (не '@payload-config'): jiti не резолвит tsconfig-алиасы.
 import { getPayload } from 'payload'
+
+import config from '../payload.config'
 
 const log = (m: string) => console.log(m)
 
