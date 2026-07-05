@@ -12,7 +12,10 @@ import { withRetry } from '../../../lib/withRetry'
 import { categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
 import { EVENT_MEDIA } from '../../../lib/eventMedia'
+import { EVENT_REPORTS } from '../../../lib/eventReports'
+import { videoEmbedSrc } from '../../../lib/videoEmbed'
 import { FestivalNotice } from '../components/FestivalNotice'
+import { FotostenaGallery } from '../components/FotostenaGallery'
 import { EventEditor } from '../components/edit/EventEditor'
 import { RegistrationForm } from '../events/[slug]/RegistrationForm'
 
@@ -52,6 +55,8 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
   const heroSrc = hero?.url || media?.hero?.src || null
   const heroAlt = hero?.url ? hero.alt || event.title : media?.hero?.alt || event.title
   const isComp = isCompetitionCategory(event.category)
+  // Фотоотчёт события (что реально было 4 июля) — реальные кадры/видео из VK.
+  const report = event.slug ? EVENT_REPORTS[event.slug] : undefined
 
   return (
     <main>
@@ -104,6 +109,54 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
                     </a>
                   ))}
                 </div>
+              </section>
+            )}
+
+            {report && (
+              <section className="event-report" aria-label={t(locale, 'event.report.title')}>
+                <h2>📸 {t(locale, 'event.report.title')}</h2>
+                <p className="event-report-lead">{locale === 'tt' ? report.lead.tt : report.lead.ru}</p>
+                <FotostenaGallery
+                  items={report.photos.map((p) => ({
+                    thumbUrl: p.thumb,
+                    fullUrl: p.full,
+                    alt: p.alt,
+                    authorName: p.author,
+                    postUrl: p.post,
+                  }))}
+                  locale={locale}
+                />
+                {report.videos && report.videos.length > 0 && (
+                  <div className="news-videos event-report-videos">
+                    <h3>{t(locale, 'event.report.videos')}</h3>
+                    {report.videos.map((v) => {
+                      const src = videoEmbedSrc(v.url)
+                      return (
+                        <figure className="news-video" key={v.url}>
+                          {v.title && <figcaption className="news-video-title">🎬 {v.title}</figcaption>}
+                          {src ? (
+                            <div className="efir-player">
+                              <iframe
+                                src={src}
+                                title={v.title}
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                allowFullScreen
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <a href={v.url} target="_blank" rel="noopener noreferrer">
+                              {v.title || v.url}
+                            </a>
+                          )}
+                        </figure>
+                      )
+                    })}
+                  </div>
+                )}
+                <p className="fotostena-disclaimer">
+                  <Link href={localeHref(locale, '/fotostena')}>{t(locale, 'event.report.more')} →</Link>
+                </p>
               </section>
             )}
           </article>
