@@ -54,6 +54,9 @@ export async function MediatekaView({ locale }: { locale: Locale }) {
         <div className="section-inner">
           <SectionHeading eyebrow={t(locale, 'mediateka.eyebrow')} title={t(locale, 'mediateka.title')} />
           <p className="section-lead">{t(locale, 'mediateka.lead')}</p>
+          <p className="section-lead">
+            <a href={locale === 'tt' ? '/tt/fotostena' : '/fotostena'}>{t(locale, 'fotostena.title')} →</a>
+          </p>
         </div>
       </section>
       <section className="section">
