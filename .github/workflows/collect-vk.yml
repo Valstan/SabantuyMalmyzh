@@ -110,10 +110,14 @@ jobs:
           # jiti, НЕ `payload run`: последний на этом скрипте молча выходит,
           # не выполнив его (0 вывода/0 записей; и на Windows-dev, и здесь).
           echo "Запускаю collectVkCandidates (queries='${QUERIES:-default}', since='${SINCE:-default}') ..."
+          # jiti — транзитивная зависимость (payload) → в web/node_modules/.bin
+          # его НЕТ (pnpm линкует только прямые); берём CLI из виртуального стора.
+          JITI=$(ls -d web/node_modules/.pnpm/jiti@*/node_modules/jiti/lib/jiti-cli.mjs 2>/dev/null | head -1)
+          if [ -z "$JITI" ]; then echo "::error::jiti не найден в web/node_modules/.pnpm"; exit 1; fi
           NODE_ENV=production \
           DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
           VK_SERVICE_TOKEN="$VKTOKEN" VK_QUERIES="$QUERIES" VK_SINCE="$SINCE" \
-            web/node_modules/.bin/jiti web/src/seed/collectVkCandidates.ts
+            node "$JITI" web/src/seed/collectVkCandidates.ts
 
           # 5. Сводка (read-only)
           echo "кандидатов по статусам: $(psql "$DB" -tAc "SELECT status || '=' || count(*) FROM vk_candidates GROUP BY status ORDER BY status;" | tr '\n' ' ')"
