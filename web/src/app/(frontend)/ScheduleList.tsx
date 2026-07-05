@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { CATEGORY_COVER, CATEGORY_LABELS, EVENT_COVER, categoryLabel } from '../../lib/categories'
+import { EVENT_REPORTS } from '../../lib/eventReports'
 import { t, type Locale } from '../../lib/i18n'
 import { localeHref } from '../../lib/localeHref'
 import { EventShare, type ShareEvent } from './components/EventShare'
@@ -360,6 +361,11 @@ export function ScheduleList({ items, locale = 'ru' }: { items: ScheduleItem[]; 
                     </h4>
                     {event.summary && <p>{event.summary}</p>}
                     {event.location && <p className="meta">📍 {event.location}</p>}
+                    {event.slug && EVENT_REPORTS[event.slug] && href && (
+                      <Link className="report-badge" href={href}>
+                        {t(locale, 'schedule.hasReport')}
+                      </Link>
+                    )}
                     {event.registrationEnabled && href && (
                       <Link className="reg-badge" href={`${href}#register`}>
                         {t(locale, 'schedule.regOpen')}

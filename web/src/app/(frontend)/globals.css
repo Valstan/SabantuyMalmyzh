@@ -280,6 +280,23 @@ a {
   text-decoration: underline;
 }
 
+/* Бейдж «фотоотчёт» — событие имеет реальные кадры праздника */
+.report-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  margin-right: 0.75rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand-green-dark, #1f5234);
+  border-radius: 999px;
+  text-decoration: none;
+}
+.report-badge:hover {
+  filter: brightness(1.12);
+}
+
 .schedule-item-title .badge {
   margin-left: 0.5rem;
   vertical-align: middle;
@@ -396,6 +413,29 @@ a {
 
 .event-content {
   margin-top: 1rem;
+}
+
+/* Фотоотчёт события (реальные кадры/видео из VK, lib/eventReports.ts) */
+.event-report {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--brand-green-dark, #1f5234);
+}
+.event-report > h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.event-report-lead {
+  font-size: 1.02rem;
+  margin-bottom: 1rem;
+  color: var(--ink, #22311c);
+}
+.event-report-videos {
+  margin-top: 1.25rem;
+}
+.event-report-videos h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Фотогалерея события (кодовые медиа, lib/eventMedia.ts) */
