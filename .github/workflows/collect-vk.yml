@@ -4,8 +4,9 @@ name: Collect VK photo candidates (manual)
 # в коллекцию vk-candidates (status=new) — на модерацию в /admin. Ничего не
 # публикует сам.
 #
-# Токен: secrets.VK_SERVICE_TOKEN (сервисный ключ VK-приложения 54656174) —
-# передаётся в env запуска на боксе и НИГДЕ не сохраняется (#008).
+# Токен: secrets.VK_SERVICE_TOKEN — ПОЛЬЗОВАТЕЛЬСКИЙ VK-токен (vk1.a…), не
+# сервисный ключ приложения (тому newsfeed.search недоступен, code 1051).
+# Передаётся в env запуска на боксе и НИГДЕ не сохраняется (#008).
 #
 # Требует те же доступы, что deploy-prod.yml:
 #   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
@@ -68,7 +69,7 @@ jobs:
         run: |
           set -e
           if [ -z "$VK_SERVICE_TOKEN" ]; then
-            echo "::error::secrets.VK_SERVICE_TOKEN не задан — возьмите сервисный ключ доступа в настройках VK-приложения (id 54656174) и добавьте в GitHub Secrets."
+            echo "::error::secrets.VK_SERVICE_TOKEN не задан — нужен ПОЛЬЗОВАТЕЛЬСКИЙ VK-токен (vk1.a…), например parse-токен SARAFAN."
             exit 1
           fi
           # Токен уходит на бокс через stdin-пайп env-строкой (не в argv → не в ps/логи).
