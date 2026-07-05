@@ -27,6 +27,7 @@ import { PushSubscriptions } from './collections/PushSubscriptions'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { Visitors } from './collections/Visitors'
+import { VkCandidates } from './collections/VkCandidates'
 import { startPushTicker } from './lib/pushTick'
 import { FestivalMap } from './globals/FestivalMap'
 import { HomeContent } from './globals/HomeContent'
@@ -56,7 +57,7 @@ export default buildConfig({
     // на этапе деплоя (web/src/migrations/), как у GONBA.
     push: true,
   }),
-  collections: [Pages, Events, Gallery, News, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, PushSubscriptions, Visitors, Users],
+  collections: [Pages, Events, Gallery, News, Media, Registrations, PollVotes, QuizQuestions, QuizResults, Subscribers, Raffle, RaffleEntry, Submissions, SubmissionReactions, SubmissionViews, SubmissionComments, ContentReports, PhotoBattles, PushSubscriptions, Visitors, VkCandidates, Users],
   globals: [FestivalMap, HomeContent, LiveStream, SiteHeader, SiteFooter],
   // Email-уведомления о новых заявках (хук notifyOrganizer → payload.sendEmail).
   // Провайдеро-независимо: любой внешний SMTP-relay (Resend / Brevo / SendGrid / …)

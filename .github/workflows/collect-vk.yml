@@ -1,0 +1,118 @@
+name: Collect VK photo candidates (manual)
+
+# Фотостена (I8): собирает фото из открытых VK-постов о Сабантуе кандидатами
+# в коллекцию vk-candidates (status=new) — на модерацию в /admin. Ничего не
+# публикует сам.
+#
+# Токен: secrets.VK_SERVICE_TOKEN (сервисный ключ VK-приложения 54656174) —
+# передаётся в env запуска на боксе и НИГДЕ не сохраняется (#008).
+#
+# Требует те же доступы, что deploy-prod.yml:
+#   secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git-ref репозитория для кода коллектора на боксе'
+        required: true
+        default: 'main'
+      queries:
+        description: 'Поисковые запросы через «;» (пусто = дефолт скрипта)'
+        required: false
+        default: ''
+      since:
+        description: 'Нижняя граница поиска, ISO-дата (пусто = 30 дней назад)'
+        required: false
+        default: ''
+
+concurrency:
+  group: prod-db
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Collect on box
+        env:
+          VK_SERVICE_TOKEN: ${{ secrets.VK_SERVICE_TOKEN }}
+        run: |
+          set -e
+          if [ -z "$VK_SERVICE_TOKEN" ]; then
+            echo "::error::secrets.VK_SERVICE_TOKEN не задан — возьмите сервисный ключ доступа в настройках VK-приложения (id 54656174) и добавьте в GitHub Secrets."
+            exit 1
+          fi
+          # Токен уходит на бокс через stdin-пайп env-строкой (не в argv → не в ps/логи).
+          {
+            printf 'VK_SERVICE_TOKEN=%s\n' "$VK_SERVICE_TOKEN"
+          } | ssh sabantuy 'cat > /tmp/vk-collect.env; chmod 600 /tmp/vk-collect.env'
+          ssh sabantuy 'bash -s' "${{ inputs.ref }}" "${{ inputs.queries }}" "${{ inputs.since }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"
+          QUERIES="${2:-}"
+          SINCE="${3:-}"
+          BASE=/home/valstan/sabantuy
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          cleanup() { rm -f /tmp/vk-collect.env; }
+          trap cleanup EXIT
+
+          # 1. Репо на боксе (read-only deploy key)
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+
+          # 2. Зависимости (seed-рантайм; не next build → без OOM на 1.5 GiB)
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          # 3. Секреты прода → env (значения НЕ печатаем)
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в $ENVF"; exit 1; fi
+          VKTOKEN=$(grep '^VK_SERVICE_TOKEN=' /tmp/vk-collect.env | sed 's/^VK_SERVICE_TOKEN=//')
+
+          # 4. Коллектор (NODE_ENV=production → push выключен, G128).
+          echo "Запускаю collectVkCandidates (queries='${QUERIES:-default}', since='${SINCE:-default}') ..."
+          NODE_ENV=production \
+          DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+          VK_SERVICE_TOKEN="$VKTOKEN" VK_QUERIES="$QUERIES" VK_SINCE="$SINCE" \
+            corepack pnpm -C web payload run src/seed/collectVkCandidates.ts
+
+          # 5. Сводка (read-only)
+          echo "кандидатов по статусам: $(psql "$DB" -tAc "SELECT status || '=' || count(*) FROM vk_candidates GROUP BY status ORDER BY status;" | tr '\n' ' ')"
+          REMOTE

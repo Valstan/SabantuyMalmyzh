@@ -87,6 +87,7 @@ export interface Config {
     'photo-battles': PhotoBattle;
     'push-subscriptions': PushSubscription;
     visitors: Visitor;
+    'vk-candidates': VkCandidate;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -115,6 +116,7 @@ export interface Config {
     'photo-battles': PhotoBattlesSelect<false> | PhotoBattlesSelect<true>;
     'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
     visitors: VisitorsSelect<false> | VisitorsSelect<true>;
+    'vk-candidates': VkCandidatesSelect<false> | VkCandidatesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -725,6 +727,28 @@ export interface Visitor {
   createdAt: string;
 }
 /**
+ * Фото из открытых VK-постов о празднике. Поставьте статус «Одобрено» — кадр скачается в Media и появится на странице «Фотостена» со ссылкой на автора. Отклонённые никуда не попадают.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vk-candidates".
+ */
+export interface VkCandidate {
+  id: number;
+  vkKey: string;
+  status: 'new' | 'approved' | 'rejected';
+  photoUrl: string;
+  postUrl: string;
+  authorName?: string | null;
+  authorUrl?: string | null;
+  text?: string | null;
+  foundQuery?: string | null;
+  vkPublishedAt?: string | null;
+  media?: (number | null) | Media;
+  downloadError?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -854,6 +878,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'visitors';
         value: number | Visitor;
+      } | null)
+    | ({
+        relationTo: 'vk-candidates';
+        value: number | VkCandidate;
       } | null)
     | ({
         relationTo: 'users';
@@ -1280,6 +1308,25 @@ export interface VisitorsSelect<T extends boolean = true> {
   name?: T;
   avatarUrl?: T;
   lastLoginAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vk-candidates_select".
+ */
+export interface VkCandidatesSelect<T extends boolean = true> {
+  vkKey?: T;
+  status?: T;
+  photoUrl?: T;
+  postUrl?: T;
+  authorName?: T;
+  authorUrl?: T;
+  text?: T;
+  foundQuery?: T;
+  vkPublishedAt?: T;
+  media?: T;
+  downloadError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
