@@ -1113,6 +1113,185 @@ a.feature-card--cover:hover .feature-cover img {
   color: rgba(31, 82, 52, 0.7);
 }
 
+/* ── Фотостена: множественный выбор в режиме редактирования ──────────────────── */
+.fotostena-cell.is-manage {
+  position: relative;
+}
+.fotostena-cell.is-manage .medialib-cell {
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.12s;
+}
+.fotostena-check {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(31, 82, 52, 0.55);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1;
+  z-index: 2;
+}
+.fotostena-check input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.fotostena-check.is-on {
+  background: #1f5234;
+  border-color: #1f5234;
+}
+.fotostena-cell.is-manage:has(.fotostena-check.is-on) .medialib-cell {
+  outline-color: #1f5234;
+}
+
+.fotostena-selectbar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 16px);
+  padding: 0.55rem 0.7rem;
+  border-radius: 14px;
+  background: #14351f;
+  color: #f3efe2;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+}
+.fsb-count {
+  font-size: 0.9rem;
+  padding-right: 0.15rem;
+}
+.fsb-count b {
+  color: #f4d38a;
+}
+.fotostena-selectbar .fsb-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 9px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.14);
+  color: #f3efe2;
+  white-space: nowrap;
+}
+.fotostena-selectbar .fsb-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+}
+.fotostena-selectbar .fsb-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.fotostena-selectbar .fsb-btn--danger {
+  background: #7a1b28;
+}
+.fotostena-selectbar .fsb-btn--danger:hover:not(:disabled) {
+  background: #99202f;
+}
+.fotostena-selectbar .fsb-btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+/* ShareMenu-кнопка внутри панели — под общий вид */
+.fotostena-selectbar .sharemenu-btn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #f3efe2;
+  border: 0;
+}
+.fsb-del {
+  position: relative;
+}
+.fsb-del-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #1f2a22;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.fsb-del-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.fsb-del-item small {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: rgba(31, 42, 34, 0.6);
+}
+.fsb-del-item:hover {
+  background: rgba(31, 82, 52, 0.08);
+}
+.fsb-del-item + .fsb-del-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.fsb-del-item--danger {
+  color: #99202f;
+}
+.fsb-del-item--danger small {
+  color: rgba(153, 32, 47, 0.7);
+}
+.fsb-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #f3efe2;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  opacity: 0.8;
+}
+.fsb-close:hover {
+  opacity: 1;
+}
+.fsb-error {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: #ffb3bd;
+}
+@media (max-width: 560px) {
+  .fotostena-selectbar {
+    gap: 0.35rem;
+    padding: 0.5rem;
+  }
+  .fotostena-selectbar .fsb-btn {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.8rem;
+  }
+}
+
 /* Ссылка-действие в лайтбоксе (переход в медиатеку) */
 .lightbox-act--link {
   text-decoration: none;
