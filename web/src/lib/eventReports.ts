@@ -47,7 +47,6 @@ export const EVENT_REPORTS: Record<string, EventReport> = {
       { full: '/events/p2026-podvorye/r10.jpg', thumb: '/events/p2026-podvorye/r10-480.jpg', alt: 'Лошадь с телегой и корова на подворье', author: 'Наталья Хайруллина', post: 'https://vk.com/wall382982136_5230' },
       { full: '/events/p2026-podvorye/r11.jpg', thumb: '/events/p2026-podvorye/r11-480.jpg', alt: 'Украшенная праздничная повозка', author: 'Первый Малмыжский', post: 'https://vk.com/wall-86517261_133381' },
       { full: '/events/p2026-podvorye/r12.jpg', thumb: '/events/p2026-podvorye/r12-480.jpg', alt: 'Хозяйка подворья с угощением', author: 'Алефтина Трухина', post: 'https://vk.com/wall596331687_297' },
-      { full: '/events/p2026-podvorye/r13.jpg', thumb: '/events/p2026-podvorye/r13-480.jpg', alt: 'Гости у стола подворья', author: 'Клуб Большая Шабанка', post: 'https://vk.com/wall-197439468_2669' },
     ],
   },
   'p2026-kollektivy': {
