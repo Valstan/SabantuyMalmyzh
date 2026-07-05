@@ -3,12 +3,19 @@
  * складывает их фото кандидатами в коллекцию vk-candidates (status=new) на
  * модерацию в /admin. Публикацией НЕ занимается — только сбор (полуавтомат).
  *
- *   VK_SERVICE_TOKEN=... corepack pnpm -C web payload run src/seed/collectVkCandidates.ts
+ *   VK_SERVICE_TOKEN=... web/node_modules/.bin/jiti web/src/seed/collectVkCandidates.ts
+ *
+ * ⚠️ НЕ `payload run`: он на этом скрипте молча выходит без выполнения
+ * (10 с, ноль вывода, ноль записей — воспроизведено и на Windows-dev, и на
+ * Linux-боксе), поэтому запуск через jiti + relative-импорт конфига.
  *
  * Env:
- *   VK_SERVICE_TOKEN — сервисный ключ VK-приложения 54656174 (обязателен;
- *                      на боксе НЕ хранится — workflow collect-vk.yml передаёт
- *                      его из GitHub Secret прямо в env запуска).
+ *   VK_SERVICE_TOKEN — ПОЛЬЗОВАТЕЛЬСКИЙ VK-токен (vk1.a…): сервисному ключу
+ *                      приложения newsfeed.search недоступен (code 1051,
+ *                      проверено 2026-07-05); подходит parse-токен SARAFAN
+ *                      (VK_TOKEN_VITA с бокса setka — проверен, работает).
+ *                      На боксе НЕ хранится — workflow collect-vk.yml передаёт
+ *                      его из GitHub Secret прямо в env запуска.
  *   VK_QUERIES       — запросы через «;» (дефолт — 4 запроса разведки 04.07).
  *   VK_SINCE         — ISO-дата нижней границы поиска (дефолт: 30 дней назад).
  *
@@ -20,8 +27,10 @@
  * нужен пользовательский токен (см. сообщение об ошибке ниже).
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- seed-утилита: ответы VK API untyped */
-import config from '@payload-config'
+// relative-импорт (не '@payload-config'): jiti не резолвит tsconfig-алиасы.
 import { getPayload } from 'payload'
+
+import config from '../payload.config'
 
 const log = (m: string) => console.log(m)
 
@@ -49,10 +58,10 @@ async function vk(method: string, params: Record<string, string>): Promise<any> 
   const json: any = await res.json()
   if (json.error) {
     const { error_code, error_msg } = json.error
-    if (error_code === 15 || error_code === 27 || error_code === 30) {
+    if (error_code === 15 || error_code === 27 || error_code === 30 || error_code === 1051) {
       throw new Error(
-        `VK ${method}: ${error_msg} (code ${error_code}). Сервисному ключу метод недоступен — ` +
-          `нужен пользовательский токен с правом wall/newsfeed в VK_SERVICE_TOKEN.`,
+        `VK ${method}: ${error_msg} (code ${error_code}). Методу нужен ПОЛЬЗОВАТЕЛЬСКИЙ ` +
+          `токен (vk1.a…) в секрете VK_SERVICE_TOKEN — сервисный ключ приложения не подходит.`,
       )
     }
     throw new Error(`VK ${method}: ${error_msg} (code ${error_code})`)
