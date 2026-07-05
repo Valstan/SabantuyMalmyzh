@@ -1292,6 +1292,37 @@ a.feature-card--cover:hover .feature-cover img {
   }
 }
 
+/* Порционная догрузка: «часовой» под сеткой + спиннер */
+.fotostena-sentinel {
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem 0 0.5rem;
+}
+.fotostena-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(31, 82, 52, 0.2);
+  border-top-color: #1f5234;
+  animation: fotostena-spin 0.7s linear infinite;
+}
+@keyframes fotostena-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Меню удаления одного кадра из полноэкранного лайтбокса (раскрыв вверх) */
+.lightbox-del {
+  position: relative;
+  display: inline-flex;
+}
+.lightbox-del-menu {
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 3;
+}
+
 /* Ссылка-действие в лайтбоксе (переход в медиатеку) */
 .lightbox-act--link {
   text-decoration: none;

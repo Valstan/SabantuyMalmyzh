@@ -13,18 +13,19 @@ import { SectionHeading } from '../components/SectionHeading'
 // авторам и ссылками на исходники + единый лайтбокс. ISR; ревалидация — хук
 // revalidateFotostena при модерации.
 
-const LIMIT = 300
-
 async function getApproved(): Promise<FotostenaItem[]> {
   try {
     return await withRetry(async () => {
       const payload = await getPayload({ config })
+      // Все одобренные кадры (без верхнего лимита) — метаданные (URL/атрибуция)
+      // легковесны; сами изображения грузятся лениво (loading="lazy") и порционно
+      // на клиенте (FotostenaGallery: прогрессивный рендер ячеек по мере скролла).
       const res = await payload.find({
         collection: 'vk-candidates',
         where: { status: { equals: 'approved' }, media: { exists: true } },
         sort: '-vkPublishedAt',
         depth: 1,
-        limit: LIMIT,
+        pagination: false,
         overrideAccess: true,
       })
       return res.docs

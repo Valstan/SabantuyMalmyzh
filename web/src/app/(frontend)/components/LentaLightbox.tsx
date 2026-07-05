@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { t, type Locale } from '../../../lib/i18n'
 import { deleteSubmission, isMine } from '../../../lib/ugcClient'
@@ -34,6 +34,7 @@ export function LentaLightbox({
   onRemoved,
   onNavigate,
   libraryHref,
+  extraActions,
 }: {
   // submissionId/лайк/удаление опциональны: лента передаёт их (полная карточка), а
   // одиночный просмотр (статистика Фотобитвы) — нет (тогда панель = только «на весь экран»).
@@ -51,6 +52,8 @@ export function LentaLightbox({
   onNavigate: (i: number) => void
   /** Ссылка «Вся медиатека» в панели действий (просмотр из статей/медиатеки). */
   libraryHref?: string
+  /** Доп. кнопки в панели действий для текущего кадра (напр. фотостена: копировать/удалить). */
+  extraActions?: (index: number) => ReactNode
 }) {
   const n = media.length
   const current = media[index]
@@ -144,6 +147,19 @@ export function LentaLightbox({
       }
     }
   }, [])
+
+  // Упреждающая подгрузка соседних кадров (±2) — чтобы листание свайпом/стрелками
+  // шло плавно без «раздумий»: следующие фото уже в кэше браузера к моменту показа.
+  useEffect(() => {
+    for (let d = -2; d <= 2; d += 1) {
+      if (d === 0) continue
+      const m = media[((index + d) % n + n) % n]
+      if (m && m.kind === 'photo' && m.mediaUrl) {
+        const img = new Image()
+        img.src = m.mediaUrl
+      }
+    }
+  }, [index, media, n])
 
   // Фокус: при открытии — на «Закрыть»; при закрытии — обратно на элемент-триггер.
   useEffect(() => {
@@ -344,6 +360,8 @@ export function LentaLightbox({
             🗂 {t(locale, 'lenta.lb.library')}
           </a>
         )}
+
+        {extraActions?.(index)}
 
         {canDelete && onRemoved && (
           <button
