@@ -64,9 +64,10 @@ jobs:
           sudo journalctl -k --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
 
           echo; echo "=====[ NGINX ACCESS $SINCE ($NGDATE) ]====="
-          LOGS=$(ls -1 /var/log/nginx/access.log /var/log/nginx/access.log.1 2>/dev/null)
-          ZLOGS=$(ls -1 /var/log/nginx/access.log.*.gz 2>/dev/null)
-          dump_logs() { cat $LOGS 2>/dev/null; for z in $ZLOGS; do zcat "$z" 2>/dev/null; done; }
+          echo "--- /var/log/nginx содержимое ---"; sudo ls -la /var/log/nginx/ 2>&1 | head -20
+          LOGS=$(sudo ls -1 /var/log/nginx/access.log /var/log/nginx/access.log.1 2>/dev/null)
+          ZLOGS=$(sudo ls -1 /var/log/nginx/access.log.*.gz 2>/dev/null)
+          dump_logs() { for f in $LOGS; do sudo cat "$f" 2>/dev/null; done; for z in $ZLOGS; do sudo zcat "$z" 2>/dev/null; done; }
           DAY=$(dump_logs | grep -F "$NGDATE" )
           if [ -z "$DAY" ]; then
             echo "!!! записей за $NGDATE не найдено; доступные даты в логах:"
