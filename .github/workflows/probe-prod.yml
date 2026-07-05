@@ -1,0 +1,99 @@
+# Read-only probe прод-бокса: ретроспектива сезонного пика + факт диска (ADR-0001).
+# Ничего не меняет на боксе — только читает метрики/логи и печатает в лог воркфлоу.
+# Запуск: gh workflow run probe-prod.yml [-f since=2026-07-04]
+name: Probe production (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Дата (YYYY-MM-DD), за которую агрегировать nginx-логи'
+        required: false
+        default: '2026-07-04'
+
+concurrency:
+  group: probe-prod
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Probe box (read-only)
+        run: |
+          ssh sabantuy 'bash -s' "${{ inputs.since }}" <<'REMOTE'
+          set +e   # каждый блок независим — собираем всё, что доступно
+          SINCE="$1"
+          # nginx-лог пишет время как 04/Jul/2026 — переводим дату в этот формат
+          NGDATE=$(date -d "$SINCE" '+%d/%b/%Y' 2>/dev/null)
+
+          echo "=====[ SYSTEM NOW ]====="
+          date -u '+now UTC: %F %T'; uptime; free -m; df -h / | tail -2
+
+          echo; echo "=====[ SERVICE sabantuy ]====="
+          systemctl show sabantuy -p MainPID,NRestarts,ActiveEnterTimestamp,MemoryCurrent,MemoryPeak,MemoryMax 2>/dev/null
+          ps -o pid,rss,etime,cmd -p "$(systemctl show sabantuy -p MainPID --value)" 2>/dev/null
+
+          echo; echo "=====[ JOURNAL since $SINCE: oom/restart/error markers ]====="
+          sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -ciE 'oom|killed' | sed 's/^/oom-or-killed lines: /'
+          sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20
+          sudo journalctl -k --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
+
+          echo; echo "=====[ NGINX ACCESS $SINCE ($NGDATE) ]====="
+          LOGS=$(ls -1 /var/log/nginx/access.log /var/log/nginx/access.log.1 2>/dev/null)
+          ZLOGS=$(ls -1 /var/log/nginx/access.log.*.gz 2>/dev/null)
+          dump_logs() { cat $LOGS 2>/dev/null; for z in $ZLOGS; do zcat "$z" 2>/dev/null; done; }
+          DAY=$(dump_logs | grep -F "$NGDATE" )
+          if [ -z "$DAY" ]; then
+            echo "!!! записей за $NGDATE не найдено; доступные даты в логах:"
+            dump_logs | sed -E 's/.*\[([0-9]+\/[A-Za-z]+\/[0-9]+):.*/\1/' | sort | uniq -c
+          else
+            printf '%s\n' "$DAY" > /tmp/probe-day.log
+            echo "total requests: $(wc -l < /tmp/probe-day.log)"
+            echo "unique IPs:     $(awk '{print $1}' /tmp/probe-day.log | sort -u | wc -l)"
+            echo; echo "--- requests per hour ---"
+            sed -E 's/.*\[[^:]+:([0-9]{2}):.*/\1/' /tmp/probe-day.log | sort | uniq -c
+            echo; echo "--- peak minutes (top 10) ---"
+            sed -E 's/.*\[[^:]+:([0-9]{2}:[0-9]{2}):.*/\1/' /tmp/probe-day.log | sort | uniq -c | sort -rn | head -10
+            echo; echo "--- status codes ---"
+            awk '{print $9}' /tmp/probe-day.log | sort | uniq -c | sort -rn
+            echo; echo "--- top 25 paths (page-like, no static) ---"
+            awk '{print $7}' /tmp/probe-day.log | grep -vE '\.(js|css|png|jpg|jpeg|webp|svg|ico|woff2?|map|txt)([?].*)?$' | grep -v '^/_next/' | sort | uniq -c | sort -rn | head -25
+            echo; echo "--- top 10 slow-ish signals: 499/5xx paths ---"
+            awk '$9 ~ /^(499|5..)$/ {print $9, $7}' /tmp/probe-day.log | sort | uniq -c | sort -rn | head -10
+            rm -f /tmp/probe-day.log
+          fi
+
+          echo; echo "=====[ DISK / MEDIA (ADR-0001) ]====="
+          df -h /; echo
+          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null
+          find /home/valstan/sabantuy/shared/media -type f 2>/dev/null | wc -l | sed 's/^/media files: /'
+          du -sh /home/valstan/sabantuy/releases 2>/dev/null
+          echo; echo "=====[ POSTGRES SIZE ]====="
+          sudo -u postgres psql -tAc "SELECT pg_size_pretty(pg_database_size('sabantuy'));" 2>/dev/null || echo "(pg size недоступен без sudo -u postgres)"
+          exit 0
+          REMOTE
