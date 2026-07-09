@@ -38,7 +38,16 @@
       "Bash(corepack pnpm -C web migrate:status:*)"
     ],
     "ask": [
-      "Bash(gh workflow run apply-migration.yml:*)"
+      "Bash(gh workflow run apply-migration.yml:*)",
+      "Bash(gh workflow run moderate-vk.yml:*)",
+      "Bash(gh workflow run apply-brand.yml:*)",
+      "Bash(gh workflow run apply-vk-secrets.yml:*)",
+      "Bash(gh workflow run apply-smtp-secrets.yml:*)",
+      "Bash(gh workflow run apply-push-secrets.yml:*)",
+      "Bash(gh workflow run apply-s3-keys.yml:*)",
+      "Bash(gh workflow run apply-domain-env.yml:*)",
+      "Bash(gh workflow run recover-fotostena-media.yml:*)",
+      "Bash(gh workflow run setup-subdomain.yml:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
