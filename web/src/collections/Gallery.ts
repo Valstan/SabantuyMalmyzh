@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { adminOrEditor } from '../access/adminOrEditor'
 import { authenticatedOrPublished } from '../access/authenticatedOrPublished'
 import { populatePublishedAt } from '../hooks/populatePublishedAt'
+import { revalidateGallery, revalidateGalleryDelete } from '../hooks/revalidateGallery'
 import { slugField } from '../fields/slug'
 
 // Галерея — фото и видео. Фото через Media (внешнее хранилище — цель),
@@ -104,6 +105,8 @@ export const Gallery: CollectionConfig<'gallery'> = {
   ],
   hooks: {
     beforeChange: [populatePublishedAt],
+    afterChange: [revalidateGallery],
+    afterDelete: [revalidateGalleryDelete],
   },
   versions: {
     drafts: true,
