@@ -34,8 +34,6 @@
 
 ## Инженерное (наше, при касании темы)
 
-- [ ] **Gallery revalidate-хук** — после ISR-фикса (PR #145, force-static) `gallery/[slug]` кэшируется (ISR-60), но у коллекции `Gallery` нет `afterChange`-хука ревалидации (в отличие от Pages/Events/Quiz). On-site правка альбома применяется на публичной странице за ≤60с, не мгновенно. Добавить `hooks/revalidateGallery.ts` (`/gallery/[slug]` + `/tt/gallery/[slug]` + `/gallery` + `/tt/gallery`) если правки альбомов участятся. Не срочно (галерея правится редко).
-  added: 2026-06-26 · snoozed: 0 · last-touch: 2026-06-26 · decay: fresh
 - [ ] **#035 tiered search** — при появлении первого реального поля текстового поиска (фронт или кастом-admin): substring→subsequence→fuzzy, многотокен AND, RU↔EN раскладка, татарские буквы в нормализации. Спек: pool #035. Сейчас полей текстового поиска нет (только чипы-фильтры + штатные Payload-пикеры) — не строить заранее (#020). Re-триаж 2026-07-10: оставлен (валидный условный триггер).
   added: 2026-06-10 · snoozed: 1 · last-touch: 2026-07-10 · decay: watch
 - [ ] **Медиа → внешнее хранилище (ADR-0001)** — MVP-замена (симлинк `shared/media`) работает; возврат к теме при росте объёма фото или к сезону (VPS 1.5 ГБ, диск 35%). Нужен выбор провайдера владельцем (Я.Диск?). Re-триаж 2026-07-04: отложено (UGC уже в S3, Media-объём мал; ревизия по факту диска после сезона). Re-триаж 2026-07-05: **факт снят probe'ом** — диск 39 % (3.6/9.8 ГБ), `shared/media` = 65 МБ / 123 файла, PG 16 МБ; UGC уже в S3 → **внешнее хранилище не требуется**, пункт спит до реального роста Media (следующая ревизия — по факту жалобы на диск или к сезону-2027).
@@ -47,6 +45,8 @@
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-25 · decay: fresh
 
 ## Закрыто (исход + дата)
+
+- [x] **Gallery revalidate-хук** — ✅ **ЗАКРЫТО 2026-07-10, на ПРОДЕ** (PR #273): `hooks/revalidateGallery.ts` (паттерн revalidateNews) подключён к `Gallery` (`afterChange`/`afterDelete`) — правка альбома мгновенно ревалидирует `/gallery`+`/tt/gallery`+`/gallery/[slug]`+`/tt/gallery/[slug]`. Без миграций. e2e на dev: PATCH альбома → лог `[revalidate] gallery`.
 
 - [x] **I12 per-event OG-картинки** — ✅ **ЗАКРЫТО 2026-07-10, на ПРОДЕ** (PR #271): `eventMeta` (`EventView.tsx`) отдаёт собственные canonical/og:url/og:title/description + og:image по приоритету heroImage(admin)→кодовый hero(`lib/eventMedia`)→миниатюра `EVENT_COVER`/`CATEGORY_COVER`(768×576)→`og.jpg`, с явными width/height (грабля ВК как в PR #246). e2e на dev — 3 яруса + tt подтверждены; deploy success.
 
