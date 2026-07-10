@@ -21,8 +21,6 @@
   added: 2026-06-03 · snoozed: 1 · last-touch: 2026-07-05 · decay: watch
 - [ ] **Вычитка татарского носителем** — переформулировано на re-триаже 2026-07-10 (пункт разросся до ~15 групп строк): разбит на два яруса. **Ярус A (видимый UI, вычитать в первую очередь):** шапка/подвал/главная (глобалы, `seed-site-content.yml`), навигация и `nav.news`/`news.*`, «Фотостена» `fotostena.*`+`fotostena.banner.*`+`fotostena.sel.*`, фотоотчёты `event.report.*`+`schedule.hasReport`+`lead.tt` (7 событий в `lib/eventReports.ts`), «Моя программа» `schedule.*`, лента `lenta.*`/`battle.*`/`rating.*`/`fotobitva.*`, форма имени сайта: грамматичная форма «Сабантуй Малмыжда» (header.brand tt, pageDecor eyebrow tt). **Ярус B (глубокий контент, по возможности):** tt-тела постов новостей (`seedNews.ts`, `seedVkObzor2026.ts`), privacy (`seedTatar.ts`), игры («Знаток» `seedQuiz.ts`+`game.*`, «Картинки» `seedQuizGames`+`games.*`), анонс `/sabantuy-2026`. Механика прежняя: правки в сидах/`lib/i18n.ts` или `/admin`, перезалить соответствующие seed-воркфлоу. Владелец ищет носителя; до тех пор новые tt-строки продолжаем помечать «черновик» и дописывать в ярус A/B. Исходный полный перечень — в git-истории этого файла (до 2026-07-10);
   added: 2026-06-07 · snoozed: 0 · last-touch: 2026-07-10 · decay: watch
-- [ ] **I12 per-event OG-картинки** — владелец дал OK на re-триаже 2026-07-10: делаем (отдельные og:image для страниц событий — красивее шаринг мероприятий). Взять в работу при следующем инженерном окне (несезон — не срочно, но принято).
-  added: 2026-06-07 · snoozed: 0 · last-touch: 2026-07-10 · decay: fresh
 
 - [ ] **Опубликовать клаузу веб-аналитики на живой `/privacy`** — в шаблон Политики (`seedFromWp.ts`) добавлен раздел «Веб-аналитика и cookie» (Метрика/LiveInternet, 152-ФЗ). На живой странице появится при пересиде privacy ИЛИ владелец вставляет вручную в `/admin` (страница owner-gated, реквизиты оператора всё равно за владельцем). Плашка-уведомление при этом уже несёт раскрытие.
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-18 · decay: fresh
@@ -49,6 +47,8 @@
   added: 2026-06-18 · snoozed: 0 · last-touch: 2026-06-25 · decay: fresh
 
 ## Закрыто (исход + дата)
+
+- [x] **I12 per-event OG-картинки** — ✅ **ЗАКРЫТО 2026-07-10, на ПРОДЕ** (PR #271): `eventMeta` (`EventView.tsx`) отдаёт собственные canonical/og:url/og:title/description + og:image по приоритету heroImage(admin)→кодовый hero(`lib/eventMedia`)→миниатюра `EVENT_COVER`/`CATEGORY_COVER`(768×576)→`og.jpg`, с явными width/height (грабля ВК как в PR #246). e2e на dev — 3 яруса + tt подтверждены; deploy success.
 
 - [x] **Ужесточить автономию #025/G25/G29** — ✅ **ЗАКРЫТО 2026-07-10** (re-триаж, owner OK): прод живой (visitors VK, UGC, подписчики, Media) → воркфлоу, мутирующие живые прод-данные/env (`moderate-vk`, `apply-brand`, `apply-*-secrets`, `apply-domain-env`, `recover-*`, `setup-subdomain`), переведены в ярус `ask` в `.claude/settings.json`; CLAUDE.md §PR-only flow обновлён. Сиды/деплой — авто как прежде.
 
