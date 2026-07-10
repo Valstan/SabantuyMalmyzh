@@ -9,7 +9,7 @@ import { getPayload } from 'payload'
 import { t, type Locale } from '../../../lib/i18n'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
-import { categoryLabel } from '../../../lib/categories'
+import { CATEGORY_COVER, EVENT_COVER, categoryLabel } from '../../../lib/categories'
 import { isCompetitionCategory } from '../../../lib/competitions'
 import { EVENT_MEDIA } from '../../../lib/eventMedia'
 import { EVENT_REPORTS } from '../../../lib/eventReports'
@@ -180,7 +180,58 @@ export async function EventView({ slug, locale }: { slug: string; locale: Locale
   )
 }
 
+type MediaLike = {
+  url?: string | null
+  alt?: string | null
+  width?: number | null
+  height?: number | null
+  sizes?: Record<string, { url?: string | null; width?: number | null; height?: number | null }>
+}
+
+// I12: собственные OG/canonical страницы события — без них соц-скрейперы
+// (ВК/TG/ОК) берут корневые метаданные layout: og:url на главную и общий
+// og.jpg вместо картинки события. Картинка = та же логика приоритета, что
+// hero на странице: heroImage из /admin → кодовый hero (lib/eventMedia) →
+// миниатюра программы (EVENT_COVER/CATEGORY_COVER, все 768×576) → общий баннер.
 export async function eventMeta(slug: string, locale: Locale): Promise<Metadata> {
   const event = await queryEventBySlug(decodeURIComponent(slug), locale)
-  return { title: event?.title ?? t(locale, 'notFound.title') }
+  if (!event) return { title: t(locale, 'notFound.title') }
+  const path = localeHref(locale, `/events/${encodeURIComponent(event.slug ?? decodeURIComponent(slug))}`)
+
+  const hero =
+    typeof event.heroImage === 'object' && event.heroImage !== null ? (event.heroImage as MediaLike) : null
+  const wide = hero?.sizes?.wide?.url ? hero.sizes.wide : null
+  const media = event.slug ? EVENT_MEDIA[event.slug] : undefined
+  const coverBase =
+    (event.slug ? EVENT_COVER[event.slug] : undefined) ??
+    (event.category ? CATEGORY_COVER[event.category] : undefined)
+
+  // Явные width/height — как у новостей (newsPostMeta): ВК публикует сниппет
+  // первого скрейпа раньше, чем докачал картинку; без размеров первый шаринг
+  // свежего URL уходит без фото.
+  const image = hero?.url
+    ? {
+        url: wide?.url || hero.url,
+        alt: hero.alt || event.title,
+        width: (wide ? wide.width : hero.width) ?? undefined,
+        height: (wide ? wide.height : hero.height) ?? undefined,
+      }
+    : media?.hero
+      ? { url: media.hero.src, alt: media.hero.alt, width: media.hero.width, height: media.hero.height }
+      : coverBase
+        ? { url: `/decor/${coverBase}-768.jpg`, alt: event.title, width: 768, height: 576 }
+        : { url: '/og.jpg', width: 1200, height: 630 }
+
+  return {
+    title: `${event.title} — ${t(locale, 'nav.schedule')}`,
+    description: event.summary || undefined,
+    alternates: { canonical: path },
+    openGraph: {
+      title: event.title,
+      description: event.summary || undefined,
+      url: path,
+      type: 'article',
+      images: [image],
+    },
+  }
 }

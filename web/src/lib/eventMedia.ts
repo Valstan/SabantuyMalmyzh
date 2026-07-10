@@ -12,7 +12,10 @@ export type EventGalleryPhoto = {
 }
 
 export type EventMedia = {
-  hero?: { src: string; alt: string }
+  // width/height нужны OG-разметке (eventMeta): ВК публикует сниппет первого
+  // скрейпа раньше, чем докачал картинку — без явных размеров первый шаринг
+  // уходит без фото (та же грабля, что у новостей, PR #246).
+  hero?: { src: string; alt: string; width: number; height: number }
   gallery?: EventGalleryPhoto[]
 }
 
@@ -25,7 +28,7 @@ const avstraliaPhoto = (n: number, alt: string): EventGalleryPhoto => ({
 
 export const EVENT_MEDIA: Record<string, EventMedia> = {
   'p2026-koncert-avstraliya': {
-    hero: { src: `${AVSTRALIA_DIR}/hero.jpg`, alt: 'Кавер-группа «АВСТРАЛИЯ» на сцене' },
+    hero: { src: `${AVSTRALIA_DIR}/hero.jpg`, alt: 'Кавер-группа «АВСТРАЛИЯ» на сцене', width: 1600, height: 900 },
     gallery: [
       avstraliaPhoto(1, 'Группа «АВСТРАЛИЯ»: фотосессия с ретро-телевизорами'),
       avstraliaPhoto(2, '«АВСТРАЛИЯ»: вокалистка, гитарист и барабанщик'),
