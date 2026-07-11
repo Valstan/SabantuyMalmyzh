@@ -94,6 +94,24 @@ export const EVENT_REPORTS: Record<string, EventReport> = {
       { full: '/events/p2026-sostyazaniya/r02.jpg', thumb: '/events/p2026-sostyazaniya/r02-480.jpg', alt: 'Приём в борьбе корэш', author: 'БАЛТАСИ - ИНФО | Афиша, новости, события', post: 'https://vk.com/wall-179203620_23517' },
       { full: '/events/p2026-sostyazaniya/r03.jpg', thumb: '/events/p2026-sostyazaniya/r03-480.jpg', alt: 'Силач на гиревом состязании', author: 'КИРОВСКАЯ ОБЛАСТЬ - ИНФО | Информационная сеть', post: 'https://vk.com/wall-168170001_4267' },
       { full: '/events/p2026-sostyazaniya/r04.jpg', thumb: '/events/p2026-sostyazaniya/r04-480.jpg', alt: 'Круг болельщиков вокруг ковра корэш', author: 'Староирюкское сельское поселение', post: 'https://vk.com/wall-207543751_1641' },
+      { full: '/events/p2026-sostyazaniya/r05.jpg', thumb: '/events/p2026-sostyazaniya/r05-480.jpg', alt: 'Гиревой спорт: участник поднимает гирю над головой', author: 'Гульшат Закиева', post: 'https://vk.com/wall229000873_3088' },
+      { full: '/events/p2026-sostyazaniya/r06.jpg', thumb: '/events/p2026-sostyazaniya/r06-480.jpg', alt: 'Батыр Сабантуя с традиционным призом — живым бараном', author: 'Инициативная группа Вятские Поляны и район', post: 'https://vk.com/wall-209489739_44254' },
+    ],
+  },
+  'p2026-skachki': {
+    lead: { ru: 'Конные скачки — одна из главных забав Сабантуя: наездники мчали по дорожке под азартный гул зрителей.', tt: 'Ат чабышлары — Сабантуйның төп ярышларының берсе: җайдаклар тамашачыларның кызу гөрелтесе астында юл буйлап чапты.' },
+    photos: [
+      { full: '/events/p2026-skachki/r01.jpg', thumb: '/events/p2026-skachki/r01-480.jpg', alt: 'Наездники на дистанции конных скачек', author: 'МАЛМЫЖ - ИНФО | Афиша, новости, события', post: 'https://vk.com/wall-158787639_77196' },
+      { full: '/events/p2026-skachki/r02.jpg', thumb: '/events/p2026-skachki/r02-480.jpg', alt: 'Кони на скаку по дистанции скачек', author: 'Андрей Березин', post: 'https://vk.com/wall729268020_845' },
+    ],
+  },
+  'p2026-nagrazhdenie': {
+    lead: { ru: 'Победителей состязаний и самых активных участников праздника чествовали на главной сцене — грамоты, кубки и подарки нашли своих героев.', tt: 'Ярышларда җиңүчеләрне һәм бәйрәмнең иң актив катнашучыларын төп сәхнәдә котладылар — грамоталар, кубоклар һәм бүләкләр үз хуҗаларын тапты.' },
+    photos: [
+      { full: '/events/p2026-nagrazhdenie/r01.jpg', thumb: '/events/p2026-nagrazhdenie/r01-480.jpg', alt: 'Награждение участника праздника грамотой на сцене', author: 'МАЛМЫЖ - ИНФО | Афиша, новости, события', post: 'https://vk.com/wall-158787639_77209' },
+      { full: '/events/p2026-nagrazhdenie/r02.jpg', thumb: '/events/p2026-nagrazhdenie/r02-480.jpg', alt: 'Вручение награды на Сабантуе', author: 'Первый Малмыжский', post: 'https://vk.com/wall-86517261_133468' },
+      { full: '/events/p2026-nagrazhdenie/r03.jpg', thumb: '/events/p2026-nagrazhdenie/r03-480.jpg', alt: 'Чествование победителей с грамотой', author: 'Эдуард Симонов', post: 'https://vk.com/wall712413567_837' },
+      { full: '/events/p2026-nagrazhdenie/r04.jpg', thumb: '/events/p2026-nagrazhdenie/r04-480.jpg', alt: 'Победители состязаний с призами', author: 'Инициативная группа Вятские Поляны и район', post: 'https://vk.com/wall-209489739_44254' },
     ],
   },
   'p2026-skazka-tukay': {
