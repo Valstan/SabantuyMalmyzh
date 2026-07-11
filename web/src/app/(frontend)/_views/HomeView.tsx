@@ -276,6 +276,10 @@ export async function HomeView({ locale }: { locale: Locale }) {
     .map((i) => (i.startDate ? new Date(i.startDate).getTime() : NaN))
     .filter((ts) => !Number.isNaN(ts) && ts > Date.now())
   const festivalStartIso = futureStarts.length ? new Date(Math.min(...futureStarts)).toISOString() : null
+  // Праздник прошёл: программа есть, но все старты в прошлом → показываем
+  // пост-фестивальный баннер («Сабантуй состоялся — вот фото и видео») вместо
+  // отсчёта. К сезону-2027 появятся будущие старты → баннер сам скроется.
+  const festivalIsOver = items.length > 0 && futureStarts.length === 0
 
   const photoCount = (g: { photos?: unknown }) => (Array.isArray(g.photos) ? g.photos.length : 0)
   const featured = (albums ?? []).slice().sort((a, b) => photoCount(b) - photoCount(a))[0] ?? null
@@ -354,6 +358,36 @@ export async function HomeView({ locale }: { locale: Locale }) {
           {t(locale, 'nav.about')}
         </Link>
       </Hero>
+
+      {/* Пост-фестивальный баннер: праздник прошёл → «спасибо, вот фото и видео».
+          Три CTA — фотостена, обзор-пост «как это было», фотоотчёты в программе.
+          Показываем только когда все события в прошлом (festivalIsOver). */}
+      {festivalIsOver && (
+        <section className="section section--photo" style={photoBg('/decor/page-maydan-lg.jpg')}>
+          <div className="section-inner" style={{ textAlign: 'center' }}>
+            <SectionHeading
+              eyebrow={t(locale, 'home.postfest.eyebrow')}
+              title={t(locale, 'home.postfest.title')}
+              align="center"
+              tulip
+            />
+            <p className="section-lead" style={{ margin: '0 auto', maxWidth: 680 }}>
+              {t(locale, 'home.postfest.lead')}
+            </p>
+            <div className="home-postfest-actions">
+              <Link className="btn btn-gold" href={h('/fotostena')}>
+                {t(locale, 'home.postfest.photos')}
+              </Link>
+              <Link className="btn btn-outline" href={h('/novosti/sabantuy-2026-kak-eto-bylo')}>
+                {t(locale, 'home.postfest.obzor')}
+              </Link>
+              <Link className="btn btn-outline" href="#program">
+                {t(locale, 'home.postfest.reports')}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Фотостена-баннер: кликабельный коллаж из реальных кадров праздника
           (public/decor/fotostena-collage.jpg — 8 одобренных фото /fotostena).
