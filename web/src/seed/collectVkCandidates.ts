@@ -196,7 +196,11 @@ async function run() {
   process.exit(0)
 }
 
-run().catch((e) => {
+// await, а не `run().catch(...)`: не-await'нутый промис на входе `payload run`
+// даёт exit 0 без вывода и БЕЗ РАБОТЫ (G158, прод-инцидент RmzMalmyzh). Мы
+// запускаем скрипт через jiti (там событийный цикл дожидается промиса), но
+// оставлять форму-мину незачем — под await работает любой раннер.
+await run().catch((e) => {
   console.error(e)
   process.exit(1)
 })
