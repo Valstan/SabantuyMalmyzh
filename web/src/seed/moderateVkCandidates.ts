@@ -58,7 +58,9 @@ async function run() {
   process.exit(fail > 0 ? 1 : 0)
 }
 
-run().catch((e) => {
+// await, а не `run().catch(...)` — см. G158 (payload run + не-await'нутый промис
+// = exit 0 без работы). Запуск у нас через jiti, но форму-мину не держим.
+await run().catch((e) => {
   console.error(e)
   process.exit(1)
 })
