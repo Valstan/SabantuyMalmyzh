@@ -1,0 +1,92 @@
+# Read-only сверка схемы прод-БД с конфигом (дрейф после dev-`push`, родня #034/G192).
+# Ничего не меняет: только SELECT'ы по information_schema/pg_catalog + печать в лог.
+# Запуск: gh workflow run probe-schema.yml
+#
+# Зачем: у нас нет initial-миграции (схема родилась push'ем на MVP), поэтому цепочка
+# миграций схему с нуля НЕ воспроизводит — см. web/src/migrations/README.md. Правда о
+# схеме живёт в конфиге и на проде; расхождение (поле есть в конфиге, миграции не было)
+# иначе невидимо до первого обращения к колонке.
+#
+# Сверка локально:
+#   1) поднять чистую БД, материализовать схему конфига dev-`push`'ем;
+#   2) прогнать те же 3 запроса (они ниже, между маркерами) на ней;
+#   3) сравнить контрольные суммы / diff построчно.
+name: Probe production schema (read-only)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: probe-schema
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User valstan
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Dump schema inventory (read-only)
+        run: |
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set +e
+          PSQL="sudo -u postgres psql -d sabantuy -tA"
+
+          echo "=====[ MIGRATIONS APPLIED ]====="
+          $PSQL -c "SELECT count(*) FROM payload_migrations;" 2>&1
+          $PSQL -c "SELECT name FROM payload_migrations ORDER BY name;" 2>&1
+
+          echo; echo "=====[ COUNTS ]====="
+          $PSQL -c "SELECT 'tables=' || count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';" 2>&1
+          $PSQL -c "SELECT 'enums=' || count(*) FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typtype='e';" 2>&1
+
+          echo; echo "=====[ BEGIN COLUMNS ]====="
+          $PSQL -c "SELECT c.table_name||'|'||c.column_name||'|'||c.udt_name||'|'||c.is_nullable||'|'||coalesce(c.character_maximum_length::text,'')||'|'||coalesce(c.numeric_precision::text,'')
+                    FROM information_schema.columns c
+                    JOIN information_schema.tables t
+                      ON t.table_schema=c.table_schema AND t.table_name=c.table_name AND t.table_type='BASE TABLE'
+                    WHERE c.table_schema='public'
+                    ORDER BY 1;" 2>&1
+          echo "=====[ END COLUMNS ]====="
+
+          echo; echo "=====[ BEGIN ENUMS ]====="
+          $PSQL -c "SELECT t.typname||'|'||string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder)
+                    FROM pg_type t
+                    JOIN pg_enum e ON e.enumtypid=t.oid
+                    JOIN pg_namespace n ON n.oid=t.typnamespace
+                    WHERE n.nspname='public'
+                    GROUP BY t.typname
+                    ORDER BY 1;" 2>&1
+          echo "=====[ END ENUMS ]====="
+
+          echo; echo "=====[ CHECKSUMS ]====="
+          $PSQL -c "SELECT md5(string_agg(x, E'\n' ORDER BY x)) FROM (
+                      SELECT c.table_name||'|'||c.column_name||'|'||c.udt_name||'|'||c.is_nullable||'|'||coalesce(c.character_maximum_length::text,'')||'|'||coalesce(c.numeric_precision::text,'') AS x
+                      FROM information_schema.columns c
+                      JOIN information_schema.tables t
+                        ON t.table_schema=c.table_schema AND t.table_name=c.table_name AND t.table_type='BASE TABLE'
+                      WHERE c.table_schema='public') s;" 2>&1 | sed 's/^/columns-md5: /'
+          exit 0
+          REMOTE
