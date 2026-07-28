@@ -127,6 +127,12 @@ corepack pnpm -C web dev                   # http://localhost:3000  ·  /admin
 
 В репо — только `web/.env.example`. Локально — `web/.env` (в `.gitignore`). На проде — `/etc/sabantuy/sabantuy.env` (root:0640) + systemd `EnvironmentFile=`. Токены/пароли никогда не коммитим и не пишем в чат.
 
+### Миграция схемы = три файла: `.ts` + `.sql` + `.json` (G192, mandate 2026-07-26)
+
+Drizzle диффит **против последнего `.json`-снапшота рядом с миграциями**, а не против живой БД. Снапшота нет → «текущее состояние» считается пустым → `migrate:create` выдаёт схему с нуля и `down()` с `DROP TABLE … CASCADE` по всем таблицам, при этом файл валиден и правдоподобен. У нас так и было: 27 миграций, 0 снапшотов; автоген выдал 1270 строк с 73 `DROP TABLE … CASCADE` — на живом UGC это невосстановимо. Базлайн-снапшот заведён (`web/src/migrations/20260705_120000.json`).
+
+**Дальше: `.json` коммитится вместе с каждой миграцией; `down()` читать глазами до применения.** Отдельно помнить: **initial-миграции у нас нет** (схема родилась `push`'ем на MVP) → цепочка НЕ воспроизводит схему с нуля, правда о схеме = конфиг + прод, сверка — read-only `probe-schema.yml`. Подробности и провенанс — [`web/src/migrations/README.md`](web/src/migrations/README.md).
+
 ### PR-only flow (cross-project, ADR-0002) + автономия под гейтами (pool #027)
 
 **Никакого `git push origin main`.** Любое изменение — ветка → PR → merge. Префиксы: `feat/ fix/ chore/ docs/ refactor/`.
