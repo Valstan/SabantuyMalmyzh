@@ -37,6 +37,13 @@ const NAV_LINKS: { key: string; path: string; i18nKey: string }[] = [
   { key: 'contacts', path: '/kontakty', i18nKey: 'nav.contacts' },
 ]
 
+// Каталог сервисов экосистемы (мандат brain 2026-07-26, п.3): кнопка ведёт на
+// единый вход вМалмыже.рф, где перечислены все сервисы района. Хост в punycode —
+// кириллический .рф в коде живёт как xn--… (G133/G108); кириллица работала бы в
+// href тоже, но punycode снимает любые вопросы к кодировке по пути к браузеру.
+// вход.вмалмыже.рф/services
+const SERVICES_CATALOG_URL = 'https://xn--b1ae3a1a.xn--80adkdyec4j.xn--p1ai/services'
+
 // Locale-aware «обвязка» сайта (шапка + подвал + переключатель языка). Клиентский
 // компонент: локаль берём из пути (usePathname → pathLocale). usePathname работает и
 // в SSR, и на клиенте → без мерцания; и НЕ делает страницы динамическими (ISR цел,
@@ -86,6 +93,16 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
                 {navLabel(l.key, l.i18nKey)}
               </Link>
             ))}
+            {/* Внешняя ссылка (не Link — другой домен): каталог сервисов района */}
+            <a
+              className="nav-services"
+              href={SERVICES_CATALOG_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t(locale, 'nav.servicesTitle')}
+            >
+              🌿 {t(locale, 'nav.services')}
+            </a>
           </nav>
         </div>
       </header>
@@ -114,6 +131,9 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
               {navLabel(l.key, l.i18nKey)}
             </Link>
           ))}
+          <a href={SERVICES_CATALOG_URL} target="_blank" rel="noopener noreferrer" title={t(locale, 'nav.servicesTitle')}>
+            🌿 {t(locale, 'nav.services')}
+          </a>
         </nav>
         {/* «Установить приложение» — заметная точка входа к PWA-установке на телефон.
             Сам компонент решает, показываться ли (есть нативный промпт / iOS / уже стоит). */}

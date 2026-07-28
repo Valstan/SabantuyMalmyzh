@@ -71,6 +71,21 @@ a {
   text-decoration: underline;
 }
 
+/* Кнопка каталога сервисов экосистемы (внешняя ссылка): выделена рамкой-пилюлей,
+   чтобы читалась как переход НА ДРУГОЙ сайт, а не как раздел нашего меню. */
+.site-nav-links a.nav-services {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 0.08rem 0.6rem;
+  opacity: 1;
+  white-space: nowrap;
+}
+
+.site-nav-links a.nav-services:hover {
+  background: rgba(255, 255, 255, 0.14);
+  text-decoration: none;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;
