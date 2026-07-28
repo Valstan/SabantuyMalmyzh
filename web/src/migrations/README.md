@@ -23,6 +23,33 @@ Drizzle генерирует миграцию как **дифф против п�
 2. **`down()` читать глазами до применения.** Автогену на слово не верить.
 3. Накат на прод — `apply-migration.yml` **с `--ref <feature-branch>`** (G28), до мержа.
 
+## Правило №2: enum расширять пересборкой типа, а не `ADD VALUE` (G193)
+
+Postgres запрещает **использовать** новое значение enum в той же транзакции, где оно
+добавлено, а `payload migrate` идёт одной транзакцией. Автоген выдаёт только
+`ALTER TYPE … ADD VALUE`; как только в миграцию попадает осмысленный
+`UPDATE … SET status='новое'` (перевод существующих строк), она падает — **но
+только там, где есть данные**. На чистой схеме `UPDATE` не задевает ни строки,
+CI зелёный, узнаётся на проде.
+
+Нас это касается предметно: `enum_registrations_status`,
+`enum_vk_candidates_status`, статусы модерации UGC (`submissions.status`,
+`submission_comments.status`) — типовые поля, которые расширяются по ходу жизни
+продукта, причём уже на боевых данных.
+
+Лечение — пересобрать тип, а не расширять:
+
+```sql
+ALTER TABLE "t" ALTER COLUMN "status" SET DATA TYPE text;
+UPDATE "t" SET "status" = 'новое' WHERE "status" = 'старое';   -- окно, пока это text
+DROP TYPE "public"."enum_t_status";
+CREATE TYPE "public"."enum_t_status" AS ENUM (...);            -- с новым набором
+ALTER TABLE "t" ALTER COLUMN "status" SET DATA TYPE "public"."enum_t_status"
+  USING "status"::"public"."enum_t_status";
+```
+
+Симметричный `down` обязателен. Полный разбор — G193 в библиотеке мозга.
+
 ## Провенанс `20260705_120000.json`
 
 Снапшот-базлайн, **сгенерирован 2026-07-28** (а не в день миграции `20260705_120000`)
