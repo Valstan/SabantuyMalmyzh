@@ -32,6 +32,10 @@ concurrency:
 env:
   NEW_ORIGIN: https://xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # https://сабантуй.вмалмыже.рф
 
+# Явные права GITHUB_TOKEN вместо дефолтных (мандат brain 2026-07-31).
+permissions:
+  contents: read
+
 jobs:
   run:
     runs-on: ubuntu-latest

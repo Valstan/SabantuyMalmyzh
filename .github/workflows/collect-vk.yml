@@ -31,6 +31,10 @@ concurrency:
   group: prod-db
   cancel-in-progress: false
 
+# Явные права GITHUB_TOKEN вместо дефолтных (мандат brain 2026-07-31).
+permissions:
+  contents: read
+
 jobs:
   collect:
     runs-on: ubuntu-latest
