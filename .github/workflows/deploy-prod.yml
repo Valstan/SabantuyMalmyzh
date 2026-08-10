@@ -30,6 +30,11 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
+# Явные права GITHUB_TOKEN вместо дефолтных (мандат brain 2026-07-31, волна 1
+# ADR-0012): деплою нужен только чекаут репозитория.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -216,6 +221,51 @@ jobs:
           esac
           exit $fail
           REMOTE
+
+      # Сценарий B спеки vault-client (ADR-0006/ADR-0012): после успешного деплоя
+      # кладём копию своих секретов в свою комнату КАРМАНа. Обязанность ADR-0006
+      # существует с июня и не выполнялась никем, пока была ручным curl'ом.
+      #
+      # НЕ блокирующий: нет токена / хранилище недоступно → предупреждение, деплой
+      # остаётся зелёным. Но `curl -sf` обязателен — молчаливый 200-на-ошибку хуже
+      # отсутствия шага (#110: «отправлено ≠ доставлено»).
+      - name: Зеркалировать секреты в свою комнату vault
+        if: success()
+        continue-on-error: true
+        env:
+          SECRETS_TOKEN: ${{ secrets.SECRETS_TOKEN }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          VK_CLIENT_SECRET: ${{ secrets.VK_CLIENT_SECRET }}
+          VK_SERVICE_TOKEN: ${{ secrets.VK_SERVICE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SECRETS_TOKEN:-}" ]; then
+            echo "::warning::SECRETS_TOKEN не задан — зеркалирование в vault пропущено (ADR-0006 не выполнен)"
+            exit 0
+          fi
+          # Значения передаются через --arg (не через подстановку в строку JSON):
+          # спецсимволы в секретах не ломают документ и не утекают в лог.
+          jq -n \
+            --arg smtp "$SMTP_PASS" \
+            --arg s3id "$S3_ACCESS_KEY_ID" \
+            --arg s3sec "$S3_SECRET_ACCESS_KEY" \
+            --arg vkcs "$VK_CLIENT_SECRET" \
+            --arg vksvc "$VK_SERVICE_TOKEN" \
+            '{secrets:{
+               SMTP_PASS:$smtp,
+               S3_ACCESS_KEY_ID:$s3id,
+               S3_SECRET_ACCESS_KEY:$s3sec,
+               VK_CLIENT_SECRET:$vkcs,
+               VK_SERVICE_TOKEN:$vksvc
+             }}' > /tmp/vault-mirror.json
+          trap 'rm -f /tmp/vault-mirror.json' EXIT
+          curl -sf -X POST "${SECRETS_VAULT_URL:-https://831d0ce99bdf.vps.myjino.ru/api/secrets}" \
+            -H "Authorization: Bearer $SECRETS_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data @/tmp/vault-mirror.json > /dev/null
+          echo "Секреты зеркалированы в комнату vault"
 
       - name: On failure — журналы прода
         if: failure()
