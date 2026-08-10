@@ -35,8 +35,12 @@ jobs:
         with:
           node-version: 22
 
-      - name: Включить pnpm 10 (НЕ 11 — несовместим, G-семейство GONBA)
-        run: corepack prepare pnpm@10.15.0 --activate
+      # `corepack enable` обязателен: без него шима pnpm нет в PATH и следующий шаг
+      # падает с `pnpm: command not found` (поймано первым же красным прогоном).
+      - name: Включить corepack + pnpm 10 (НЕ 11 — несовместим)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
 
       - name: Установить зависимости
         working-directory: web
