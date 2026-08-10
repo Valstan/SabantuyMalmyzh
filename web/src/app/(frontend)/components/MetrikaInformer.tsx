@@ -4,8 +4,12 @@
  * Пришёл на смену бейджу LiveInternet — единственный счётчик экосистемы
  * теперь Метрика (D-025).
  *
- * Картинку отдаёт informer.yandex.ru по номеру нашего счётчика; она рисуется
- * ТОЛЬКО если в кабинете счётчика включён информер. Поэтому отдельный флаг:
+ * ⚠️ Показ включается В КАБИНЕТЕ: Настройки → Дополнительные настройки →
+ * «Код счётчика» → чекбокс **«Информер»** (он же делает статистику по
+ * посетителям/визитам/просмотрам публичной). Пока чекбокс снят, informer.yandex.ru
+ * отдаёт 200 и валидную картинку 88×31 — но со сплошными нулями, а не ошибку.
+ * Проверять надо глазами по картинке, «скрипт отдался» здесь ничего не значит.
+ * Поэтому отдельный флаг:
  *
  *   NEXT_PUBLIC_YANDEX_METRICA_ID       — номер счётчика (общий с Analytics)
  *   NEXT_PUBLIC_METRIKA_INFORMER=1      — информер включён в кабинете, показываем
@@ -29,9 +33,16 @@ export function MetrikaInformer({ label }: { label: string }) {
   const id = METRICA_ID && /^\d+$/.test(METRICA_ID) ? METRICA_ID : null
   if (!id || !INFORMER_ON) return null
 
-  // Формат информера: <тип>_<стиль>_<фон>_<текст>_<стрелка>_<показатель>.
-  // 3_1 — компактный горизонтальный; uniques — посетители (а не хиты).
-  const src = `https://informer.yandex.ru/informer/${id}/3_1_FFFFFFFF_EFEFEFFF_0_uniques`
+  // Разметка 1:1 из кабинета счётчика («Код счётчика» → чекбокс «Информер»),
+  // а не собранная по документации. Первый заход я URL угадал (`_uniques` вместо
+  // `_pageviews`) и, главное, не знал, что показ включается отдельным чекбоксом —
+  // без него Метрика отдаёт валидную картинку с нулями, а не ошибку.
+  //
+  // `class="ym-advanced-informer"` + `data-cid`/`data-lang` — не декорация: по ним
+  // тег Метрики находит информер и обновляет цифры на клиенте. Без класса остаётся
+  // только статическая картинка. Поэтому `loading="lazy"` здесь НЕ ставим —
+  // отложенная загрузка мешает тегу подхватить элемент.
+  const src = `https://informer.yandex.ru/informer/${id}/3_1_FFFFFFFF_EFEFEFFF_0_pageviews`
 
   return (
     <div className="metrika-informer">
@@ -49,7 +60,9 @@ export function MetrikaInformer({ label }: { label: string }) {
           style={{ border: 0 }}
           alt={label}
           title={label}
-          loading="lazy"
+          className="ym-advanced-informer"
+          data-cid={id}
+          data-lang="ru"
         />
       </a>
     </div>
