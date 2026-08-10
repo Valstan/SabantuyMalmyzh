@@ -6,18 +6,18 @@ import Script from 'next/script'
  * рендерится ничего (в dev и до настройки прода трафик не пачкается).
  *
  *   NEXT_PUBLIC_YANDEX_METRICA_ID — номер счётчика Метрики (только цифры)
- *   NEXT_PUBLIC_LIVEINTERNET=1     — включить видимый бейдж LiveInternet
- *                                    (рендерится отдельно — в подвале, LiveInternetCounter)
+ *
+ * Метрика — ЕДИНСТВЕННЫЙ счётчик (решение владельца 2026-08-10, D-025:
+ * LiveInternet снят со всех сайтов экосистемы). Видимая цифра посещаемости —
+ * информер Метрики в подвале (MetrikaInformer), а не сторонний бейдж.
  *
  * NEXT_PUBLIC_* бейкаются в бандл при сборке → задаются как vars в CI
  * (deploy-prod.yml), владелец заводит счётчики и вставляет id один раз.
  */
 const METRICA_ID = process.env.NEXT_PUBLIC_YANDEX_METRICA_ID
-const LIVEINTERNET = process.env.NEXT_PUBLIC_LIVEINTERNET === '1' || process.env.NEXT_PUBLIC_LIVEINTERNET === 'true'
 
-// Включена ли вообще аналитика (для показа плашки согласия). LiveInternet сам
-// рендерится в подвале (LiveInternetCounter), но на согласие влияет тоже.
-export const analyticsEnabled = (!!METRICA_ID && /^\d+$/.test(METRICA_ID)) || LIVEINTERNET
+// Включена ли вообще аналитика (для показа плашки согласия).
+export const analyticsEnabled = !!METRICA_ID && /^\d+$/.test(METRICA_ID)
 
 export function Analytics() {
   const metrica = METRICA_ID && /^\d+$/.test(METRICA_ID) ? METRICA_ID : null

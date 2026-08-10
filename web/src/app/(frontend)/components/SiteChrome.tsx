@@ -11,7 +11,7 @@ import { EventTracker } from './EventTracker'
 import { InstallAppButton } from './InstallAppButton'
 import { LanguageToggle } from './LanguageToggle'
 import { VisitorAuth } from './VisitorAuth'
-import { LiveInternetCounter } from './LiveInternetCounter'
+import { MetrikaInformer } from './MetrikaInformer'
 import { SectionDivider } from './SectionDivider'
 import { LoginControl } from './edit/LoginControl'
 import { HeaderEditor } from './edit/HeaderEditor'
@@ -152,7 +152,19 @@ export function SiteChrome({ children, chrome }: { children: React.ReactNode; ch
         ·{' '}
         <LoginControl label={t(locale, 'footer.editorLogin')} className="footer-admin-login" />
         <FooterEditor locale={locale} />
-        <LiveInternetCounter />
+        {/* Подпись автора (решение владельца 2026-08-01, стандарт онбординга п.4).
+            rel="author" — семантика авторства; портфолио на IDN-домене, в коде
+            punycode, чтобы ссылка не зависела от кодировки исходника. */}
+        <p className="footer-author">
+          <a
+            href="https://xn--80adkmnnb2b.xn--80adkdyec4j.xn--p1ai/"
+            target="_blank"
+            rel="author noopener noreferrer"
+          >
+            {t(locale, 'footer.author')}
+          </a>
+        </p>
+        <MetrikaInformer label={t(locale, 'footer.visitors')} />
       </footer>
       {/* Живой трекер программы: плавающая кнопка «Сейчас и далее» на всех
           страницах; сам решает, показываться ли (праздник идёт или <24ч до него). */}

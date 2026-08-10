@@ -2441,14 +2441,32 @@ a.feature-card--cover:hover .feature-cover img {
   }
 }
 
-/* Видимый счётчик-бейдж LiveInternet в подвале */
-.li-counter {
+/* Подпись автора в подвале (решение владельца 2026-08-01) — тише копирайта,
+   но кликабельна; ссылка подчёркивается только при наведении. */
+.footer-author {
+  margin: 0.9rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+.footer-author a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.footer-author a:hover,
+.footer-author a:focus-visible {
+  opacity: 1;
+  border-bottom-style: solid;
+}
+
+/* Видимый информер посещаемости Яндекс.Метрики в подвале (D-017) */
+.metrika-informer {
   margin-top: 1rem;
   display: flex;
   justify-content: center;
   opacity: 0.85;
 }
-.li-counter:hover {
+.metrika-informer:hover {
   opacity: 1;
 }
 
