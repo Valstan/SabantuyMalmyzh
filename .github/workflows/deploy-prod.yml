@@ -103,9 +103,9 @@ jobs:
           # Счётчики посещаемости (бейкаются в бандл при сборке). Пусто → счётчик не
           # рендерится. Владелец заводит счётчики и кладёт значения в Variables репо:
           #   NEXT_PUBLIC_YANDEX_METRICA_ID — номер счётчика Метрики (только цифры)
-          #   NEXT_PUBLIC_LIVEINTERNET=1     — включить LiveInternet
+          #   NEXT_PUBLIC_METRIKA_INFORMER=1 — показывать видимый информер в подвале
           NEXT_PUBLIC_YANDEX_METRICA_ID: ${{ vars.NEXT_PUBLIC_YANDEX_METRICA_ID }}
-          NEXT_PUBLIC_LIVEINTERNET: ${{ vars.NEXT_PUBLIC_LIVEINTERNET }}
+          NEXT_PUBLIC_METRIKA_INFORMER: ${{ vars.NEXT_PUBLIC_METRIKA_INFORMER }}
           # Включает output:'standalone' (next.config.js). На локальной машине флаг НЕ
           # ставят → обычная сборка, которая не мутирует node_modules (см. next.config.js).
           STANDALONE_BUILD: '1'
