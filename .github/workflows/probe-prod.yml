@@ -67,6 +67,19 @@ jobs:
           sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20
           sudo journalctl -k --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
 
+          # G234 (keep-alive гонка nginx↔Node): гонка возможна ТОЛЬКО если nginx
+          # держит keep-alive к апстриму (upstream+keepalive, proxy_http_version 1.1,
+          # Connection ""). Плюс фактическое значение KEEP_ALIVE_TIMEOUT у сервиса —
+          # Next-standalone читает его из env, в репозитории этого не видно.
+          echo; echo "=====[ G234: keep-alive nginx <-> Node ]====="
+          echo "--- директивы nginx (upstream/keepalive/proxy) ---"
+          sudo grep -rnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf /etc/nginx/conf.d/ 2>/dev/null | grep -v '^\s*#' | head -30
+          echo "--- env сервиса: KEEP_ALIVE_TIMEOUT ---"
+          systemctl show sabantuy -p Environment -p EnvironmentFiles 2>/dev/null
+          sudo grep -c '^KEEP_ALIVE_TIMEOUT=' /etc/sabantuy/sabantuy.env 2>/dev/null | sed 's/^/KEEP_ALIVE_TIMEOUT задан (строк): /'
+          echo "--- ExecStart ---"
+          systemctl show sabantuy -p ExecStart 2>/dev/null | head -3
+
           echo; echo "=====[ NGINX ACCESS $SINCE ($NGDATE) ]====="
           echo "--- /var/log/nginx содержимое ---"; sudo ls -la /var/log/nginx/ 2>&1 | head -20
           LOGS=$(sudo ls -1 /var/log/nginx/access.log /var/log/nginx/access.log.1 2>/dev/null)
