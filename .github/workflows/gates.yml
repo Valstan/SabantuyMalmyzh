@@ -1,0 +1,59 @@
+# Гейты на PR — до сих пор их в CI НЕ БЫЛО ВООБЩЕ.
+#
+# Ревизия #104 (2026-08-10) вскрыла: `gh pr checks` у нас всегда отвечал
+# «no checks reported», то есть «зелёный CI» из мандата #027 существовал только
+# как локальный прогон агента на своей машине. Это ровно ложная санкция, о которой
+# #104 и написан: авто-мерж происходил на основании гейта, который никто, кроме
+# агента, не наблюдал.
+#
+# Здесь только быстрые проверки, не требующие БД (build с Postgres гоняется в
+# deploy-prod.yml после мержа). Задача — чтобы гейт был наблюдаемым и чужим.
+name: Gates (typecheck · lint · verify)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Включить pnpm 10 (НЕ 11 — несовместим, G-семейство GONBA)
+        run: corepack prepare pnpm@10.15.0 --activate
+
+      - name: Установить зависимости
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: typecheck
+        working-directory: web
+        run: pnpm typecheck
+
+      # `--max-warnings 0` внутри скрипта: без него next lint отдаёт exit 0
+      # при предупреждениях, и зелёный значок перестаёт значить «нарушений нет».
+      - name: lint
+        working-directory: web
+        run: pnpm lint
+
+      # Мутационная приёмка клиента vault (#114): allowlist без негативного
+      # прогона — декорация. Сети и БД не требует.
+      - name: Приёмка клиента vault (негативный прогон allowlist)
+        working-directory: web
+        run: pnpm verify:secrets
