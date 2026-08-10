@@ -42,7 +42,7 @@ gh pr list --state open
 ## Шаг 4.5. Шеринг находки в brain (условный, pool #009)
 
 Был **переносимый** инсайт (новый паттерн / обход бага фреймворка / security-приём)? 3-фильтр: значимость / переносимость / неочевидность.
-- Да → создать `mailbox/to-brain/YYYY-MM-DD-slug.md` (`kind: idea|feedback`, `compliance`, `urgency`) **в этом репо**. См. `CLAUDE.md` §📬 и `mailbox/README.md`.
+- Да → создать `mailbox/to-brain/YYYY-MM-DD-slug.md` (`kind: idea|feedback`, `compliance`, `urgency`) **в этом репо**. См. `AGENTS.md` §📬 и `mailbox/README.md`. В `ref:` — полный slug исходного письма, не номер идеи.
 - ❌ Никогда не писать/коммитить в `../brain_matrica/` (read-only). **Тишина = норма** (рутинный фикс/бамп/доменная правка → молчим).
 
 ## Шаг 5. Записать `docs/SESSION_HANDOFF.md`
@@ -89,7 +89,7 @@ cd ../brain_matrica && git status --short && cd -   # чисто: мы толь�
 ## Что НЕ делать
 
 - ❌ `git push origin main` напрямую; `git push --force` / `git reset --hard` по `main`.
-- ❌ Авто-мерж PR без явного **OK на diff** (ADR-0002 / `CLAUDE.md`).
+- ❌ Авто-мерж PR без явного **OK на diff** (ADR-0002 / `AGENTS.md`).
 - ❌ Писать/коммитить в `../brain_matrica/`.
 - ❌ Оставлять незапушенные ветки/коммиты или висящий `git stash` — на другой машине это потеря.
 - ❌ Раздувать handoff: это sticky-note (статус/нитка/шаг), а не лог; детали — в гите/PR/`docs/ideas`.

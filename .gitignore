@@ -151,3 +151,8 @@ vite.config.ts.timestamp-*
 design/incoming/*
 design/accepted/*
 !design/incoming/.gitkeep
+
+# Кэши и сессии других AI-агентов (канон — AGENTS.md, адаптеры коммитятся)
+.codex/
+.gemini/
+.agents/
