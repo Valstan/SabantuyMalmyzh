@@ -80,7 +80,14 @@ jobs:
           # Next-standalone читает его из env, в репозитории этого не видно.
           echo; echo "=====[ G234: keep-alive nginx <-> Node ]====="
           echo "--- директивы nginx (upstream/keepalive/proxy) ---"
-          sudo grep -rnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf /etc/nginx/conf.d/ 2>/dev/null | grep -v '^\s*#' | head -30
+          # НЕ рекурсивно по conf.d и с `-h` (без имени файла): рекурсия печатала
+          # в ПУБЛИЧНЫЙ лог конфиги всех соседей по боксу поимённо, вместе с
+          # датами их бэкапов — то есть мы публиковали состав жильцов, и не свой,
+          # а чужой (D-038, категория «состав жильцов бокса»). Замер 31.08 на
+          # живом логе: 4 соседних проекта. Для вопроса G234 (есть ли у nginx
+          # idle-пул к нашему апстриму) достаточно общего конфига и своего сайта.
+          sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[nginx.conf] /' | head -15
+          sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/conf.d/sabantuy.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[наш сайт] /' | head -15
           echo "--- env сервиса: KEEP_ALIVE_TIMEOUT ---"
           systemctl show sabantuy -p Environment -p EnvironmentFiles 2>/dev/null
           sudo grep -c '^KEEP_ALIVE_TIMEOUT=' /etc/sabantuy/sabantuy.env 2>/dev/null | sed 's/^/KEEP_ALIVE_TIMEOUT задан (строк): /'
@@ -115,9 +122,10 @@ jobs:
 
           echo; echo "=====[ DISK / MEDIA (ADR-0001) ]====="
           df -h /; echo
-          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null
+          # `cut -f1` — `du -sh` печатает путь второй колонкой (логи публичны).
+          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null | cut -f1 | sed 's/^/media размер: /'
           find /home/valstan/sabantuy/shared/media -type f 2>/dev/null | wc -l | sed 's/^/media files: /'
-          du -sh /home/valstan/sabantuy/releases 2>/dev/null
+          du -sh /home/valstan/sabantuy/releases 2>/dev/null | cut -f1 | sed 's/^/releases размер: /'
           echo; echo "=====[ POSTGRES SIZE ]====="
           sudo -u postgres psql -tAc "SELECT pg_size_pretty(pg_database_size('sabantuy'));" 2>/dev/null || echo "(pg size недоступен без sudo -u postgres)"
           exit 0
