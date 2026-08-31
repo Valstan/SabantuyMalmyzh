@@ -89,10 +89,17 @@ jobs:
           sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[nginx.conf] /' | head -15
           sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/conf.d/sabantuy.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[наш сайт] /' | head -15
           echo "--- env сервиса: KEEP_ALIVE_TIMEOUT ---"
-          systemctl show sabantuy -p Environment -p EnvironmentFiles 2>/dev/null
+          # Только `Environment=` (инлайновые пары), БЕЗ `EnvironmentFiles=`:
+          # последний печатает путь env-файла в публичный лог. На вопрос
+          # «задан ли KEEP_ALIVE_TIMEOUT» отвечает строка ниже, путь не нужен.
+          systemctl show sabantuy -p Environment 2>/dev/null
           sudo grep -c '^KEEP_ALIVE_TIMEOUT=' /etc/sabantuy/sabantuy.env 2>/dev/null | sed 's/^/KEEP_ALIVE_TIMEOUT задан (строк): /'
-          echo "--- ExecStart ---"
-          systemctl show sabantuy -p ExecStart 2>/dev/null | head -3
+          echo "--- ExecStart: обёртка graceful? (G234, амендмент-2) ---"
+          # Сам ExecStart — это абсолютный путь к бинарю и к скрипту запуска.
+          # Печатаем не его, а ответ на вопрос: запускаемся штатным server.js или
+          # обёрткой, живущей вне бандла.
+          systemctl show sabantuy -p ExecStart --value 2>/dev/null \
+            | grep -oE '[A-Za-z0-9_.-]+\.(mjs|js)' | tail -1 | sed 's/^/точка входа: /'
 
           echo; echo "=====[ NGINX ACCESS $SINCE ($NGDATE) ]====="
           echo "--- /var/log/nginx содержимое ---"; sudo ls -la /var/log/nginx/ 2>&1 | head -20
