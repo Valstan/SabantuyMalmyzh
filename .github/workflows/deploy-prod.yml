@@ -5,9 +5,13 @@ name: Deploy to production
 #
 # Требуется:
 #   secrets.SSH_PRIVATE_KEY        — приватная часть изолированного деплой-ключа (#001)
-#   vars.DEPLOY_SSH_HOST           — адрес прод-бокса (провайдер его ротирует — потому переменной, не в коде)
-#   vars.DEPLOY_SSH_PORT           — внешний порт (G8: внешний ≠ внутренний)
-#   vars.NEXT_PUBLIC_SERVER_URL    — боевой домен (punycode сабантуймалмыж.рф, бейкается в бандл при сборке; fallback ниже — локальный)
+#   secrets.DEPLOY_SSH_HOST        — адрес прод-бокса. В secrets, НЕ в vars (D-038 + письмо brain 29.08):
+#                                    раннер печатает значения vars в лог прогона, а логи публичного репо
+#                                    публичны — маскируется только заведённое как secrets. Проверено фактом:
+#                                    до перевода хост стоял открытым в логе деплоя от 10.08, в блоке env: шага.
+#   secrets.DEPLOY_SSH_PORT        — внешний порт (G8: внешний ≠ внутренний). В secrets по той же причине.
+#   vars.NEXT_PUBLIC_SERVER_URL    — боевой домен. Остаётся в vars СОЗНАТЕЛЬНО: он recon-нейтрален
+#                                    (публичный адрес сайта) и бейкается в бандл при сборке.
 
 on:
   push:
@@ -133,12 +137,12 @@ jobs:
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
-          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
         run: |
           set -e
           if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
-            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / secrets.DEPLOY_SSH_HOST / secrets.DEPLOY_SSH_PORT"
             exit 1
           fi
           mkdir -p ~/.ssh && chmod 700 ~/.ssh

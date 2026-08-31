@@ -12,7 +12,7 @@ name: Apply domain env (manual)
 #   mode=inspect — показать текущие домен-строки env (домен не секрет).
 #   mode=apply   — переставить на новый домен + рестарт + verify redirect_uri.
 #
-# Требует: secrets.SSH_PRIVATE_KEY, vars.DEPLOY_SSH_HOST, vars.DEPLOY_SSH_PORT.
+# Требует: secrets.SSH_PRIVATE_KEY, secrets.DEPLOY_SSH_HOST, secrets.DEPLOY_SSH_PORT.
 
 on:
   workflow_dispatch:
@@ -45,12 +45,12 @@ jobs:
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
-          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
         run: |
           set -e
           if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
-            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / vars.DEPLOY_SSH_HOST / vars.DEPLOY_SSH_PORT"
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / secrets.DEPLOY_SSH_HOST / secrets.DEPLOY_SSH_PORT"
             exit 1
           fi
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
