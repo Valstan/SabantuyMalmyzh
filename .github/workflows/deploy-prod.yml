@@ -1,12 +1,12 @@
 name: Deploy to production
 
-# Сборка едет в CI (ubuntu), т.к. прод-VPS (1.5 GiB RAM, без swap) не тянет next build.
+# Сборка едет в CI (ubuntu), т.к. прод-бокс маломощный и без swap — не тянет next build.
 # На сервер по SSH кладём готовый standalone-артефакт и рестартим systemd-сервис.
 #
 # Требуется:
-#   secrets.SSH_PRIVATE_KEY        — приватная часть изолированного ключа id_ed25519_sabantuy (#001)
-#   vars.DEPLOY_SSH_HOST           — <hex>.vps.myjino.ru (myjino ротирует — потому в vars, не в коде)
-#   vars.DEPLOY_SSH_PORT           — внешний порт (G8: внешний ≠ внутренний 22)
+#   secrets.SSH_PRIVATE_KEY        — приватная часть изолированного деплой-ключа (#001)
+#   vars.DEPLOY_SSH_HOST           — адрес прод-бокса (провайдер его ротирует — потому переменной, не в коде)
+#   vars.DEPLOY_SSH_PORT           — внешний порт (G8: внешний ≠ внутренний)
 #   vars.NEXT_PUBLIC_SERVER_URL    — боевой домен (punycode сабантуймалмыж.рф, бейкается в бандл при сборке; fallback ниже — локальный)
 
 on:
@@ -267,8 +267,21 @@ jobs:
             --data @/tmp/vault-mirror.json > /dev/null
           echo "Секреты зеркалированы в комнату vault"
 
-      - name: On failure — журналы прода
+      # ⚠️ Логи прогонов ПУБЛИЧНЫ (репо публичный с 17.08). Сырой дамп журнала —
+      # recon-поверхность (письмо brain 29.08, механизм 3): `systemctl status`
+      # печатает путь юнита в `Loaded:` и дерево процессов в `CGroup:`, а
+      # journalctl в дефолтном формате несёт хостнейм бокса В КАЖДОЙ СТРОКЕ.
+      # Отдельно: ошибка подключения к БД вываливает целую строку подключения
+      # вместе с паролем — её `secrets`-маскировка не ловит, DATABASE_URL живёт
+      # в env бокса, а не в секретах репозитория.
+      #
+      # Поэтому: `systemctl show` вместо `status` (свойства, без путей),
+      # `journalctl -o cat` (только текст сообщения, без префикса с хостнеймом)
+      # и финальный редактор строк подключения.
+      - name: On failure — журналы прода (без recon-полей)
         if: failure()
         run: |
-          ssh sabantuy "sudo systemctl status sabantuy --no-pager -l" 2>&1 || true
-          ssh sabantuy "sudo journalctl -u sabantuy -n 80 --no-pager" 2>&1 || true
+          ssh sabantuy "sudo systemctl show sabantuy -p ActiveState -p SubState -p Result -p NRestarts -p ExecMainStatus" 2>&1 || true
+          ssh sabantuy "sudo journalctl -u sabantuy -n 80 --no-pager -o cat" 2>&1 \
+            | sed -E 's#([a-z0-9+]+://)[^:@/[:space:]]+:[^@[:space:]]+@#\1<REDACTED>@#g' \
+            || true

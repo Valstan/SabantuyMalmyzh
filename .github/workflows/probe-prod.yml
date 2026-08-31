@@ -60,12 +60,19 @@ jobs:
 
           echo; echo "=====[ SERVICE sabantuy ]====="
           systemctl show sabantuy -p MainPID,NRestarts,ActiveEnterTimestamp,MemoryCurrent,MemoryPeak,MemoryMax 2>/dev/null
-          ps -o pid,rss,etime,cmd -p "$(systemctl show sabantuy -p MainPID --value)" 2>/dev/null
+          # `comm`, а не `cmd`: полная командная строка несёт путь релиза на боксе,
+          # а логи прогонов публичны (письмо brain 29.08). Для замера RSS/uptime
+          # имени бинаря достаточно.
+          ps -o pid,rss,etime,comm -p "$(systemctl show sabantuy -p MainPID --value)" 2>/dev/null
 
           echo; echo "=====[ JOURNAL since $SINCE: oom/restart/error markers ]====="
+          # `-o cat` — только текст сообщения. В дефолтном формате journalctl
+          # печатает хостнейм бокса В КАЖДОЙ СТРОКЕ; грепом по файлам репо такая
+          # утечка не видна. Плюс редактор строк подключения: ошибка коннекта к БД
+          # вываливает DATABASE_URL целиком, вместе с паролем.
           sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -ciE 'oom|killed' | sed 's/^/oom-or-killed lines: /'
-          sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20
-          sudo journalctl -k --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
+          sudo journalctl -u sabantuy --since "$SINCE" --no-pager -o cat 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20 | sed -E 's#([a-z0-9+]+://)[^:@/[:space:]]+:[^@[:space:]]+@#\1<REDACTED>@#g'
+          sudo journalctl -k --since "$SINCE" --no-pager -o cat 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
 
           # G234 (keep-alive гонка nginx↔Node): гонка возможна ТОЛЬКО если nginx
           # держит keep-alive к апстриму (upstream+keepalive, proxy_http_version 1.1,
@@ -73,12 +80,26 @@ jobs:
           # Next-standalone читает его из env, в репозитории этого не видно.
           echo; echo "=====[ G234: keep-alive nginx <-> Node ]====="
           echo "--- директивы nginx (upstream/keepalive/proxy) ---"
-          sudo grep -rnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf /etc/nginx/conf.d/ 2>/dev/null | grep -v '^\s*#' | head -30
+          # НЕ рекурсивно по conf.d и с `-h` (без имени файла): рекурсия печатала
+          # в ПУБЛИЧНЫЙ лог конфиги всех соседей по боксу поимённо, вместе с
+          # датами их бэкапов — то есть мы публиковали состав жильцов, и не свой,
+          # а чужой (D-038, категория «состав жильцов бокса»). Замер 31.08 на
+          # живом логе: 4 соседних проекта. Для вопроса G234 (есть ли у nginx
+          # idle-пул к нашему апстриму) достаточно общего конфига и своего сайта.
+          sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/nginx.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[nginx.conf] /' | head -15
+          sudo grep -hnE 'upstream|keepalive|proxy_http_version|proxy_pass|Connection' /etc/nginx/conf.d/sabantuy.conf 2>/dev/null | grep -v '^\s*#' | sed 's/^/[наш сайт] /' | head -15
           echo "--- env сервиса: KEEP_ALIVE_TIMEOUT ---"
-          systemctl show sabantuy -p Environment -p EnvironmentFiles 2>/dev/null
+          # Только `Environment=` (инлайновые пары), БЕЗ `EnvironmentFiles=`:
+          # последний печатает путь env-файла в публичный лог. На вопрос
+          # «задан ли KEEP_ALIVE_TIMEOUT» отвечает строка ниже, путь не нужен.
+          systemctl show sabantuy -p Environment 2>/dev/null
           sudo grep -c '^KEEP_ALIVE_TIMEOUT=' /etc/sabantuy/sabantuy.env 2>/dev/null | sed 's/^/KEEP_ALIVE_TIMEOUT задан (строк): /'
-          echo "--- ExecStart ---"
-          systemctl show sabantuy -p ExecStart 2>/dev/null | head -3
+          echo "--- ExecStart: обёртка graceful? (G234, амендмент-2) ---"
+          # Сам ExecStart — это абсолютный путь к бинарю и к скрипту запуска.
+          # Печатаем не его, а ответ на вопрос: запускаемся штатным server.js или
+          # обёрткой, живущей вне бандла.
+          systemctl show sabantuy -p ExecStart --value 2>/dev/null \
+            | grep -oE '[A-Za-z0-9_.-]+\.(mjs|js)' | tail -1 | sed 's/^/точка входа: /'
 
           echo; echo "=====[ NGINX ACCESS $SINCE ($NGDATE) ]====="
           echo "--- /var/log/nginx содержимое ---"; sudo ls -la /var/log/nginx/ 2>&1 | head -20
@@ -108,9 +129,10 @@ jobs:
 
           echo; echo "=====[ DISK / MEDIA (ADR-0001) ]====="
           df -h /; echo
-          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null
+          # `cut -f1` — `du -sh` печатает путь второй колонкой (логи публичны).
+          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null | cut -f1 | sed 's/^/media размер: /'
           find /home/valstan/sabantuy/shared/media -type f 2>/dev/null | wc -l | sed 's/^/media files: /'
-          du -sh /home/valstan/sabantuy/releases 2>/dev/null
+          du -sh /home/valstan/sabantuy/releases 2>/dev/null | cut -f1 | sed 's/^/releases размер: /'
           echo; echo "=====[ POSTGRES SIZE ]====="
           sudo -u postgres psql -tAc "SELECT pg_size_pretty(pg_database_size('sabantuy'));" 2>/dev/null || echo "(pg size недоступен без sudo -u postgres)"
           exit 0
