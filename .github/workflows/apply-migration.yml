@@ -2,7 +2,7 @@ name: Apply DB migration (manual)
 
 # Применяет ОДНУ Payload-миграцию (зеркальный .sql) на прод по SSH из Actions.
 # Нужен, т.к. (а) `payload migrate` в CI/standalone недоступен/висит, (б) локальный
-# SSH разработчика к myjino бывает недоступен (edge режет клиентский IP, G8), а
+# SSH разработчика к прод-боксу бывает недоступен (edge провайдера режет клиентский IP, G8), а
 # раннер Actions достукивается. Запуск — вручную (workflow_dispatch) ДО деплоя кода,
 # затем штатный деплой через workflow_dispatch (migration-guard пропускает dispatch).
 #
@@ -69,7 +69,10 @@ jobs:
           ssh sabantuy 'bash -s' <<'REMOTE'
           set -e
           DB=$(grep '^DATABASE_URL=' /etc/sabantuy/sabantuy.env | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
-          echo "host: $(hostname)"
+          # Хостнейм бокса в лог НЕ печатаем: логи прогонов публичны, а грепом
+          # по файлам репо такая утечка не видна (письмо brain 29.08, механизм 2).
+          # Для «на той ли машине я выполняюсь» достаточно факта наличия env-файла.
+          echo "DATABASE_URL из env-файла: $([ -n "$DB" ] && echo получен || echo НЕ ПОЛУЧЕН)"
           # generic-префлайт: только наличие реестра миграций (имя таблицы целевой колонки
           # зависит от миграции — для локализованных полей это *_locales, не базовая таблица).
           echo "payload_migrations table: $(psql "$DB" -tAc "SELECT to_regclass('public.payload_migrations');")"

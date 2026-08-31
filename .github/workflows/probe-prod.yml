@@ -60,12 +60,19 @@ jobs:
 
           echo; echo "=====[ SERVICE sabantuy ]====="
           systemctl show sabantuy -p MainPID,NRestarts,ActiveEnterTimestamp,MemoryCurrent,MemoryPeak,MemoryMax 2>/dev/null
-          ps -o pid,rss,etime,cmd -p "$(systemctl show sabantuy -p MainPID --value)" 2>/dev/null
+          # `comm`, а не `cmd`: полная командная строка несёт путь релиза на боксе,
+          # а логи прогонов публичны (письмо brain 29.08). Для замера RSS/uptime
+          # имени бинаря достаточно.
+          ps -o pid,rss,etime,comm -p "$(systemctl show sabantuy -p MainPID --value)" 2>/dev/null
 
           echo; echo "=====[ JOURNAL since $SINCE: oom/restart/error markers ]====="
+          # `-o cat` — только текст сообщения. В дефолтном формате journalctl
+          # печатает хостнейм бокса В КАЖДОЙ СТРОКЕ; грепом по файлам репо такая
+          # утечка не видна. Плюс редактор строк подключения: ошибка коннекта к БД
+          # вываливает DATABASE_URL целиком, вместе с паролем.
           sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -ciE 'oom|killed' | sed 's/^/oom-or-killed lines: /'
-          sudo journalctl -u sabantuy --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20
-          sudo journalctl -k --since "$SINCE" --no-pager 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
+          sudo journalctl -u sabantuy --since "$SINCE" --no-pager -o cat 2>/dev/null | grep -iE 'started|stopped|oom|killed|fatal' | tail -20 | sed -E 's#([a-z0-9+]+://)[^:@/[:space:]]+:[^@[:space:]]+@#\1<REDACTED>@#g'
+          sudo journalctl -k --since "$SINCE" --no-pager -o cat 2>/dev/null | grep -iE 'oom|out of memory' | tail -10
 
           # G234 (keep-alive гонка nginx↔Node): гонка возможна ТОЛЬКО если nginx
           # держит keep-alive к апстриму (upstream+keepalive, proxy_http_version 1.1,

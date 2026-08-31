@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // SEO-переезд: старый домен сабантуймалмыж.рф → основной сабантуй.вмалмыже.рф.
 // Постраничный 301 (путь+query сохраняются) — передаёт ссылочный вес и позволяет
 // оформить «Переезд сайта» в Яндекс.Вебмастере / Change of Address в GSC.
-// TLS терминируется на edge myjino, nginx бокса — catch-all → сюда доходит
+// TLS терминируется на edge провайдера, nginx бокса — catch-all → сюда доходит
 // исходный Host; сравниваем по punycode (браузеры шлют IDN только так).
 const OLD_HOSTS = new Set([
   'xn--80aaac1aqpgcf4bqn1j.xn--p1ai', // сабантуймалмыж.рф

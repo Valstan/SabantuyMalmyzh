@@ -22,7 +22,7 @@
 - Endpoint `https://storage.yandexcloud.net`, region `ru-central1`, бакет public-read на префиксе `media/`.
 - Ключ объекта: `media/<phase>/<yyyymm>/<uuid>.<ext>` (uuid выдаём при sign — до создания записи в БД).
 - Публичный URL: `https://<bucket>.storage.yandexcloud.net/<key>` (в `next.config` remotePatterns).
-- Env (в прод-env `/etc/sabantuy/sabantuy.env`, в репо — только `.env.example`-плейсхолдеры, #008):
+- Env (в env-файле прод-сервиса, в репо — только `.env.example`-плейсхолдеры, #008):
   `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`,
   `S3_PUBLIC_BASE_URL` (опц., иначе деривируем), `UGC_MAX_PHOTO_MB`, `UGC_MAX_VIDEO_MB`, `UGC_MAX_VIDEO_SEC`.
 - Настройка владельцем: см. `docs/ops/yandex-object-storage-setup.md`.
