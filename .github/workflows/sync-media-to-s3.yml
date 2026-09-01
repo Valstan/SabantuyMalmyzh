@@ -1,0 +1,84 @@
+# Синхронизация shared/media → Object Storage (ADR-0001, шаг 1 из 2).
+# Шаг 2 — мерж адаптера storage-s3 — ТОЛЬКО после зелёного apply здесь:
+# иначе url переключится на бакет раньше, чем там лежат файлы.
+#
+# Ярус `ask` для apply: пишет в облачное хранилище. dry-run — только HEAD-запросы.
+# Запуск: gh workflow run sync-media-to-s3.yml -f mode=dry-run|apply
+name: Sync media to S3 (ADR-0001 step 1)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run — только посчитать; apply — загрузить'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options: [dry-run, apply]
+      ref:
+        description: 'Git ref со скриптом (обычно main)'
+        required: false
+        default: 'main'
+
+concurrency:
+  group: sync-media-s3
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Sync (${{ inputs.mode }})
+        run: |
+          ssh sabantuy 'bash -s' "${{ inputs.mode }}" "${{ inputs.ref }}" <<'REMOTE'
+          set -euo pipefail
+          MODE="$1"; REF="$2"
+          # Пути от $HOME ssh-пользователя (D-038). Env-файл сервиса — известный
+          # остаток D-038, тот же, что в apply-*-secrets.
+          BASE="$HOME/sabantuy"; REPO="$BASE/repo"; MEDIA="$BASE/shared/media"
+          ENVF=/etc/sabantuy/sabantuy.env
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
+          git checkout -f FETCH_HEAD
+          # Зависимость @aws-sdk/client-s3 — прямая у web/, ставится как в seed-*.
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile --prod=false >/dev/null
+
+          [ -d "$MEDIA" ] || { echo "::error::каталога media нет"; exit 1; }
+          ARGS=""; [ "$MODE" = "apply" ] && ARGS="--apply"
+          # Ключи — через stdin, в лог не попадают.
+          sudo grep '^S3_' "$ENVF" | WEB_DIR="$REPO/web" node .github/scripts/sync-media-s3.mjs "$MEDIA" $ARGS --sample 3
+          REMOTE
