@@ -188,5 +188,32 @@ jobs:
           du -sh "$M"/*/ 2>/dev/null | sed "s|$M/||" | sort -h | tail -15 || echo "(подкаталогов нет — плоская раскладка)"
           echo; echo "=====[ POSTGRES SIZE ]====="
           sudo -u postgres psql -tAc "SELECT pg_size_pretty(pg_database_size('sabantuy'));" 2>/dev/null || echo "(pg size недоступен без sudo -u postgres)"
+
+          # Полнота size-вариантов. Код фронта везде делает `sizes?.X?.url ||
+          # media.url` — где варианта нет, отдаётся ОРИГИНАЛ. Замер по логу за
+          # 04.06–01.09: оригиналы дали 51 % байт медиа-трафика. Вопрос: это
+          # штатный фолбэк (Payload не генерит вариант шире исходника) или
+          # дефект (вариант должен был быть, но его нет).
+          echo; echo "=====[ MEDIA: полнота size-вариантов ]====="
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT 'нет wide:', count(*) FILTER (WHERE sizes_wide_filename IS NULL),
+                   'нет card:', count(*) FILTER (WHERE sizes_card_filename IS NULL),
+                   'нет thumb:', count(*) FILTER (WHERE sizes_thumbnail_filename IS NULL),
+                   'всего:', count(*)
+            FROM media;" 2>/dev/null || echo "(запрос недоступен)"
+
+          echo "--- нет wide: объяснимо шириной исходника или нет? ---"
+          # width < 1920 => Payload вариант не делает, фолбэк на оригинал штатный.
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT CASE WHEN width >= 1920 THEN 'ШИРЕ 1920 — вариант должен был быть'
+                        ELSE 'уже 1920 — фолбэк штатный' END AS verdict,
+                   count(*), pg_size_pretty(sum(filesize)::bigint)
+            FROM media WHERE sizes_wide_filename IS NULL GROUP BY 1;" 2>/dev/null || echo "(запрос недоступен)"
+
+          echo "--- топ-10 по весу среди тех, у кого нет wide ---"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT filename, width, pg_size_pretty(filesize::bigint)
+            FROM media WHERE sizes_wide_filename IS NULL
+            ORDER BY filesize DESC NULLS LAST LIMIT 10;" 2>/dev/null || echo "(запрос недоступен)"
           exit 0
           REMOTE
