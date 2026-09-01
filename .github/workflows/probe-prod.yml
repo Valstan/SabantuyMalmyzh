@@ -130,10 +130,62 @@ jobs:
 
           echo; echo "=====[ DISK / MEDIA (ADR-0001) ]====="
           df -h /; echo
+          # Пути берём от $HOME ssh-пользователя — литерала в отслеживаемом файле
+          # не держим (D-038). Считаем ТОЛЬКО свой каталог: рекурсивный обход
+          # общего каталога опубликовал бы соседей (#254).
+          BASE="$HOME/sabantuy"; M="$BASE/shared/media"
           # `cut -f1` — `du -sh` печатает путь второй колонкой (логи публичны).
-          du -sh /home/valstan/sabantuy/shared/media 2>/dev/null | cut -f1 | sed 's/^/media размер: /'
-          find /home/valstan/sabantuy/shared/media -type f 2>/dev/null | wc -l | sed 's/^/media files: /'
-          du -sh /home/valstan/sabantuy/releases 2>/dev/null | cut -f1 | sed 's/^/releases размер: /'
+          du -sh "$M" 2>/dev/null | cut -f1 | sed 's/^/media размер: /'
+          find "$M" -type f 2>/dev/null | wc -l | sed 's/^/media files: /'
+          du -sh "$BASE/releases" 2>/dev/null | cut -f1 | sed 's/^/releases размер: /'
+
+          echo "--- media: варианты Payload против оригиналов ---"
+          # Payload именует size-варианты суффиксом -<W>x<H> перед расширением.
+          find "$M" -type f -regextype posix-extended -regex '.*-[0-9]+x[0-9]+\.[A-Za-z0-9]+$' -printf '%s\n' 2>/dev/null \
+            | awk '{n++; s+=$1} END {printf "варианты:  %5d файлов %8.1f МБ\n", n, s/1048576}'
+          find "$M" -type f -regextype posix-extended ! -regex '.*-[0-9]+x[0-9]+\.[A-Za-z0-9]+$' -printf '%s\n' 2>/dev/null \
+            | awk '{n++; s+=$1} END {printf "оригиналы: %5d файлов %8.1f МБ\n", n, s/1048576}'
+
+          echo "--- media: по расширению ---"
+          find "$M" -type f -printf '%f %s\n' 2>/dev/null \
+            | awk '{e=$1; sub(/.*\./,"",e); n[e]++; b[e]+=$2} END {for (x in n) printf "%-6s %5d файлов %8.1f МБ\n", x, n[x], b[x]/1048576}' \
+            | sort -k4 -rn | head -12
+
+          echo "--- media: 10 самых крупных файлов ---"
+          find "$M" -type f -printf '%s %f\n' 2>/dev/null | sort -rn | head -10 \
+            | awk '{printf "%8.2f МБ  %s\n", $1/1048576, $2}'
+
+          echo "--- media: оригиналы по источнику (префикс имени) ---"
+          find "$M" -type f -regextype posix-extended ! -regex '.*-[0-9]+x[0-9]+\.[A-Za-z0-9]+$' -printf '%f %s\n' 2>/dev/null \
+            | awk '{p=$1; sub(/-.*/,"",p); n[p]++; b[p]+=$2} END {for (x in n) printf "%-14s %5d файлов %8.1f МБ\n", x, n[x], b[x]/1048576}' \
+            | sort -k4 -rn | head -12
+
+          # Горячие оригиналы или холодный архив? Код везде делает
+          # `sizes?.X?.url || media.url`, то есть фолбэк на оригинал существует.
+          # Вопрос «срабатывает ли он в жизни» решается только логом.
+          # ⚠️ access.log ОБЩИЙ на бокс. Счётчики агрегатные — чужие строки их
+          # разве что завысят. Но имена файлов печатаем ТОЛЬКО по своим
+          # префиксам: иначе опубликуем медиа соседей (#254).
+          echo "--- media: период, покрытый текущим access.log ---"
+          sudo awk 'NR==1 || NR%1000000==0 {print} END {print}' /var/log/nginx/access.log 2>/dev/null \
+            | sed -E 's/.*\[([0-9]+\/[A-Za-z]+\/[0-9]+):.*/\1/' | sort -u | head -4
+
+          echo "--- media: что реально запрашивают ---"
+          sudo awk '$7 ~ /\/api\/media\/file\// {
+              if ($7 ~ /-[0-9]+x[0-9]+\.[A-Za-z0-9]+([?].*)?$/) { v++; vb += $10 } else { o++; ob += $10 }
+            } END {
+              printf "варианты:  %7d запросов %9.1f МБ\n", v, vb/1048576
+              printf "оригиналы: %7d запросов %9.1f МБ\n", o, ob/1048576
+            }' /var/log/nginx/access.log 2>/dev/null
+
+          echo "--- media: 10 самых запрашиваемых оригиналов (только наши префиксы) ---"
+          sudo awk '$7 ~ /\/api\/media\/file\// && $7 !~ /-[0-9]+x[0-9]+\./ {print $7}' /var/log/nginx/access.log 2>/dev/null \
+            | sed 's|.*/||' \
+            | grep -E '^(fotostena|seed|vkobzor|podgotovka|obzor2|bus|afisha)' \
+            | sort | uniq -c | sort -rn | head -10
+
+          echo "--- media: подкаталоги верхнего уровня ---"
+          du -sh "$M"/*/ 2>/dev/null | sed "s|$M/||" | sort -h | tail -15 || echo "(подкаталогов нет — плоская раскладка)"
           echo; echo "=====[ POSTGRES SIZE ]====="
           sudo -u postgres psql -tAc "SELECT pg_size_pretty(pg_database_size('sabantuy'));" 2>/dev/null || echo "(pg size недоступен без sudo -u postgres)"
           exit 0
