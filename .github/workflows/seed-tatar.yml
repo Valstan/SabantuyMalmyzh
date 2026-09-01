@@ -45,6 +45,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
         run: |
           set -e
           if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
@@ -59,7 +60,7 @@ jobs:
           Host sabantuy
             HostName $DEPLOY_SSH_HOST
             Port $DEPLOY_SSH_PORT
-            User valstan
+            User $DEPLOY_SSH_USER
             IdentityFile ~/.ssh/id_ed25519_sabantuy
             IdentitiesOnly yes
             StrictHostKeyChecking accept-new
