@@ -245,7 +245,9 @@ jobs:
                 -H "x-revalidate-secret: $RS" http://127.0.0.1:3000/api/revalidate || true)
           echo "POST /api/revalidate → $rv"
           [ "$rv" = "200" ] || { echo "::error::ревалидация не прошла ($rv) — страницы останутся пустыми до истечения revalidate"; fail=1; }
-          n=$(curl -s --max-time 30 http://127.0.0.1:3000/fotostena | grep -c 'storage.yandexcloud.net' || true)
+          # grep -o | wc -l — ВХОЖДЕНИЯ, не строки: Next отдаёт HTML одной строкой,
+          # и grep -c показывал «1» при 642 ссылках (приёмка 01.09).
+          n=$(curl -s --max-time 30 http://127.0.0.1:3000/fotostena | grep -o 'storage.yandexcloud.net' | wc -l || true)
           echo "/fotostena после ревалидации: ссылок на медиа = $n"
           [ "$n" -gt 0 ] || { echo "::error::/fotostena отрендерилась пустой — G32 не вылечен"; fail=1; }
           exit $fail
