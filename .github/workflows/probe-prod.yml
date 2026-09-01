@@ -210,6 +210,24 @@ jobs:
                    count(*), pg_size_pretty(sum(filesize)::bigint)
             FROM media WHERE sizes_wide_filename IS NULL GROUP BY 1;" 2>/dev/null || echo "(запрос недоступен)"
 
+          # Картинки внутри rich-text рендерятся через lexical-lite uploadToHtml,
+          # который берёт value.url — ОРИГИНАЛ, без обращения к sizes. Сколько
+          # весит эта разница там, где вариант wide существует и не используется.
+          echo "--- цена отдачи оригинала вместо wide (там, где wide есть) ---"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT count(*) AS files,
+                   pg_size_pretty(sum(filesize)::bigint) AS originals,
+                   pg_size_pretty(sum(sizes_wide_filesize)::bigint) AS wide_variants
+            FROM media WHERE sizes_wide_filename IS NOT NULL;" 2>/dev/null || echo "(запрос недоступен)"
+
+          echo "--- seed-картинки (они же горячие в логе): оригинал против wide ---"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT filename, width,
+                   pg_size_pretty(filesize::bigint) AS original,
+                   coalesce(pg_size_pretty(sizes_wide_filesize::bigint), 'нет wide') AS wide
+            FROM media WHERE filename LIKE 'seed-%'
+            ORDER BY filesize DESC LIMIT 13;" 2>/dev/null || echo "(запрос недоступен)"
+
           echo "--- топ-10 по весу среди тех, у кого нет wide ---"
           sudo -u postgres psql -d sabantuy -tAF' ' -c "
             SELECT filename, width, pg_size_pretty(filesize::bigint)
