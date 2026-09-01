@@ -33,6 +33,9 @@ const REQUIRED = ['DATABASE_URL', 'PAYLOAD_SECRET'] as const
  *
  * ℹ️ `NEXT_PUBLIC_*` сюда не входят принципиально: они бейкаются в бандл при сборке,
  *    рантайму их подсовывать бессмысленно (ротация = пересборка).
+ *
+ * ℹ️ `REVALIDATE_SECRET` не входит намеренно: его генерирует сам деплой на боксе,
+ *    и если env потерян — следующий деплой сделает новый. Восстанавливать нечего.
  */
 const ACCEPTED: ReadonlySet<string> = new Set<string>([
   ...REQUIRED,

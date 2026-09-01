@@ -187,6 +187,14 @@ jobs:
           rm -rf "$REL/public/media"
           ln -sfn "$BASE/shared/media" "$REL/public/media"
           ln -sfn "$REL" "$BASE/current"
+          # REVALIDATE_SECRET для пост-деплойной ревалидации (G32): генерируется
+          # здесь, на боксе, один раз; в GitHub secrets и в vault не ходит —
+          # потерялся → следующий деплой сделает новый. Идемпотентно.
+          ENVF=/etc/sabantuy/sabantuy.env
+          if ! sudo grep -q '^REVALIDATE_SECRET=' "$ENVF"; then
+            printf 'REVALIDATE_SECRET=%s\n' "$(openssl rand -hex 32)" | sudo tee -a "$ENVF" >/dev/null
+            echo "REVALIDATE_SECRET: сгенерирован и добавлен в env сервиса"
+          fi
           sudo systemctl restart sabantuy
           # держим последние 5 релизов
           ls -1dt "$BASE"/releases/*/ 2>/dev/null | tail -n +6 | xargs -r rm -rf
@@ -228,6 +236,18 @@ jobs:
             301\ https://$new_host/map*) ;;
             *) echo "::error::старый домен /map = '$redir', ожидалось '301 https://$new_host/map'"; fail=1 ;;
           esac
+          # G32: сборка пререндерила 32 ISR-страницы против ПУСТОЙ build-БД —
+          # сбрасываем всё дерево сразу, а не ждём revalidate (30–300 с на страницу).
+          # Приёмка — по симптому, не по коду ответа: в HTML /fotostena должны быть
+          # ссылки на медиа, а не пустая сетка.
+          RS=$(sudo grep '^REVALIDATE_SECRET=' /etc/sabantuy/sabantuy.env | cut -d= -f2- | tr -d '"')
+          rv=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST \
+                -H "x-revalidate-secret: $RS" http://127.0.0.1:3000/api/revalidate || true)
+          echo "POST /api/revalidate → $rv"
+          [ "$rv" = "200" ] || { echo "::error::ревалидация не прошла ($rv) — страницы останутся пустыми до истечения revalidate"; fail=1; }
+          n=$(curl -s --max-time 30 http://127.0.0.1:3000/fotostena | grep -c 'storage.yandexcloud.net' || true)
+          echo "/fotostena после ревалидации: ссылок на медиа = $n"
+          [ "$n" -gt 0 ] || { echo "::error::/fotostena отрендерилась пустой — G32 не вылечен"; fail=1; }
           exit $fail
           REMOTE
 
