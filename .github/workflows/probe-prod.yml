@@ -228,6 +228,24 @@ jobs:
             FROM media WHERE filename LIKE 'seed-%'
             ORDER BY filesize DESC LIMIT 13;" 2>/dev/null || echo "(запрос недоступен)"
 
+          echo; echo "=====[ ФОТОСТЕНА: кандидаты, медиа, сироты ]====="
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT 'кандидаты по статусам:', status, count(*) FROM vk_candidates GROUP BY status;" 2>/dev/null || echo "(запрос недоступен)"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT 'media с префиксом fotostena:', count(*), pg_size_pretty(sum(filesize)::bigint) FROM media WHERE filename LIKE 'fotostena-%';" 2>/dev/null
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT 'из них привязаны к кандидату:', count(*) FROM media m JOIN vk_candidates c ON c.media_id = m.id WHERE m.filename LIKE 'fotostena-%';" 2>/dev/null
+          echo "--- СИРОТЫ: media есть, кандидата нет ---"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT count(*), pg_size_pretty(sum(m.filesize)::bigint)
+            FROM media m WHERE m.filename LIKE 'fotostena-%'
+              AND NOT EXISTS (SELECT 1 FROM vk_candidates c WHERE c.media_id = m.id);" 2>/dev/null
+          echo "--- media, привязанные к НЕ-approved кандидату ---"
+          sudo -u postgres psql -d sabantuy -tAF' ' -c "
+            SELECT c.status, count(*), pg_size_pretty(sum(m.filesize)::bigint)
+            FROM media m JOIN vk_candidates c ON c.media_id = m.id
+            WHERE c.status <> 'approved' GROUP BY c.status;" 2>/dev/null
+
           echo "--- топ-10 по весу среди тех, у кого нет wide ---"
           sudo -u postgres psql -d sabantuy -tAF' ' -c "
             SELECT filename, width, pg_size_pretty(filesize::bigint)
