@@ -155,6 +155,11 @@ jobs:
           find "$M" -type f -printf '%s %f\n' 2>/dev/null | sort -rn | head -10 \
             | awk '{printf "%8.2f МБ  %s\n", $1/1048576, $2}'
 
+          echo "--- media: оригиналы по источнику (префикс имени) ---"
+          find "$M" -type f -regextype posix-extended ! -regex '.*-[0-9]+x[0-9]+\.[A-Za-z0-9]+$' -printf '%f %s\n' 2>/dev/null \
+            | awk '{p=$1; sub(/-.*/,"",p); n[p]++; b[p]+=$2} END {for (x in n) printf "%-14s %5d файлов %8.1f МБ\n", x, n[x], b[x]/1048576}' \
+            | sort -k4 -rn | head -12
+
           echo "--- media: подкаталоги верхнего уровня ---"
           du -sh "$M"/*/ 2>/dev/null | sed "s|$M/||" | sort -h | tail -15 || echo "(подкаталогов нет — плоская раскладка)"
           echo; echo "=====[ POSTGRES SIZE ]====="
