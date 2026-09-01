@@ -1,0 +1,62 @@
+# Рукопожатие с КАРМАНом без побочных эффектов: открыть сессию паспортным
+# путём ADR-0012 (D-061), показать, что она открылась и с какими правами,
+# и сразу отозвать. Ничего не пишет ни в хранилище, ни на прод.
+#
+# Зачем отдельно от deploy-prod: единственная приёмка паспорта — прогон с
+# refs/heads/main (условие 2 КАРМАНа), а гонять ради рукопожатия полный
+# деплой с рестартом живого сайта — несоразмерно. Здесь проверяются условия
+# 1–3 (audience, ветка, самоотзыв) и право записи; сам POST секретов
+# приезжает на ближайшем обычном деплое кода.
+#
+# Запуск: gh workflow run vault-passport-check.yml   (только с main!)
+name: Vault passport check (no side effects)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  handshake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Открыть сессию паспортом и отозвать
+        run: |
+          set -euo pipefail
+          # Тот же адрес и тот же fallback, что в deploy-prod. Это четвёртое
+          # вхождение хоста соседской комнаты в репо — остаток D-038, parked
+          # на ответе brain/КАРМАНа; при чистке искать вместе с остальными.
+          VAULT="${SECRETS_VAULT_URL:-https://831d0ce99bdf.vps.myjino.ru/api/secrets}"
+
+          echo "ветка прогона: $GITHUB_REF"
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::условие 2 КАРМАНа: сессия открывается только с refs/heads/main"
+            exit 1
+          fi
+
+          ASSERTION="$(curl -sf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=karman-vault" | jq -r '.value // empty')"
+          [ -n "$ASSERTION" ] || { echo "::error::GitHub не выдал OIDC-удостоверение"; exit 1; }
+          echo "::add-mask::$ASSERTION"
+          echo "удостоверение получено (длина $(printf '%s' "$ASSERTION" | wc -c))"
+
+          # -w с кодом ответа отдельно: 401/403 — это к КАРМАНу, по его аудиту.
+          RESP="$(curl -s -o /tmp/session.json -w '%{http_code}' -X POST "$VAULT/session" \
+            -H "Authorization: Bearer $ASSERTION")"
+          echo "POST /session → HTTP $RESP"
+          [ "$RESP" = "201" ] || [ "$RESP" = "200" ] || { echo "::error::сессия не открыта"; cat /tmp/session.json | jq -c 'del(.token)' 2>/dev/null || true; exit 1; }
+
+          TOKEN="$(jq -r '.token // empty' /tmp/session.json)"
+          [ -n "$TOKEN" ] || { echo "::error::в ответе нет token"; exit 1; }
+          echo "::add-mask::$TOKEN"
+          # Одна сессия — один отзыв. Повторных POST /session ради печати НЕ делаем:
+          # каждый открыл бы ещё одну сессию, которую никто не отзовёт.
+          trap 'curl -s -o /dev/null -w "DELETE /session → HTTP %{http_code}\n" -X DELETE "$VAULT/session" -H "Authorization: Bearer $TOKEN" || true; rm -f /tmp/session.json' EXIT
+
+          # Печатаем ТОТ ЖЕ ответ без токена. Остальное (ok, canWrite, ttl…) — факт приёмки.
+          echo "ответ хранилища (без token):"
+          jq -c 'del(.token)' /tmp/session.json
+          echo "право записи: $(jq -r '.canWrite // false' /tmp/session.json)"
