@@ -39,9 +39,9 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    // MVP: временное локальное хранилище. Цель — внешнее хранилище (Я.Диск /
-    // встраивание плеером для видео), чтобы не отдавать тяжёлое с маленького VPS.
-    // См. docs/adr/0001-media-storage.md.
+    // На проде файлы живут в Object Storage (плагин s3Storage в payload.config.ts,
+    // ADR-0001): staticDir ниже действует ТОЛЬКО когда S3-ключи не заданы —
+    // локальная разработка. Видео по-прежнему не грузим (embed плеером).
     //
     // ⚠️ В standalone-сборке Next относительный staticDir (через import.meta.url)
     // «запекается» в АБСОЛЮТНЫЙ путь СБОРОЧНОЙ машины (/home/runner/.../public/media)

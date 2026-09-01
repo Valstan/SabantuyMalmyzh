@@ -4,6 +4,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig } from 'payload'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { fileURLToPath } from 'url'
 
 import { Pages } from './collections/Pages'
@@ -93,6 +94,35 @@ export default buildConfig({
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
   sharp,
+  plugins: [
+    // ADR-0001 (решение 2026-09-01): редакционные медиа — в том же бакете Object
+    // Storage, что и UGC, через штатный адаптер, а не через Я.Диск с самописными
+    // хуками. С disablePayloadAccessControl url записи указывает прямо на бакет:
+    // бокс не хранит и не проксирует ни байта, /api/media/file/* не используется.
+    //
+    // Без `prefix` НАМЕРЕННО: поля url/sizes.*.url в схеме уже есть (снапшот
+    // 20260705), а `prefix` добавил бы колонку → миграция (G192). Ключ объекта =
+    // имя файла, ровно как залил sync-media-to-s3.yml.
+    //
+    // enabled только при заданных ключах: локальная разработка без S3 остаётся на
+    // staticDir из Media.ts, плагин при enabled:false конфиг не трогает.
+    s3Storage({
+      enabled: Boolean(process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY),
+      bucket: process.env.S3_BUCKET || '',
+      acl: 'public-read',
+      disableLocalStorage: true,
+      collections: { media: { disablePayloadAccessControl: true } },
+      config: {
+        endpoint: process.env.S3_ENDPOINT || 'https://storage.yandexcloud.net',
+        region: process.env.S3_REGION || 'ru-central1',
+        forcePathStyle: true, // как в lib/s3.ts: path-style, без виртуального хоста
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+      },
+    }),
+  ],
   // Двуязычие: Сабантуй — татарский праздник, ru/tt культурно уместно.
   // Включаем на greenfield (дёшево), пока БД пустая — ретрофит на наполненную
   // БД болезнен (миграция всех localized-полей). См. письмо brain 2026-06-04.
