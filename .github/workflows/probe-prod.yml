@@ -160,6 +160,30 @@ jobs:
             | awk '{p=$1; sub(/-.*/,"",p); n[p]++; b[p]+=$2} END {for (x in n) printf "%-14s %5d файлов %8.1f МБ\n", x, n[x], b[x]/1048576}' \
             | sort -k4 -rn | head -12
 
+          # Горячие оригиналы или холодный архив? Код везде делает
+          # `sizes?.X?.url || media.url`, то есть фолбэк на оригинал существует.
+          # Вопрос «срабатывает ли он в жизни» решается только логом.
+          # ⚠️ access.log ОБЩИЙ на бокс. Счётчики агрегатные — чужие строки их
+          # разве что завысят. Но имена файлов печатаем ТОЛЬКО по своим
+          # префиксам: иначе опубликуем медиа соседей (#254).
+          echo "--- media: период, покрытый текущим access.log ---"
+          sudo awk 'NR==1 || NR%1000000==0 {print} END {print}' /var/log/nginx/access.log 2>/dev/null \
+            | sed -E 's/.*\[([0-9]+\/[A-Za-z]+\/[0-9]+):.*/\1/' | sort -u | head -4
+
+          echo "--- media: что реально запрашивают ---"
+          sudo awk '$7 ~ /\/api\/media\/file\// {
+              if ($7 ~ /-[0-9]+x[0-9]+\.[A-Za-z0-9]+([?].*)?$/) { v++; vb += $10 } else { o++; ob += $10 }
+            } END {
+              printf "варианты:  %7d запросов %9.1f МБ\n", v, vb/1048576
+              printf "оригиналы: %7d запросов %9.1f МБ\n", o, ob/1048576
+            }' /var/log/nginx/access.log 2>/dev/null
+
+          echo "--- media: 10 самых запрашиваемых оригиналов (только наши префиксы) ---"
+          sudo awk '$7 ~ /\/api\/media\/file\// && $7 !~ /-[0-9]+x[0-9]+\./ {print $7}' /var/log/nginx/access.log 2>/dev/null \
+            | sed 's|.*/||' \
+            | grep -E '^(fotostena|seed|vkobzor|podgotovka|obzor2|bus|afisha)' \
+            | sort | uniq -c | sort -rn | head -10
+
           echo "--- media: подкаталоги верхнего уровня ---"
           du -sh "$M"/*/ 2>/dev/null | sed "s|$M/||" | sort -h | tail -15 || echo "(подкаталогов нет — плоская раскладка)"
           echo; echo "=====[ POSTGRES SIZE ]====="
