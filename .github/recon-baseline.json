@@ -1,0 +1,443 @@
+{
+  "_": "Гейт D-038. Запись = «это место известно и посчитано», НЕ «это одобрено». reason обязан говорить: сознательно и почему, либо в очереди на триаж и где пункт. Значений здесь нет намеренно (#191): denylist с настоящими значениями публикует то, что запрещает.",
+  "accepted": [
+    {
+      "file": ".github/workflows/apply-brand.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-brand.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-domain-env.yml",
+      "class": "fs-etc-project",
+      "count": 3,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-migration.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-push-secrets.yml",
+      "class": "fs-etc-project",
+      "count": 3,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-s3-keys.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-smtp-secrets.yml",
+      "class": "fs-etc-project",
+      "count": 3,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/apply-vk-secrets.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/collect-vk.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/collect-vk.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/deploy-prod.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/deploy-prod.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/moderate-vk.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/moderate-vk.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/probe-prod.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/recover-fotostena-media.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/recover-fotostena-media.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-announcement.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-announcement.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-bus-post.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-bus-post.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-culture.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-culture.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-news.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-news.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-prep-posts.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-prep-posts.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-prod.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-prod.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-program-2026.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-program-2026.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-program.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-program.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-quiz-images.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-quiz-images.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-quiz.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-quiz.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-site-content.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-site-content.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-tatar.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-tatar.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-vk-obzor.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-vk-obzor.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-vk-obzor2.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/seed-vk-obzor2.yml",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/setup-subdomain.yml",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": ".github/workflows/sync-media-to-s3.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
+    },
+    {
+      "file": "docs/GOTCHAS.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "самоописание гейта и разбор находок: строки существуют, чтобы объяснить класс, значений в них нет"
+    },
+    {
+      "file": "docs/ops/smtp-setup.md",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "документация эксплуатации: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "docs/ops/yandex-object-storage-setup.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "документация эксплуатации: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "docs/PENDING_FOLLOWUPS.md",
+      "class": "fs-etc-project",
+      "count": 3,
+      "reason": "самоописание гейта и разбор находок: строки существуют, чтобы объяснить класс, значений в них нет"
+    },
+    {
+      "file": "docs/social/sabantuy-2026-fotoreportazh-vk.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "документация эксплуатации: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "docs/social/sabantuy-2026-fotoreportazh-vk.md",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "документация эксплуатации: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "mailbox/to-brain/2026-06-03-m1-scaffold-and-payload-second-consumer.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-06-05-payload-staticdir-baked-build-path-standalone.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-06-05-payload-staticdir-baked-build-path-standalone.md",
+      "class": "fs-home",
+      "count": 5,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-06-26-prefestival-capacity-probe.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-06-27-cors-idn-punycode-apex-and-secret-delivery-via-gh-secrets.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-07-05-payload-staticdir-media-dir-ephemeral-checkout.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-07-05-payload-staticdir-media-dir-ephemeral-checkout.md",
+      "class": "fs-home",
+      "count": 2,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-07-28-esa-ack-redirect-uri-branding-catalog-fix.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-08-10-keepalive-measured-no-upstream-pool.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-09-01-correction-my-clean-was-false-rg-has-its-own-blind-spot.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "mailbox/to-brain/2026-09-04-d038-applied-and-five-classes-the-resweep-found.md",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "архив переписки: вычищать или нет — решает brain, вопрос задан письмом 2026-09-04. Не «принято», а «известно и посчитано»"
+    },
+    {
+      "file": "web/.env.example",
+      "class": "fs-etc-project",
+      "count": 5,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/collections/Media.ts",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/collections/Media.ts",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/lib/push.ts",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/lib/s3.ts",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/lib/secretsBootstrap.ts",
+      "class": "fs-etc-project",
+      "count": 2,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": "web/src/lib/secretsBootstrap.ts",
+      "class": "host-hex-subdomain",
+      "count": 1,
+      "reason": "сознательно: константа VAULT_URL load-bearing — сценарий A поднимает приложение ровно тогда, когда локальный env потерян вместе с переменной SECRETS_VAULT_URL"
+    },
+    {
+      "file": "web/src/lib/secretsBootstrap.ts",
+      "class": "host-vps-vds",
+      "count": 1,
+      "reason": "сознательно: константа VAULT_URL load-bearing — сценарий A поднимает приложение ровно тогда, когда локальный env потерян вместе с переменной SECRETS_VAULT_URL"
+    },
+    {
+      "file": "web/src/payload.config.ts",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    }
+  ]
+}
