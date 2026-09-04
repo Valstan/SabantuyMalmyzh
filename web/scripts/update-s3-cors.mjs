@@ -3,10 +3,11 @@
 // браузер→S3) работала с нового домена — иначе CORS-preflight его Origin не пропустит
 // (ровно та punycode-грабля, что ловили с apex домена ранее).
 //
-// Безопасность ключей: S3_* читаются из STDIN (раннер пайпит их из /etc/sabantuy/
-// sabantuy.env по SSH), сами значения никогда не печатаются. На экран — только origins.
+// Безопасность ключей: S3_* читаются из STDIN (раннер пайпит их по SSH из env-файла
+// сервиса; точный путь — D-038, не здесь), сами значения никогда не печатаются.
+// На экран — только origins.
 //
-// Запуск: ssh box 'grep ^S3_ env' | node web/scripts/update-s3-cors.mjs <inspect|apply> <newOrigin>
+// Запуск: ssh sabantuy 'grep ^S3_ <env-файл>' | node web/scripts/update-s3-cors.mjs <inspect|apply> <newOrigin>
 
 import {
   GetBucketCorsCommand,
