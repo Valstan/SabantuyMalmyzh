@@ -35,7 +35,8 @@ gh pr list --state open
    ```bash
    node -e "const fs=require('fs');const f=process.argv[1];const b=fs.readFileSync(f);const n=[...b].filter(x=>x===0).length;console.log(f,'NUL',n);if(n)fs.writeFileSync(f,Buffer.from([...b].filter(x=>x!==0)))" '<путь>'
    ```
-3. Ветка `feat/ fix/ chore/ docs/ refactor/` → коммит → `git push -u origin <ветка>` → `gh pr create` → **показать diff** → дождаться **OK** → `gh pr merge --squash --delete-branch`.
+3. Ветка `feat/ fix/ chore/ docs/ refactor/` → коммит → `git push -u origin <ветка>` → `gh pr create` → дождаться зелёного CI (`gh pr checks <n> --watch`, читать вывод) → `gh pr merge --squash --delete-branch` отдельной командой.
+   - Ярусы — `AGENTS.md` §PR-only flow. Под вопросом остаётся только черта #025: миграции и мутации прод-данных.
    - ⚠️ Мерж в `main` **авто-деплоит на прод** (`deploy-prod.yml`). Если в коммите есть новые миграции — сначала #017-поток (`apply-migration.yml --ref <ветка>` ДО мержа), иначе migration-guard остановит деплой.
 
 ## Шаг 4. Обновить живой бэклог `docs/ideas/site-enhancements.md`
@@ -62,13 +63,15 @@ gh pr list --state open
 ```bash
 git checkout -b docs/handoff-<slug>
 git add docs/SESSION_HANDOFF.md docs/ideas/site-enhancements.md
-git commit -m "docs: handoff — <короткое резюме>"   # многострочно — несколько -m, НЕ here-string в Bash-тулзе
+git commit -F <scratchpad>/msg.txt     # текст сообщения — в файле (D-046), не в аргументах
 git push -u origin docs/handoff-<slug>
-gh pr create ...
-# показать diff → OK → gh pr merge --squash --delete-branch
+gh pr create --body-file <scratchpad>/pr.txt
+gh pr checks <n> --watch && gh pr merge --squash --delete-branch
 git checkout main && git pull --ff-only
 ```
-Handoff **должен оказаться в `main`** (после OK), иначе `/start` на другой машине не увидит свежее состояние.
+Handoff **должен оказаться в `main`**, иначе `/start` на другой машине не увидит свежее состояние.
+
+> **Лучше не доводить до этого шага.** Handoff едет тем же PR, что и шаг нитки: сделал шаг — обновил `Updated:`, «где мы» и «что дальше» и отправил вместе с работой. Тогда отдельного «закрыть сессию» не существует как действия, а `/close_session` остаётся страховкой: для шага, сделанного словами в чате, для пересадки на другую машину посреди нитки и для разбора распухшего handoff.
 
 ## Шаг 7. Sync-гейт (жёсткий) — не закрывать, пока не выполнено
 
@@ -76,7 +79,7 @@ Handoff **должен оказаться в `main`** (после OK), инач�
 git status --short                 # пусто
 git rev-parse HEAD @{u}            # обе строки совпадают → main == origin/main
 gh pr list --state open            # перечислить (на origin → не потеряны)
-cd ../brain_matrica && git status --short && cd -   # чисто: мы только pull'или
+git -C ../brain_matrica status --short   # должно быть пусто: brain read-only, мы в нём ничего не меняли и не синхронизировали
 ```
 - На `main`, дерево чистое, `HEAD == @{u}`.
 - Нет забытых untracked-файлов с важной работой.
@@ -86,13 +89,13 @@ cd ../brain_matrica && git status --short && cd -   # чисто: мы толь�
 
 - Что закрыто в сессии (1–2 строки).
 - Handoff + бэклог обновлены ✅, **всё на `origin`** ✅, brain read-only ✅.
-- Открытые PR (ждут OK на мерж) — список с номерами.
+- Открытые PR — список с номерами и чего каждый ждёт (зелёного CI, ответа владельца по #025).
 - Что подхватит `/start` на другой машине (следующий шаг).
 
 ## Что НЕ делать
 
 - ❌ `git push origin main` напрямую; `git push --force` / `git reset --hard` по `main`.
-- ❌ Авто-мерж PR без явного **OK на diff** (ADR-0002 / `AGENTS.md`).
+- ❌ Мерж PR с красным или незавершённым CI; накат миграций и мутации прод-данных без явного подтверждения (#025).
 - ❌ Писать/коммитить в `../brain_matrica/`.
 - ❌ Оставлять незапушенные ветки/коммиты или висящий `git stash` — на другой машине это потеря.
 - ❌ Раздувать handoff: это sticky-note (статус/нитка/шаг), а не лог; детали — в гите/PR/`docs/ideas`.
