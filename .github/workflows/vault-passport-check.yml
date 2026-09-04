@@ -24,12 +24,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Открыть сессию паспортом и отозвать
+        env:
+          SECRETS_VAULT_URL: ${{ secrets.SECRETS_VAULT_URL }}
         run: |
           set -euo pipefail
-          # Тот же адрес и тот же fallback, что в deploy-prod. Это четвёртое
-          # вхождение хоста соседской комнаты в репо — остаток D-038, parked
-          # на ответе brain/КАРМАНа; при чистке искать вместе с остальными.
-          VAULT="${SECRETS_VAULT_URL:-https://831d0ce99bdf.vps.myjino.ru/api/secrets}"
+          # Адрес берётся там же, где в deploy-prod, — из secrets.
+          VAULT="${SECRETS_VAULT_URL:-}"
+          # Адрес комнаты — только из secrets. Fallback на литерал убран (D-038):
+          # он побеждал всегда и клал хост чужого бокса в отслеживаемый файл публичного репо.
+          if [ -z "$VAULT" ]; then
+            echo "::error::secrets.SECRETS_VAULT_URL не задан — адрес комнаты браться неоткуда"
+            exit 1
+          fi
 
           echo "ветка прогона: $GITHUB_REF"
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
