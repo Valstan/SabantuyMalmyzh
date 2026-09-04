@@ -31,7 +31,10 @@ gh pr list --state open
 
 Если `git status` непустой помимо handoff/доков:
 1. **Гейты** (если трогался код): `corepack pnpm -C web typecheck && corepack pnpm -C web lint` (+ `next build` / e2e-node, если правка существенная).
-2. **NUL-чек** (грабля харнесса): `git add -A && git diff --cached --stat` — любой исходник как `Bin` → вычистить NUL и пересохранить UTF-8 (см. `/obriv` шаг 3).
+2. **NUL-чек** (грабля харнесса): `git add -A && git diff --cached --stat` — любой исходник, показанный как `Bin`, подозрителен: при обрыве записи в файл попадает `NUL`-байт, сборка это может проглотить, а diff — нет. Вычистить и пересохранить UTF-8:
+   ```bash
+   node -e "const fs=require('fs');const f=process.argv[1];const b=fs.readFileSync(f);const n=[...b].filter(x=>x===0).length;console.log(f,'NUL',n);if(n)fs.writeFileSync(f,Buffer.from([...b].filter(x=>x!==0)))" '<путь>'
+   ```
 3. Ветка `feat/ fix/ chore/ docs/ refactor/` → коммит → `git push -u origin <ветка>` → `gh pr create` → **показать diff** → дождаться **OK** → `gh pr merge --squash --delete-branch`.
    - ⚠️ Мерж в `main` **авто-деплоит на прод** (`deploy-prod.yml`). Если в коммите есть новые миграции — сначала #017-поток (`apply-migration.yml --ref <ветка>` ДО мержа), иначе migration-guard остановит деплой.
 
