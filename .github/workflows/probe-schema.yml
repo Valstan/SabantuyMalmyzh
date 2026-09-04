@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -95,3 +97,45 @@ jobs:
                       WHERE c.table_schema='public') s;" 2>&1 | sed 's/^/columns-md5: /'
           exit 0
           REMOTE
+
+      # Дрейф-проба класса G231/G35: Payload берёт блокировку при открытии ЛЮБОГО
+      # документа и перечисляет в payload_locked_documents_rels все коллекции разом.
+      # Ручная миграция, заведшая коллекцию и не добавившая сюда колонку, роняет
+      # админку целиком — и молча: заготовка DDL снимается по именам НОВЫХ таблиц,
+      # правка чужой существующей в неё не попадает, а список таблиц не меняется.
+      # Ловится только сверкой пары «таблица.колонка» со списком коллекций конфига.
+      - name: Дрейф-проба payload_locked_documents_rels против списка коллекций
+        run: |
+          set -euo pipefail
+          ssh sabantuy 'sudo -u postgres psql -d sabantuy -tA -c "SELECT column_name FROM information_schema.columns WHERE table_name = '"'"'payload_locked_documents_rels'"'"' ORDER BY column_name;"' > /tmp/cols.txt
+          echo "колонок в таблице: $(wc -l < /tmp/cols.txt)"
+          python3 - <<'PY'
+          import re, pathlib, sys
+
+          STRUCTURAL = {'id', 'order', 'parent_id', 'path'}
+          cols = {c.strip() for c in open('/tmp/cols.txt') if c.strip()}
+          rel_cols = {c[:-3] for c in cols - STRUCTURAL if c.endswith('_id')}
+
+          slugs = {}
+          for f in sorted(pathlib.Path('web/src/collections').glob('*.ts')):
+              m = re.search(r"slug:\s*['\"]([^'\"]+)['\"]", f.read_text(encoding='utf-8'))
+              if m:
+                  slugs[m.group(1).replace('-', '_')] = f.name
+
+          # Непустой контроль (#262): метод обязан видеть заведомо существующее.
+          if 'users' not in slugs or 'users' not in rel_cols:
+              print('::error::контроль не прошёл — метод не видит заведомо существующую коллекцию users; '
+                    'пустой результат сравнения ничего не значит')
+              sys.exit(1)
+
+          missing = sorted(set(slugs) - rel_cols)
+          extra = sorted(rel_cols - set(slugs))
+          print(f'коллекций в конфиге: {len(slugs)} · relation-колонок в таблице: {len(rel_cols)}')
+          for s in missing:
+              print(f'::error::нет колонки {s}_id для коллекции {slugs[s]} — админка ляжет на первой же блокировке')
+          for c in extra:
+              print(f'::warning::колонка {c}_id есть, коллекции нет — остаток удалённой коллекции')
+          if missing:
+              sys.exit(1)
+          print(f'чисто: колонок {len(rel_cols)} = коллекций {len(slugs)}')
+          PY
