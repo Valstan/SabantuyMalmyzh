@@ -56,12 +56,9 @@ jobs:
             printf '%s ' "$pkg"; sudo grep -m1 '"version"' "$WD/node_modules/$pkg/package.json" 2>/dev/null || echo 'n/a'
           done
           echo "=====[ TRIGGER: /api/media?limit=1 и /api/vk-candidates ]====="
-          curl -s -o /dev/null -w 'media → %{http_code}
-' --max-time 20 'http://127.0.0.1:3000/api/media?limit=1'
-          curl -s -o /dev/null -w 'vk-candidates → %{http_code}
-' --max-time 20 'http://127.0.0.1:3000/api/vk-candidates?limit=1&depth=1'
-          curl -s -o /dev/null -w 'users → %{http_code}
-' --max-time 20 'http://127.0.0.1:3000/api/users?limit=1'
+          curl -s -o /dev/null -w 'media → %{http_code}\n' --max-time 20 'http://127.0.0.1:3000/api/media?limit=1'
+          curl -s -o /dev/null -w 'vk-candidates → %{http_code}\n' --max-time 20 'http://127.0.0.1:3000/api/vk-candidates?limit=1&depth=1'
+          curl -s -o /dev/null -w 'users → %{http_code}\n' --max-time 20 'http://127.0.0.1:3000/api/users?limit=1'
           sleep 2
           echo "=====[ JOURNAL since $SINCE, -o cat, ошибки с контекстом ]====="
           sudo journalctl -u sabantuy --no-pager -o cat --since "$SINCE" | grep -vE 'Failed to find Server Action|failed-to-find-server-action' | grep -iE -A14 'error|column|relation|drizzle|syntax|does not exist' | head -120
