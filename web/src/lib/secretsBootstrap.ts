@@ -65,6 +65,9 @@ const ACCEPTED: ReadonlySet<string> = new Set<string>([
   'VAPID_PRIVATE_KEY',
   // Персистентный каталог медиа на боксе
   'MEDIA_DIR',
+  // Приёмник ВК-конвейера Сарафана (D-093): право присылать / право публиковать
+  'INGEST_GATEWAY_KEY',
+  'INGEST_PUBLISH_KEY',
 ])
 
 export type BootstrapReason = 'local-env-intact' | 'no-token' | 'recovered' | 'fetch-failed'

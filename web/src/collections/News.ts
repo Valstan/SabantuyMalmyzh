@@ -84,6 +84,36 @@ export const News: CollectionConfig<'news'> = {
       },
     },
     slugField(),
+    // Откуда пост пришёл (приёмник конвейера Сарафана, D-093). Заполняется только
+    // приёмником; редактор видит атрибуцию и может её поправить.
+    {
+      name: 'source',
+      type: 'group',
+      label: 'Источник (ВК-конвейер)',
+      admin: { position: 'sidebar' },
+      fields: [
+        {
+          name: 'vkPostId',
+          type: 'text',
+          label: 'VK post ID',
+          unique: true,
+          index: true,
+          admin: { description: 'Ключ идемпотентности приёмника — повторная доставка не создаёт дубль.' },
+        },
+        {
+          name: 'sourceUrl',
+          type: 'text',
+          label: 'Ссылка на оригинал',
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData?: { vkPostId?: string | null } },
+          ) => {
+            if (siblingData?.vkPostId && !value) return 'Для поста из ВК обязательна ссылка на оригинал.'
+            return true
+          },
+        },
+      ],
+    },
   ],
   hooks: {
     beforeChange: [populatePublishedAt],

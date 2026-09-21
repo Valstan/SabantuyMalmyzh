@@ -278,6 +278,8 @@ jobs:
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           VK_CLIENT_SECRET: ${{ secrets.VK_CLIENT_SECRET }}
           VK_SERVICE_TOKEN: ${{ secrets.VK_SERVICE_TOKEN }}
+          INGEST_GATEWAY_KEY: ${{ secrets.INGEST_GATEWAY_KEY }}
+          INGEST_PUBLISH_KEY: ${{ secrets.INGEST_PUBLISH_KEY }}
           SECRETS_VAULT_URL: ${{ secrets.SECRETS_VAULT_URL }}
         run: |
           set -euo pipefail
@@ -327,19 +329,25 @@ jobs:
 
           # Значения передаются через --arg (не через подстановку в строку JSON):
           # спецсимволы в секретах не ломают документ и не утекают в лог.
+          # Ключи приёмника (D-093) зеркалим, если заданы: пустой не кладём, чтобы не
+          # затирать в комнате значение пустотой. INGEST_PUBLISH_KEY зеркалим, но
+          # наружу не отдаём никогда — черновик по построению.
           jq -n \
             --arg smtp "$SMTP_PASS" \
             --arg s3id "$S3_ACCESS_KEY_ID" \
             --arg s3sec "$S3_SECRET_ACCESS_KEY" \
             --arg vkcs "$VK_CLIENT_SECRET" \
             --arg vksvc "$VK_SERVICE_TOKEN" \
-            '{secrets:{
+            --arg gw "${INGEST_GATEWAY_KEY:-}" \
+            --arg pub "${INGEST_PUBLISH_KEY:-}" \
+            '{secrets:({
                SMTP_PASS:$smtp,
                S3_ACCESS_KEY_ID:$s3id,
                S3_SECRET_ACCESS_KEY:$s3sec,
                VK_CLIENT_SECRET:$vkcs,
                VK_SERVICE_TOKEN:$vksvc
-             }}' > /tmp/vault-mirror.json
+             } + (if $gw == "" then {} else {INGEST_GATEWAY_KEY:$gw} end)
+               + (if $pub == "" then {} else {INGEST_PUBLISH_KEY:$pub} end))}' > /tmp/vault-mirror.json
           # trap на удаление файла НЕ ставим отдельно: второй `trap … EXIT`
           # заменяет первый, и самоотзыв сессии молча пропал бы. Уборка файла
           # уже входит в тот единственный trap, что стоит выше.
@@ -348,6 +356,34 @@ jobs:
             -H 'Content-Type: application/json' \
             --data @/tmp/vault-mirror.json > /dev/null
           echo "Секреты зеркалированы в комнату vault (сессия будет отозвана на выходе)"
+
+          # Grant → setka на ОДИН ключ приёмника (D-093): двусторонний путь КАРМАНа —
+          # мы предлагаем своим токеном, Сарафан принимает своим по allowlist имён.
+          # Имя у получателя SABANTUY_INGEST_KEY (конвенция <SITE>_INGEST_KEY).
+          # Идемпотентно: уже предложено/принято → не повторяем; 409 — состояние, не ошибка.
+          # Не блокирует деплой; тело отказа печатаем (секретов в нём нет, #110).
+          if [ -n "${INGEST_GATEWAY_KEY:-}" ]; then
+            GCODE="$(curl -s -o /tmp/vault-grants.json -w '%{http_code}' "$VAULT/grants" -H "Authorization: Bearer $TOKEN" || true)"
+            HAVE="$(jq -r '
+              (if type == "array" then . else (.issued // .grants // .items // []) end)
+              | map(select(((.sourceKey // .key // "") == "INGEST_GATEWAY_KEY")
+                       and ((.targetSlug // .target_slug // "") == "setka")))
+              | length' /tmp/vault-grants.json 2>/dev/null || echo 0)"
+            echo "GET /grants: $GCODE, выдач INGEST_GATEWAY_KEY → setka: ${HAVE:-0}"
+            if [ "${HAVE:-0}" = "0" ]; then
+              jq -n '{key:"INGEST_GATEWAY_KEY", target_slug:"setka", alias:"SABANTUY_INGEST_KEY",
+                      note:"D-093, brain 2026-09-15: приёмник конвейера Сарафана"}' > /tmp/vault-grant.json
+              CODE="$(curl -s -o /tmp/vault-grant-out.txt -w '%{http_code}' -X POST "$VAULT/grants" \
+                -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+                --data @/tmp/vault-grant.json || true)"
+              case "$CODE" in
+                200|201) echo "grant → setka предложен: $CODE (alias SABANTUY_INGEST_KEY)" ;;
+                409)     echo "grant → setka: 409, уже есть — идемпотентно" ;;
+                *)       echo "::warning::grant → setka не предложен: HTTP $CODE"; cat /tmp/vault-grant-out.txt || true; echo ;;
+              esac
+            fi
+            rm -f /tmp/vault-grants.json /tmp/vault-grant.json /tmp/vault-grant-out.txt
+          fi
 
       # ⚠️ Логи прогонов ПУБЛИЧНЫ (репо публичный с 17.08). Сырой дамп журнала —
       # recon-поверхность (письмо brain 29.08, механизм 3): `systemctl status`
