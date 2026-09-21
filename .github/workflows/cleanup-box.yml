@@ -1,0 +1,147 @@
+name: Cleanup box (manual, ask)
+
+# Уборка бокса — решение владельца 2026-09-21 по письму brain 12.09 («два checkout'а —
+# четверть диска»): сборка идёт в CI, исходники боксу не нужны ни одному шагу;
+# локальная копия shared/media после переезда в Object Storage (ADR-0001) — мёртвый груз.
+#
+# Ярус «подтверждать в том же ходе» (#025): `rm -rf` на проде. Поэтому два режима:
+#   plan  — только читает: кандидаты (git-checkout'ы под домашним каталогом), размеры,
+#           обращения к /api/media/file/ в access.log, df. Ничего не удаляет.
+#   apply — удаляет РОВНО пути из `targets` (по одному в строке), каждый проходит
+#           проверки на боксе: под $HOME; не current/releases/shared; содержит .git
+#           (checkout) — либо это ровно $HOME/sabantuy/shared/media, которую не удаляем,
+#           а опустошаем (символьная ссылка релиза на неё остаётся валидной), и только
+#           если в access.log нет обращений к /api/media/file/ (иначе кто-то ещё
+#           читает локальные файлы — стоп). Маски и относительные пути отвергаются.
+# Значения путей приходят из ввода запускающего, в файле их нет (D-038).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan — только показать кандидаты; apply — удалить перечисленные targets'
+        required: true
+        default: 'plan'
+        type: choice
+        options: [plan, apply]
+      targets:
+        description: 'apply: абсолютные пути, по одному в строке (из вывода plan)'
+        required: false
+        type: string
+
+concurrency:
+  group: sabantuy-prod-ssh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_SSH_HOST" ] || [ -z "$DEPLOY_SSH_PORT" ]; then
+            echo "::error::Заданы не все: secrets.SSH_PRIVATE_KEY / secrets.DEPLOY_SSH_HOST / secrets.DEPLOY_SSH_PORT"
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Plan (read-only)
+        run: |
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set +e
+          BASE="$HOME/sabantuy"
+          echo "=====[ диск до ]====="; df -h / | tail -1
+          echo "=====[ развёртывание (не трогаем) ]====="
+          echo "current → $(readlink "$BASE/current" | sed "s#^$HOME#~#")"
+          du -sh "$BASE/releases" "$BASE/shared" 2>/dev/null | sed "s#$HOME#~#"
+          echo "=====[ кандидаты: git-checkout'ы под ~ (глубина ≤ 3), кроме releases ]====="
+          find "$HOME" -maxdepth 4 -type d -name .git 2>/dev/null | grep -v '/releases/' | while read -r g; do
+            d=$(dirname "$g"); printf '%s\t%s\tHEAD=%s\n' "$(du -sh "$d" 2>/dev/null | cut -f1)" "$(echo "$d" | sed "s#^$HOME#~#")" "$(git -C "$d" rev-parse --short HEAD 2>/dev/null)"
+          done
+          echo "=====[ локальная копия media ]====="
+          M="$BASE/shared/media"
+          [ -d "$M" ] && echo "$(du -sh "$M" | cut -f1)  ~/sabantuy/shared/media  файлов: $(find "$M" -type f | wc -l)" || echo "нет каталога"
+          echo "обращений к /api/media/file/ в текущем access.log: $(sudo awk '$7 ~ /\/api\/media\/file\//' /var/log/nginx/access.log 2>/dev/null | wc -l)"
+          echo "первая строка access.log: $(sudo head -1 /var/log/nginx/access.log 2>/dev/null | awk '{print $4}')"
+          echo "=====[ ссылки релизов на media ]====="
+          for r in "$BASE"/releases/*/; do printf '%s → %s\n' "$(basename "$r")" "$(readlink "$r/public/media" 2>/dev/null | sed "s#^$HOME#~#")"; done
+          REMOTE
+
+      - name: Apply (удаление по явному списку)
+        if: inputs.mode == 'apply'
+        env:
+          TARGETS: ${{ inputs.targets }}
+        run: |
+          set -e
+          [ -n "$TARGETS" ] || { echo "::error::mode=apply без targets — нечего удалять"; exit 1; }
+          printf '%s\n' "$TARGETS" > targets.txt
+          scp -q targets.txt sabantuy:/tmp/cleanup-targets.txt
+          rm -f targets.txt
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set -e
+          BASE="$HOME/sabantuy"; M="$BASE/shared/media"
+          fail=0
+          # 1. Все проверки ДО первого rm: одна плохая строка — не удаляем ничего.
+          while IFS= read -r t; do
+            t="${t%$'\r'}"; [ -n "$t" ] || continue
+            case "$t" in
+              */|*..*|*'*'*|*'?'*) echo "::error::отвергнуто (маска/относительный/слэш в конце): $t" | sed "s#$HOME#~#"; fail=1; continue;;
+              "$HOME"/*) ;;
+              *) echo "::error::отвергнуто (вне домашнего каталога)"; fail=1; continue;;
+            esac
+            case "$t" in
+              "$BASE"|"$BASE/current"|"$BASE/current/"*|"$BASE/releases"|"$BASE/releases/"*|"$BASE/shared")
+                echo "::error::отвергнуто (развёртывание): $t" | sed "s#$HOME#~#"; fail=1; continue;;
+            esac
+            if [ "$t" = "$M" ]; then
+              hits=$(sudo awk '$7 ~ /\/api\/media\/file\//' /var/log/nginx/access.log 2>/dev/null | wc -l)
+              if [ "$hits" != "0" ]; then echo "::error::media: в access.log $hits обращений к /api/media/file/ — локальные файлы ещё читают, стоп"; fail=1; fi
+              continue
+            fi
+            [ -d "$t/.git" ] || { echo "::error::отвергнуто (не git-checkout): $t" | sed "s#$HOME#~#"; fail=1; }
+            if [ "$(readlink -f "$BASE/current")" = "$(readlink -f "$t")" ]; then echo "::error::это current"; fail=1; fi
+          done < /tmp/cleanup-targets.txt
+          [ "$fail" = 0 ] || { rm -f /tmp/cleanup-targets.txt; echo "::error::проверки не прошли — ничего не удалено"; exit 1; }
+          # 2. Удаление — ровно по списку.
+          while IFS= read -r t; do
+            t="${t%$'\r'}"; [ -n "$t" ] || continue
+            before=$(du -sh "$t" 2>/dev/null | cut -f1)
+            if [ "$t" = "$M" ]; then
+              find "$M" -mindepth 1 -delete
+              echo "опустошено (каталог оставлен, ссылка релиза валидна): ~/sabantuy/shared/media ($before)"
+            else
+              rm -rf "$t"
+              echo "удалено: $(echo "$t" | sed "s#^$HOME#~#") ($before)"
+            fi
+          done < /tmp/cleanup-targets.txt
+          rm -f /tmp/cleanup-targets.txt
+          echo "=====[ диск после ]====="; df -h / | tail -1
+          echo "=====[ приёмка ]====="
+          sudo systemctl show sabantuy -p ActiveState -p NRestarts
+          echo "/ → $(curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3000/)"
+          echo "/fotostena ссылок на медиа: $(curl -s --max-time 30 http://127.0.0.1:3000/fotostena | grep -o 'storage.yandexcloud.net' | wc -l)"
+          REMOTE
