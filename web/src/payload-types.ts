@@ -212,6 +212,7 @@ export interface Media {
   id: number;
   alt?: string | null;
   caption?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -369,6 +370,13 @@ export interface News {
    * Заполняется автоматически из заголовка. Можно переопределить вручную.
    */
   slug?: string | null;
+  source?: {
+    /**
+     * Ключ идемпотентности приёмника — повторная доставка не создаёт дубль.
+     */
+    vkPostId?: string | null;
+    sourceUrl?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1017,6 +1025,12 @@ export interface NewsSelect<T extends boolean = true> {
       };
   publishedAt?: T;
   slug?: T;
+  source?:
+    | T
+    | {
+        vkPostId?: T;
+        sourceUrl?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1028,6 +1042,7 @@ export interface NewsSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

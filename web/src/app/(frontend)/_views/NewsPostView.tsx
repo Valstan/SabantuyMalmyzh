@@ -88,6 +88,15 @@ export async function NewsPostView({ slug, locale }: { slug: string; locale: Loc
             <article className="page">
               <div className="page-prose">
                 {post.body ? <RichText data={post.body} /> : <p className="meta">{t(locale, 'page.empty')}</p>}
+                {/* Атрибуция поста, пришедшего ВК-конвейером (D-093): ссылка на оригинал. */}
+                {post.source?.sourceUrl && (
+                  <p className="meta">
+                    {locale === 'tt' ? 'Чыганак' : 'Источник'}:{' '}
+                    <a href={post.source.sourceUrl} target="_blank" rel="noreferrer noopener">
+                      {post.source.sourceUrl.includes('vk.com') ? 'ВКонтакте' : post.source.sourceUrl}
+                    </a>
+                  </p>
+                )}
               </div>
             </article>
           </ArticleLightbox>
