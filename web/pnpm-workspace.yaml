@@ -1,0 +1,20 @@
+# Настройки pnpm 10 живут здесь, а не в package.json#pnpm (то поле pnpm 10 игнорирует
+# с предупреждением при каждом install — отсюда и переехал onlyBuiltDependencies).
+packages:
+  - '.'
+
+# Скрипты сборки разрешены только этим пакетам (остальным pnpm 10 их блокирует).
+onlyBuiltDependencies:
+  - sharp
+  - esbuild
+  - unrs-resolver
+
+# Транзитивные high из `pnpm audit --prod` (deps-audit.yml), которые апстрим
+# (@payloadcms/next, next, payload) ещё не подтянул. Все — патч-бампы внутри
+# своего мажора. Снимать override, когда апстрим сам перешагнёт версию.
+overrides:
+  immutable: '>=4.3.9'      # GHSA-v56q-mh7h-f735, через @payloadcms/next>sass
+  js-yaml: '>=4.3.2'        # через payload>json-schema-to-typescript
+  fast-uri: '>=3.1.6'       # через payload>ajv
+  postcss: '>=8.5.18'       # через next>postcss (там пин 8.4.31)
+  nanoid: '>=3.3.18'        # через next>postcss
