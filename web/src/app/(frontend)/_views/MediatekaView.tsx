@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { withRetry } from '../../../lib/withRetry'
 import { MediaLibrary, type LibraryItem } from '../components/MediaLibrary'
 import { SectionHeading } from '../components/SectionHeading'
@@ -75,4 +76,5 @@ export async function MediatekaView({ locale }: { locale: Locale }) {
 export const mediatekaMeta = (locale: Locale): Metadata => ({
   title: `${t(locale, 'mediateka.title')} — Сабантуй в Малмыже`,
   description: t(locale, 'mediateka.lead'),
+  alternates: localeAlternates(locale, '/mediateka'),
 })

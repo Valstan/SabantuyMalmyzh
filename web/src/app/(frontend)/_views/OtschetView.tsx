@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { localeHref } from '../../../lib/localeHref'
 import { abs } from '../../../lib/site'
 import { withRetry } from '../../../lib/withRetry'
@@ -90,6 +91,7 @@ export async function OtschetView({ locale }: { locale: Locale }) {
 export const otschetMeta = (locale: Locale): Metadata => ({
   title: `${t(locale, 'otschet.metaTitle')} — Сабантуй в Малмыже`,
   description: t(locale, 'otschet.lead'),
+  alternates: localeAlternates(locale, '/otschet'),
   openGraph: {
     title: t(locale, 'otschet.metaTitle'),
     description: t(locale, 'otschet.lead'),

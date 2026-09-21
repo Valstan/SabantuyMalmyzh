@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { excerpt } from '../../../lib/lexicalExcerpt'
 import { breadcrumbJsonLd, faqJsonLd } from '../../../lib/jsonLd'
 import { localeHref } from '../../../lib/localeHref'
 import { getPageDecor } from '../../../lib/pageDecor'
@@ -131,6 +132,7 @@ export async function pageMeta(slug: string, locale: Locale): Promise<Metadata> 
   const page = await queryPageBySlug(decoded, locale)
   return {
     title: page?.title ?? t(locale, 'notFound.title'),
+    description: page?.content ? excerpt(page.content, 160) || undefined : undefined,
     alternates: {
       canonical: locale === 'tt' ? `/tt/${decoded}` : `/${decoded}`,
       languages: { 'ru-RU': `/${decoded}`, 'tt-RU': `/tt/${decoded}` },

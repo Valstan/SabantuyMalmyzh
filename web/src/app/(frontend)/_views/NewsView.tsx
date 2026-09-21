@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { NewsEditor } from '../components/edit/NewsEditor'
@@ -92,4 +93,5 @@ export async function NewsView({ locale }: { locale: Locale }) {
 export const newsMeta = (locale: Locale): Metadata => ({
   title: `${t(locale, 'nav.news')} — Сабантуй в Малмыже`,
   description: t(locale, 'news.lead'),
+  alternates: localeAlternates(locale, '/novosti'),
 })

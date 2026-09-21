@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { MAP_TYPE_ORDER, mapTypeMeta } from '../../../lib/mapTypes'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
@@ -77,4 +78,11 @@ export async function MapView({ locale }: { locale: Locale }) {
   )
 }
 
-export const mapMeta = (locale: Locale): Metadata => ({ title: `${t(locale, 'home.map.title')} — Сабантуй в Малмыже` })
+export const mapMeta = (locale: Locale): Metadata => ({
+  title: `${t(locale, 'home.map.title')} — Сабантуй в Малмыже`,
+  description:
+    locale === 'tt'
+      ? 'Малмыждагы Сабантуй мәйданы картасы: сәхнә, майдан, ярминкә, керү, автотуктау.'
+      : 'Карта площадки Сабантуя в Малмыже: сцена, майдан, ярмарка, вход, парковка.',
+  alternates: localeAlternates(locale, '/map'),
+})

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
@@ -92,4 +93,9 @@ export async function GalleryView({ locale }: { locale: Locale }) {
 
 export const galleryMeta = (locale: Locale): Metadata => ({
   title: `${t(locale, 'nav.gallery')} — Сабантуй в Малмыже`,
+  description:
+    locale === 'tt'
+      ? 'Малмыждагы Сабантуй фотоальбомнары: бәйрәм, көрәш, концерт, кунаклар — еллар буенча.'
+      : 'Фотоальбомы Сабантуя в Малмыже: праздник, борьба, концерт, гости — по годам.',
+  alternates: localeAlternates(locale, '/gallery'),
 })

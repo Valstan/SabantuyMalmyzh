@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload, type Where } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { effectiveDeckSize } from '../../../lib/quiz'
 import { DEFAULT_QUIZ_GAME, findQuizGame } from '../../../lib/quizGames'
 import { withRetry } from '../../../lib/withRetry'
@@ -121,5 +122,6 @@ export const quizMeta = (locale: Locale, game: string = DEFAULT_QUIZ_GAME): Meta
   return {
     title: `${title} — Сабантуй в Малмыже`,
     description: def?.description ?? t(locale, 'game.lead'),
+    alternates: localeAlternates(locale, game === DEFAULT_QUIZ_GAME ? '/igra' : `/igra/${game}`),
   }
 }

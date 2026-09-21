@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { localeHref } from '../../../lib/localeHref'
 import { withRetry } from '../../../lib/withRetry'
 import { SectionHeading } from '../components/SectionHeading'
@@ -77,6 +78,11 @@ export async function AlbumView({ slug, locale }: { slug: string; locale: Locale
 }
 
 export async function albumMeta(slug: string, locale: Locale): Promise<Metadata> {
-  const album = await queryAlbum(decodeURIComponent(slug), locale)
-  return { title: album ? `${album.title} — ${t(locale, 'nav.gallery')}` : t(locale, 'notFound.title') }
+  const decoded = decodeURIComponent(slug)
+  const album = await queryAlbum(decoded, locale)
+  return {
+    title: album ? `${album.title} — ${t(locale, 'nav.gallery')}` : t(locale, 'notFound.title'),
+    description: album?.description || (album ? `${album.title}: ${t(locale, 'nav.gallery')} — Сабантуй в Малмыже` : undefined),
+    alternates: localeAlternates(locale, `/gallery/${decoded}`),
+  }
 }
