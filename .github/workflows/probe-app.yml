@@ -1,0 +1,74 @@
+# Read-only probe приложения на проде: состояние юнита, свежий журнал (без recon-полей,
+# `-o cat`), локальные ответы Next (код, заголовки безопасности, /fotostena) и форма
+# media-URL из API. Ничего не меняет. Заведён 2026-09-21 при разборе красного смоука
+# после обновления Payload 3.90 / Next 15.5 (deploy-prod run 35643278963).
+name: Probe app (read-only)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: probe-app
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+
+      - name: Probe app (read-only)
+        run: |
+          ssh sabantuy 'bash -s' <<'REMOTE'
+          set +e
+          echo "=====[ UNIT ]====="
+          sudo systemctl show sabantuy -p ActiveState -p SubState -p Result -p NRestarts -p ExecMainStatus -p ActiveEnterTimestamp
+          echo "=====[ JOURNAL since last start, -o cat, без хостнейма ]====="
+          sudo journalctl -u sabantuy --no-pager -o cat -n 200 | grep -vE 'Failed to find Server Action|nextjs.org/docs/messages/failed-to-find-server-action' | tail -120
+          echo "=====[ Server Action scans: count last 24h ]====="
+          sudo journalctl -u sabantuy --no-pager -o cat --since '24 hours ago' | grep -c 'Failed to find Server Action'
+          echo "=====[ VERSIONS in release ]====="
+          for f in $(sudo find / -path '*/current/.next/standalone/node_modules/next/package.json' -o -path '*/current/node_modules/next/package.json' 2>/dev/null | head -3); do echo "$f"; grep '"version"' "$f"; done
+          for f in $(sudo find / -path '*/current/*node_modules/payload/package.json' 2>/dev/null | head -2); do echo "$f"; grep '"version"' "$f"; done
+          echo "=====[ HEADERS local / ]====="
+          curl -sI --max-time 15 http://127.0.0.1:3000/ | grep -iE '^(HTTP|content-security|strict-transport|x-content-type|x-frame|referrer|x-powered)'
+          echo "=====[ /fotostena ]====="
+          html=$(curl -s --max-time 40 http://127.0.0.1:3000/fotostena)
+          echo "bytes: ${#html}"
+          echo "storage.yandexcloud.net: $(printf '%s' "$html" | grep -o 'storage.yandexcloud.net' | wc -l)"
+          echo "/api/media/file: $(printf '%s' "$html" | grep -o '/api/media/file' | wc -l)"
+          echo "<img: $(printf '%s' "$html" | grep -o '<img' | wc -l)"
+          printf '%s' "$html" | grep -o 'src="[^"]*"' | head -5
+          echo "=====[ API vk-candidates approved, depth=1 — форма media.url ]====="
+          curl -s --max-time 20 'http://127.0.0.1:3000/api/vk-candidates?limit=1&depth=1&where[status][equals]=approved' | head -c 1500; echo
+          echo "=====[ API media limit=1 ]====="
+          curl -s --max-time 20 'http://127.0.0.1:3000/api/media?limit=1' | head -c 800; echo
+          echo "=====[ /api/users/me ]====="
+          curl -s -o /dev/null -w '%{http_code}\n' --max-time 15 http://127.0.0.1:3000/api/users/me
+          REMOTE
