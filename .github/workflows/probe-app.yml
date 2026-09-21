@@ -68,6 +68,19 @@ jobs:
           sudo journalctl -u sabantuy --no-pager -o cat --since '24 hours ago' | grep -c 'Failed to find Server Action'
           echo "=====[ HEADERS local / ]====="
           curl -sI --max-time 15 http://127.0.0.1:3000/ | grep -iE '^(HTTP|content-security|strict-transport|x-content-type|x-frame|referrer|x-powered)'
+          echo "=====[ #251 default_server: чужой Host через nginx не должен отдавать наш <title> ]====="
+          # nginx на боксе общий (дежурный — ТАКСИ); проверяем со своей стороны по loopback.
+          nope=$(curl -sk --max-time 15 https://127.0.0.1/ -H 'Host: nope.xn--80adkdyec4j.xn--p1ai' | grep -o '<title>[^<]*' | head -1)
+          echo "title при Host=nope: '${nope:-<пусто>}'"
+          case "$nope" in *Сабантуй*) echo "::warning::#251: сайт отдаётся по чужому Host — нужен default_server у nginx";; *) echo "#251: ок, наш title не отдаётся";; esac
+          echo "=====[ #250 immutable: заголовки трёх ассетов через nginx ]====="
+          H='Host: xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai'
+          chunk=$(curl -sk --max-time 20 https://127.0.0.1/ -H "$H" | grep -oE '/_next/static/chunks/[^"]+\.js' | head -1)
+          for a in "$chunk" /manifest.webmanifest /sw.js /icons/icon-192.png; do
+            [ -n "$a" ] || continue
+            echo "--- $a"
+            curl -skI --max-time 15 "https://127.0.0.1$a" -H "$H" | grep -iE '^(HTTP|cache-control|content-type)'
+          done
           echo "=====[ /fotostena ]====="
           html=$(curl -s --max-time 40 http://127.0.0.1:3000/fotostena)
           echo "bytes: ${#html}"

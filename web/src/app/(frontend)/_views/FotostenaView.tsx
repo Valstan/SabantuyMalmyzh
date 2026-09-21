@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { t, type Locale } from '../../../lib/i18n'
+import { localeAlternates } from '../../../lib/localeAlternates'
 import { withRetry } from '../../../lib/withRetry'
 import { FotostenaGallery, type FotostenaItem } from '../components/FotostenaGallery'
 import { SectionHeading } from '../components/SectionHeading'
@@ -86,4 +87,5 @@ export async function FotostenaView({ locale }: { locale: Locale }) {
 export const fotostenaMeta = (locale: Locale): Metadata => ({
   title: `${t(locale, 'fotostena.title')} — Сабантуй в Малмыже`,
   description: t(locale, 'fotostena.lead'),
+  alternates: localeAlternates(locale, '/fotostena'),
 })
