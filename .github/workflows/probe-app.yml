@@ -70,24 +70,26 @@ jobs:
           curl -sI --max-time 15 http://127.0.0.1:3000/ | grep -iE '^(HTTP|content-security|strict-transport|x-content-type|x-frame|referrer|x-powered)'
           echo "=====[ #251 default_server: чужой Host через nginx не должен отдавать наш <title> ]====="
           # nginx на боксе общий (дежурный — ТАКСИ); проверяем со своей стороны по loopback.
-          # --resolve, а не Host-заголовок: nginx выбирает vhost по SNI, loopback без SNI
-          # попадает в default и отдаёт пустоту — «ок» было бы ложным (#284: гейт без области).
+          # TLS терминирует edge провайдера (G8), nginx бокса слушает :80 — ходим по http
+          # с Host-заголовком. Контроль на своём домене обязателен: «ок» без него —
+          # гейт без области (#284). Первые две версии этой проверки отдали пустоту молча.
           DOM=xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai
           NOPE=nope.xn--80adkdyec4j.xn--p1ai
-          echo "контроль (наш домен через nginx): HTTP $(curl -sk -o /tmp/own.html -w '%{http_code}' --max-time 20 --resolve "$DOM:443:127.0.0.1" "https://$DOM/")"
+          echo "слушатели: $(sudo ss -ltnH 'sport = :80 or sport = :443' | awk '{print $4}' | tr '\n' ' ')"
+          echo "контроль (наш домен через nginx): HTTP $(curl -s -o /tmp/own.html -w '%{http_code}' --max-time 20 -H "Host: $DOM" http://127.0.0.1/)"
           own=$(grep -o '<title>[^<]*' /tmp/own.html | head -1); echo "наш title: '${own:-<пусто>}'"
-          code=$(curl -sk -o /tmp/nope.html -w '%{http_code}' --max-time 15 --resolve "$NOPE:443:127.0.0.1" "https://$NOPE/")
+          code=$(curl -s -o /tmp/nope.html -w '%{http_code}' --max-time 15 -H "Host: $NOPE" http://127.0.0.1/)
           nope=$(grep -o '<title>[^<]*' /tmp/nope.html | head -1)
           echo "чужой Host: HTTP $code, title '${nope:-<пусто>}'"
           if [ -z "$own" ]; then echo "::warning::#251: контроль не отдал наш title — проверка неприменима";
           else case "$nope" in *Сабантуй*) echo "::warning::#251: сайт отдаётся по чужому Host — нужен default_server у nginx";; *) echo "#251: ок, по чужому Host наш title не отдаётся";; esac; fi
           rm -f /tmp/own.html /tmp/nope.html
           echo "=====[ #250 immutable: заголовки ассетов через nginx ]====="
-          chunk=$(curl -sk --max-time 20 --resolve "$DOM:443:127.0.0.1" "https://$DOM/" | grep -oE '/_next/static/chunks/[^"]+\.js' | head -1)
+          chunk=$(curl -s --max-time 20 -H "Host: $DOM" http://127.0.0.1/ | grep -oE '/_next/static/chunks/[^"]+\.js' | head -1)
           for a in "$chunk" /manifest.webmanifest /sw.js /icons/icon-192.png /og.jpg; do
             [ -n "$a" ] || continue
             echo "--- $a"
-            curl -skI --max-time 15 --resolve "$DOM:443:127.0.0.1" "https://$DOM$a" | grep -iE '^(HTTP|cache-control|content-type)'
+            curl -sI --max-time 15 -H "Host: $DOM" "http://127.0.0.1$a" | grep -iE '^(HTTP|cache-control|content-type)'
           done
           echo "=====[ /fotostena ]====="
           html=$(curl -s --max-time 40 http://127.0.0.1:3000/fotostena)
