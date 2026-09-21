@@ -48,13 +48,36 @@ const nextConfig = {
   // именем (напр. калфак в /quiz) → 7-дневный max-age самозалечивается после деплоя.
   // /media (загрузки), /sw.js (service worker обязан обновляться) и /og.jpg
   // (перегенерится) сознательно НЕ трогаем — у них кэш короткий по делу.
+  //
+  // Заголовки безопасности — мандат brain 2026-09-14: `curl -sI` прода показал, что
+  // их нет вовсе (nginx перед нами их не ставит). Рецепт портала (G311):
+  //   - CSP намеренно БЕЗ script-src/style-src — админка Payload и информер Метрики
+  //     живут на inline; полная CSP здесь = сломанная админка. Берём только то, что
+  //     закрывает clickjacking и подмену формы: frame-ancestors, form-action, base-uri.
+  //     form-action 'self': внешних HTML-форм у нас нет (VK-вход и ЕСА — редиректы).
+  //   - HSTS без includeSubDomains: соседние поддомены *.вмалмыже.рф — чужие проекты.
+  //   - poweredByHeader: false — версию Next по X-Powered-By сканеры читают первой.
   async headers() {
     const STATIC = 'public, max-age=604800, stale-while-revalidate=86400'
-    return ['/afisha', '/decor', '/quiz', '/icons'].map((dir) => ({
-      source: `${dir}/:path*`,
-      headers: [{ key: 'Cache-Control', value: STATIC }],
-    }))
+    const SECURITY = [
+      {
+        key: 'Content-Security-Policy',
+        value: "frame-ancestors 'self'; form-action 'self'; base-uri 'self'",
+      },
+      { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    ]
+    return [
+      { source: '/:path*', headers: SECURITY },
+      ...['/afisha', '/decor', '/quiz', '/icons'].map((dir) => ({
+        source: `${dir}/:path*`,
+        headers: [{ key: 'Cache-Control', value: STATIC }],
+      })),
+    ]
   },
+  poweredByHeader: false,
   reactStrictMode: true,
 }
 

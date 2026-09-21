@@ -1,0 +1,52 @@
+# Аудит зависимостей по расписанию — мандат brain 2026-09-14 (#312).
+#
+# Зачем: критические дыры Payload (pre-auth takeover, < 3.79.1) и Next (RCE в image
+# optimization, < 15.5.24) три месяца лежали в lockfile незамеченными — ни один гейт
+# на них не смотрел, узнали из письма. Аудит нужен машиной и по ритму, а не памятью.
+#
+# Это НЕ required-check: красный здесь — сигнал «выйти и обновиться», а не блок
+# мержа чужого PR. Уровень high: moderate/low в транзитивных deps шумят постоянно
+# (postcss/nanoid/js-yaml под @payloadcms/next) и без обновления апстрима не лечатся.
+# Только прод-дерево (`--prod`): dev-инструменты на бокс не едут.
+name: Deps audit (pnpm audit --prod)
+
+on:
+  schedule:
+    - cron: '17 4 * * 1,4' # пн/чт 04:17 UTC = 07:17 МСК
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'web/pnpm-lock.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'web/pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deps-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # corepack — тот же приём, что в gates.yml: без него pnpm нет в PATH.
+      - name: Включить corepack + pnpm 10
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      # pnpm audit ходит в реестр по lockfile — install не нужен, node_modules тоже.
+      - name: pnpm audit --prod --audit-level=high
+        working-directory: web
+        run: pnpm audit --prod --audit-level=high
