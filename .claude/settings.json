@@ -47,7 +47,9 @@
       "Bash(gh workflow run apply-s3-keys.yml:*)",
       "Bash(gh workflow run apply-domain-env.yml:*)",
       "Bash(gh workflow run recover-fotostena-media.yml:*)",
-      "Bash(gh workflow run setup-subdomain.yml:*)"
+      "Bash(gh workflow run setup-subdomain.yml:*)",
+      "Bash(gh workflow run apply-ingest-secrets.yml:*)",
+      "Bash(gh workflow run cleanup-box.yml:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
