@@ -49,13 +49,26 @@ jobs:
           set +e
           echo "=====[ UNIT ]====="
           sudo systemctl show sabantuy -p ActiveState -p SubState -p Result -p NRestarts -p ExecMainStatus -p ActiveEnterTimestamp
-          echo "=====[ JOURNAL since last start, -o cat, без хостнейма ]====="
-          sudo journalctl -u sabantuy --no-pager -o cat -n 200 | grep -vE 'Failed to find Server Action|nextjs.org/docs/messages/failed-to-find-server-action' | tail -120
+          SINCE=$(sudo systemctl show sabantuy -p ActiveEnterTimestamp --value)
+          echo "=====[ VERSIONS in release (по WorkingDirectory юнита, путь не печатаем) ]====="
+          WD=$(sudo systemctl show sabantuy -p WorkingDirectory --value)
+          for pkg in next payload @payloadcms/db-postgres @payloadcms/storage-s3 drizzle-orm; do
+            printf '%s ' "$pkg"; sudo grep -m1 '"version"' "$WD/node_modules/$pkg/package.json" 2>/dev/null || echo 'n/a'
+          done
+          echo "=====[ TRIGGER: /api/media?limit=1 и /api/vk-candidates ]====="
+          curl -s -o /dev/null -w 'media → %{http_code}
+' --max-time 20 'http://127.0.0.1:3000/api/media?limit=1'
+          curl -s -o /dev/null -w 'vk-candidates → %{http_code}
+' --max-time 20 'http://127.0.0.1:3000/api/vk-candidates?limit=1&depth=1'
+          curl -s -o /dev/null -w 'users → %{http_code}
+' --max-time 20 'http://127.0.0.1:3000/api/users?limit=1'
+          sleep 2
+          echo "=====[ JOURNAL since $SINCE, -o cat, ошибки с контекстом ]====="
+          sudo journalctl -u sabantuy --no-pager -o cat --since "$SINCE" | grep -vE 'Failed to find Server Action|failed-to-find-server-action' | grep -iE -A14 'error|column|relation|drizzle|syntax|does not exist' | head -120
+          echo "=====[ JOURNAL since start: всего строк ]====="
+          sudo journalctl -u sabantuy --no-pager -o cat --since "$SINCE" | wc -l
           echo "=====[ Server Action scans: count last 24h ]====="
           sudo journalctl -u sabantuy --no-pager -o cat --since '24 hours ago' | grep -c 'Failed to find Server Action'
-          echo "=====[ VERSIONS in release ]====="
-          for f in $(sudo find / -path '*/current/.next/standalone/node_modules/next/package.json' -o -path '*/current/node_modules/next/package.json' 2>/dev/null | head -3); do echo "$f"; grep '"version"' "$f"; done
-          for f in $(sudo find / -path '*/current/*node_modules/payload/package.json' 2>/dev/null | head -2); do echo "$f"; grep '"version"' "$f"; done
           echo "=====[ HEADERS local / ]====="
           curl -sI --max-time 15 http://127.0.0.1:3000/ | grep -iE '^(HTTP|content-security|strict-transport|x-content-type|x-frame|referrer|x-powered)'
           echo "=====[ /fotostena ]====="
