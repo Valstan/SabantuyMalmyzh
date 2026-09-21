@@ -24,7 +24,7 @@ const MAX_VIDEOS = 5
 
 // Единственная рубрика ленты. Сарафан присылает `section` (портал) или
 // `rubric` (Казанская) — принимаем оба имени, значение сверяем с этим списком.
-export const RUBRICS = ['news'] as const
+const RUBRICS = ['news'] as const
 export type Rubric = (typeof RUBRICS)[number]
 
 const textNode = (text: string): LexNode => ({

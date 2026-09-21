@@ -438,6 +438,12 @@
       "class": "fs-etc-project",
       "count": 1,
       "reason": "исходный код: в очереди на триаж, пункт «серверные пути» в PENDING_FOLLOWUPS"
+    },
+    {
+      "file": ".github/workflows/apply-ingest-secrets.yml",
+      "class": "fs-etc-project",
+      "count": 3,
+      "reason": "Путь env-файла сервиса на боксе: исполняется по SSH (load-bearing), тот же класс, что apply-push-secrets.yml. D-093, 2026-09-21."
     }
   ]
 }
