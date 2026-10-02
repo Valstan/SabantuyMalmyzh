@@ -53,7 +53,7 @@
 - [ ] **`overrides` в `pnpm-workspace.yaml` — снимать по мере апстрима** — immutable/js-yaml/fast-uri/postcss/nanoid подняты поверх `@payloadcms/next`/`next`/`payload`. Каждый override — обещание, что апстрим догонит; при каждом бампе Payload/Next: если апстрим уже на версии ≥ override, строку удалить.
   added: 2026-09-21 · last-run: 2026-09-21 · state: `recurring: при каждом бампе payload/next`
 - [ ] **Четыре угла аудита D-038 не отработали — это «не проверено», а не «чисто»** — в развёртке 2026-09-04 из шести независимых углов результат дали два (пути, кодировки). **Прогнаны 2026-10-02:**
-  - хостнеймы сплошным инвентарём — ✅ `vps.myjino.ru`, `myjino.ru`, `831d0ce99bdf.vps.myjino.ru` (в `secretsBootstrap.ts`), соседские конфиги (`kazanskaya.conf`) — только в mailbox/письмах, в коде — только как комментарии/история.
+  - хостнеймы сплошным инвентарём — ✅ `vps.myjino.ru`, `myjino.ru`, `<hex>.vps.myjino.ru` (в `secretsBootstrap.ts`), соседские конфиги (`kazanskaya.conf`) — только в mailbox/письмах, в коде — только как комментарии/история.
   - IP-адреса — ✅ `831d0ce99bdf` (vault URL в `secretsBootstrap.ts`), остальные — только в mailbox/письмах.
   - кириллические/транслитные формы — ✅ только в mailbox/письмах.
   - внутренние детали чужих проектов — ✅ только в mailbox/письмах (`trener`, `kazanskaya`, `matricarmz`, `gonba`, `sarafan`, `taksi` — как имена/комментарии).
