@@ -86,11 +86,26 @@ jobs:
       - name: Run on box
         run: |
           set -e
-          ssh sabantuy 'bash -s' \
-            "${{ inputs.ref }}" "${{ inputs.mode }}" "${{ inputs.from_album_id }}" \
-            "${{ inputs.to_slug }}" "${{ inputs.to_title }}" "${{ inputs.to_date }}" <<'REMOTE'
+          # ВНИМАНИЕ: параметры пакуются в один base64-блок, а не передаются
+          # отдельными аргументами. ssh склеивает argv в строку БЕЗ кавычек, и
+          # название альбома с пробелами разбивалось на несколько аргументов:
+          # $6 становился куском заголовка («2026» вместо «2026-07-04»), а дата
+          # уходила в Postgres обрезанной. Плюс base64 переносит кириллицу
+          # без потери кодировки на трёх слоях (раннер → ssh → удалённый bash).
+          BLOB=$(printf '%s\n%s\n%s\n%s\n%s\n%s' \
+            "${{ inputs.ref }}" \
+            "${{ inputs.mode }}" \
+            "${{ inputs.from_album_id }}" \
+            "${{ inputs.to_slug }}" \
+            "${{ inputs.to_title }}" \
+            "${{ inputs.to_date }}" | base64 -w0)
+          ssh sabantuy 'bash -s' "$BLOB" <<'REMOTE'
           set -euo pipefail
-          REF="$1"; MODE="$2"; FROM_ID="$3"; TO_SLUG="$4"; TO_TITLE="$5"; TO_DATE="$6"
+          # mapfile доступен в bash 4+; значения по строкам, каждое — свой аргумент.
+          mapfile -t ARGS < <(printf '%s' "$1" | base64 -d)
+          [ "${#ARGS[@]}" -eq 6 ] || { echo "::error::ожидалось 6 параметров, пришло ${#ARGS[@]}"; exit 1; }
+          REF="${ARGS[0]}"; MODE="${ARGS[1]}"; FROM_ID="${ARGS[2]}"
+          TO_SLUG="${ARGS[3]}"; TO_TITLE="${ARGS[4]}"; TO_DATE="${ARGS[5]}"
           BASE=${{ secrets.DEPLOY_BASE }}
           [ -n "$BASE" ] || { echo "::error::секрет DEPLOY_BASE пуст — база на боксе неизвестна"; exit 1; }
           REPO="$BASE/repo"
