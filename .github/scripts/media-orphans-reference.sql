@@ -39,7 +39,8 @@ BEGIN
          SELECT DISTINCT (%1$I."%2$I")::bigint
          FROM public.%1$I "%1$I"
          WHERE "%2$I" IS NOT NULL
-           AND EXISTS (SELECT 1 FROM media m WHERE m.id = "%1$I"."%2$I")',
+           AND EXISTS (SELECT 1 FROM media m WHERE m.id = "%1$I"."%2$I")
+         ON CONFLICT (media_id) DO NOTHING',
         r.table_name, r.column_name
       );
     EXCEPTION WHEN others THEN
@@ -69,7 +70,8 @@ BEGIN
          SELECT DISTINCT ("%1$I"."%2$I")::bigint
          FROM public."%1$I" "%1$I"
          WHERE "%1$I"."%2$I" IS NOT NULL
-           AND EXISTS (SELECT 1 FROM media m WHERE m.id = "%1$I"."%2$I")',
+           AND EXISTS (SELECT 1 FROM media m WHERE m.id = "%1$I"."%2$I")
+         ON CONFLICT (media_id) DO NOTHING',
         r.table_name, r.column_name
       );
     EXCEPTION WHEN others THEN
@@ -102,7 +104,8 @@ BEGIN
               ) AS q(v)
          WHERE q.v IS NOT NULL
            AND jsonb_typeof(q.v) = ''number''
-           AND q.v::text ~ ''^[0-9]+$'',
+           AND q.v::text ~ ''^[0-9]+$''
+         ON CONFLICT (media_id) DO NOTHING,
         r.table_name, r.column_name
       );
     EXCEPTION WHEN others THEN
