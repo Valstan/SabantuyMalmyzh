@@ -22,17 +22,21 @@
  *   SEED_TO_SLUG=sabantuy-2026    slug целевого альбома
  *   SEED_TO_TITLE=…               заголовок, если целевого нет (обязателен в apply)
  *   SEED_TO_DATE=2026-07-04      дата альбома
+ *   SEED_MATCH_PREFIX=fotostena  префикс имён файлов, которые считаем заезжими
  */
 
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { blockMediaId, makeBail, scanOrphanMedia } from './lib/orphanScan'
+import { blockMediaId, fetchMediaFilenames, makeBail, scanOrphanMedia } from './lib/orphanScan'
 
 const MODE = process.env.SEED_MODE || 'plan'
 const FROM_ID = Number(process.env.SEED_FROM_ALBUM_ID || '1')
 const TO_SLUG = process.env.SEED_TO_SLUG || 'sabantuy-2026'
 const TO_TITLE = process.env.SEED_TO_TITLE || ''
 const TO_DATE = process.env.SEED_TO_DATE || '2026-07-04'
+// Префикс имён файлов, которые ставит конвейер ВК (`fotostena--<vkId>_…`):
+// по нему и отличаем фото этого года от «родных» фото альбома.
+const MATCH_PREFIX = process.env.SEED_MATCH_PREFIX || 'fotostena'
 
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
@@ -43,15 +47,13 @@ type GalleryRow = { id: number; title?: string; photos?: unknown[]; _status?: st
 log(`[rehome] mode=${MODE} из альбома #${FROM_ID} в «${TO_SLUG}»`)
 
 try {
-  // ── 1. Кого переносим: фото-сироты, попавшие в альбом ошибочно ─────────────
-  // ВАЖНО: берём ВСЕХ осирот (`orphans`), а не «пригодных к публикации»
-  // (`toPublish`). После первой публикации 110 фото перестали быть сиротами —
-  // на них ссылается альбом, — и поиск по toPublish находил ноль: переносить
-  // было нечего. Отсекаются только копии-дубли, чтобы в новом альбоме не
-  // оказалось десяти копий одного кадра.
+  // ── 1. Откуда эти фото вообще взялись ───────────────────────────────────────
+  // Отбор по «фото-сироте» здесь невозможен по определению: на фото в альбоме
+  // ссылается альбом, то есть оно перестаёт быть сиротой сразу после публикации.
+  // Первый план это и показал: «переносить нечего», хотя переносить было 110.
+  // Поэтому отбор идёт по происхождению: файлы, названные конвейером ВК
+  // (`fotostena--<vkId>_<postId>_<idx>.jpg`), в альбоме чужого года — заезжие.
   const scan = await scanOrphanMedia(payload, log)
-  const orphans = new Set(scan.orphans.map((o) => o.id))
-  const dupSet = new Set(scan.dupExtras)
   log(
     `[rehome] сирот всего: ${scan.orphans.length}, копий-дублей: ${scan.dupExtras.length} ` +
       `(из ${scan.totalMedia} файлов в медиа)`,
@@ -60,7 +62,7 @@ try {
     bail(new Error('«сироты» = все файлы → ссылки не собрались, скан сломан'))
   }
 
-  // ── 2. Источник: какие его фото — наши осироты ───────────────────────────────
+  // ── 2. Источник: какие его фото — заезжие ────────────────────────────────────
   const source = (await payload.findByID({
     collection: 'gallery',
     id: FROM_ID,
@@ -69,15 +71,48 @@ try {
   })) as unknown as GalleryRow
 
   const sourceBlocks = Array.isArray(source.photos) ? source.photos : []
-  const takeIdx = sourceBlocks
-    .map((b, i) => ({ i, id: blockMediaId(b) }))
-    .filter((x) => x.id !== null && orphans.has(x.id) && !dupSet.has(x.id))
-  const stayBlocks = sourceBlocks.filter((_, i) => !takeIdx.some((x) => x.i === i))
-  const takeBlocks = takeIdx.map((x) => sourceBlocks[x.i])
+  const sourceIds = sourceBlocks
+    .map(blockMediaId)
+    .filter((n): n is number => n !== null && Number.isFinite(n))
+  const names = await fetchMediaFilenames(payload, sourceIds)
 
-  log(`[rehome] в источнике фото: ${sourceBlocks.length}; из них переносим: ${takeBlocks.length}; остаётся: ${stayBlocks.length}`)
+  const foreignIdx = sourceBlocks
+    .map((_, i) => i)
+    .filter((i) => {
+      const id = blockMediaId(sourceBlocks[i])
+      return id !== null && names.get(id)?.startsWith(MATCH_PREFIX)
+    })
+
+  // Копии-дубли (одинаковый размер) в новый альбом не тащим: 16 одинаковых
+  // кадров в витрине выглядят как поломка.
+  const dupSet = new Set(scan.dupExtras)
+  const sizeOf = new Map(scan.orphans.map((o) => [o.id, o.filesize]))
+  const seenSize = new Set<number>()
+  const takeIdx = foreignIdx.filter((i) => {
+    const id = blockMediaId(sourceBlocks[i])
+    if (id === null || dupSet.has(id)) return false
+    const size = sizeOf.get(id)
+    if (size !== undefined && size !== null) {
+      if (seenSize.has(size)) return false
+      seenSize.add(size)
+    }
+    return true
+  })
+
+  const stayBlocks = sourceBlocks.filter((_, i) => !takeIdx.includes(i))
+  const takeBlocks = takeIdx.map((i) => sourceBlocks[i])
+
+  const sample = takeIdx
+    .slice(0, 3)
+    .map((i) => names.get(blockMediaId(sourceBlocks[i]) ?? -1))
+    .filter(Boolean)
+  log(
+    `[rehome] в источнике фото: ${sourceBlocks.length}; заезжих (${MATCH_PREFIX}*): ${foreignIdx.length}; ` +
+      `переносим: ${takeBlocks.length}; остаётся: ${stayBlocks.length}`,
+  )
+  if (sample.length) log(`[rehome] пример: ${sample.join(', ')}`)
   if (takeBlocks.length === 0) {
-    log('[rehome] переносить нечего — источник не содержит осиротевших фото')
+    log(`[rehome] переносить нечего: в источнике нет файлов ${MATCH_PREFIX}*`)
     process.exit(0)
   }
 
