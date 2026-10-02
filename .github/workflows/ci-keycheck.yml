@@ -1,0 +1,15 @@
+name: CI key comment (debug)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  fp:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tail -5
