@@ -12,7 +12,7 @@ ref:
 
 # Отбой запроса
 
-Владелец через консоль бокса добавил строку `sabantuy-deploy@valstan-pc` в `/home/valstan/.ssh/authorized_keys` сам: D-100 закрыт (письмо `2026-10-02-d100-closed-ci-key-restored`). Запрос к ТАКСИ не нужен — если еще не передали, отбой.
+Владелец через консоль бокса добавил строку `sabantuy-deploy@valstan-pc` в `authorized_keys пользователя valstan` сам: D-100 закрыт (письмо `2026-10-02-d100-closed-ci-key-restored`). Запрос к ТАКСИ не нужен — если еще не передали, отбой.
 
 Приёмка: `d100-authorized-keys.yml` plan — зелёный, `probe-app.yml` — зелёный (сайт отдаёт smoke-маршруты, SSH из CI работает).
 
