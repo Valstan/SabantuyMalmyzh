@@ -348,15 +348,16 @@ LIMIT 15;
 -- ============================================================================
 -- Куда класть: существующие альбомы Gallery (нужен id целевого альбома).
 -- ============================================================================
-\echo '=== 6. Альбомы в gallery (что уже есть) ==='
+\echo '=== 6. Структура таблиц gallery* (фактическая, не по догадке) ==='
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name LIKE 'gallery%'
+ORDER BY table_name, ordinal_position;
+
+\echo '=== 7. Альбомы: заголовки и число фото ==='
 SELECT g.id,
-       l.title,
        g.slug,
        g._status,
-       (SELECT count(*) FROM gallery_photos gp WHERE gp.album_id = g.id) AS photos
+       (SELECT count(*) FROM gallery_photos gp WHERE gp._parent_id = g.id) AS photos
 FROM gallery g
-LEFT JOIN gallery_locales l ON l._parent_id = g.id AND l._locale = 'ru'
 ORDER BY photos DESC;
-
-\echo '=== 7. Сколько фото уже в альбомах (для оценки «много ли это») ==='
-SELECT count(DISTINCT image_id) AS photos_in_albums FROM gallery_photos;
