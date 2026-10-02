@@ -79,6 +79,7 @@ jobs:
           set -euo pipefail
           REF="$1"; MODE="$2"; ALBUM="${3:-sabantuy-2023}"; AID="${4:-1}"
           BASE=${{ secrets.DEPLOY_BASE }}
+          [ -n "$BASE" ] || { echo "::error::секрет DEPLOY_BASE пуст — база на боксе неизвестна"; exit 1; }
           REPO="$BASE/repo"
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
