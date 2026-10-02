@@ -350,11 +350,12 @@ LIMIT 15;
 -- ============================================================================
 \echo '=== 6. Альбомы в gallery (что уже есть) ==='
 SELECT g.id,
-       g.title,
+       l.title,
        g.slug,
        g._status,
        (SELECT count(*) FROM gallery_photos gp WHERE gp.album_id = g.id) AS photos
 FROM gallery g
+LEFT JOIN gallery_locales l ON l._parent_id = g.id AND l._locale = 'ru'
 ORDER BY photos DESC;
 
 \echo '=== 7. Сколько фото уже в альбомах (для оценки «много ли это») ==='
