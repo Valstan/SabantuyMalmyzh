@@ -294,30 +294,44 @@ WHERE m.filename LIKE 'fotostena--%'
   AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 GROUP BY 1 ORDER BY files DESC LIMIT 10;
 
-\echo '=== 3. Есть ли кандидат по этому же посту (vk_post_id) и какой у него статус ==='
+\echo '=== 3. Есть ли кандидат по этому посту (совпадение vkKey) и какой статус ==='
 SELECT
   c.status,
   count(DISTINCT c.id) AS candidates,
-  count(DISTINCT substring(c.vk_post_id::text from '^(\d+)')) AS posts
+  count(DISTINCT c.vkKey) AS posts
 FROM vk_candidates c
 WHERE EXISTS (
   SELECT 1 FROM media m
-  WHERE m.filename LIKE 'fotostena--' || (c.vk_user_id::text) || '_' || (c.vk_post_id::text) || '_%'
+  WHERE m.filename LIKE 'fotostena--%'
+    AND c.vkKey = substring(m.filename from 'fotostena--(\d+_\d+)_')
     AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 )
 GROUP BY c.status ORDER BY candidates DESC;
 
+\echo '=== 3b. Авторы постов, чьи фото остались сиротами ==='
+SELECT
+  c.authorName,
+  count(DISTINCT c.vkKey) AS posts
+FROM vk_candidates c
+WHERE EXISTS (
+  SELECT 1 FROM media m
+  WHERE m.filename LIKE 'fotostena--%'
+    AND c.vkKey = substring(m.filename from 'fotostena--(\d+_\d+)_')
+    AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
+)
+GROUP BY c.authorName ORDER BY posts DESC LIMIT 15;
+
 \echo '=== 4. Сколько постов дали больше одного файла (альбом) ==='
-SELECT posts_with_files, count(*) AS posts
+SELECT files_per_post, count(*) AS posts
 FROM (
-  SELECT substring(filename from 'fotostena--\d+_(\d+)_') AS post_id, count(*) AS n,
-         count(*) AS posts_with_files
+  SELECT substring(m.filename from 'fotostena--\d+_(\d+)_') AS post_id,
+         count(*) AS files_per_post
   FROM media m
   WHERE m.filename LIKE 'fotostena--%'
     AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
   GROUP BY 1
 ) t
-GROUP BY posts_with_files ORDER BY posts_with_files;
+GROUP BY files_per_post ORDER BY files_per_post;
 
 \echo '=== 5. Возможные дубли: одинаковый размер у двух сирот (кандидат на визуальный дубль) ==='
 SELECT filesize, count(*) AS copies,
