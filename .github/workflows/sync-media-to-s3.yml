@@ -67,7 +67,7 @@ jobs:
           MODE="$1"; REF="$2"
           # Пути от $HOME ssh-пользователя (D-038). Env-файл сервиса — известный
           # остаток D-038, тот же, что в apply-*-secrets.
-          BASE="$HOME/sabantuy"; REPO="$BASE/repo"; MEDIA="$BASE/shared/media"
+          BASE=${{ secrets.DEPLOY_BASE }}; REPO="$BASE/repo"; MEDIA="$BASE/shared/media"
           ENVF=/etc/sabantuy/sabantuy.env
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 

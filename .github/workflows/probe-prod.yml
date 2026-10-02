@@ -137,7 +137,7 @@ jobs:
           # Пути берём от $HOME ssh-пользователя — литерала в отслеживаемом файле
           # не держим (D-038). Считаем ТОЛЬКО свой каталог: рекурсивный обход
           # общего каталога опубликовал бы соседей (#254).
-          BASE="$HOME/sabantuy"; M="$BASE/shared/media"
+          BASE=${{ secrets.DEPLOY_BASE }}; M="$BASE/shared/media"
           # `cut -f1` — `du -sh` печатает путь второй колонкой (логи публичны).
           du -sh "$M" 2>/dev/null | cut -f1 | sed 's/^/media размер: /'
           find "$M" -type f 2>/dev/null | wc -l | sed 's/^/media files: /'

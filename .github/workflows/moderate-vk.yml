@@ -76,7 +76,7 @@ jobs:
           REF="$1"
           ACTION="$2"
           IDS="${3:-}"
-          BASE=/home/valstan/sabantuy
+          BASE=${{ secrets.DEPLOY_BASE }}
           REPO="$BASE/repo"
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 

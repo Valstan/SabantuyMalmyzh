@@ -77,7 +77,7 @@ jobs:
         run: |
           ssh sabantuy 'bash -s' <<'REMOTE'
           set +e
-          BASE="$HOME/sabantuy"
+          BASE=${{ secrets.DEPLOY_BASE }}
           echo "=====[ диск до ]====="; df -h / | tail -1
           echo "=====[ развёртывание (не трогаем) ]====="
           echo "current → $(readlink "$BASE/current" | sed "s#^$HOME#~#")"
@@ -107,7 +107,7 @@ jobs:
           rm -f targets.txt
           ssh sabantuy 'bash -s' <<'REMOTE'
           set -e
-          BASE="$HOME/sabantuy"; M="$BASE/shared/media"
+          BASE=${{ secrets.DEPLOY_BASE }}; M="$BASE/shared/media"
           fail=0
           # 1. Все проверки ДО первого rm: одна плохая строка — не удаляем ничего.
           while IFS= read -r t; do

@@ -80,7 +80,7 @@ jobs:
           set -euo pipefail
           REF="$1"
           FORCE="${2:-0}"
-          BASE=/home/valstan/sabantuy
+          BASE=${{ secrets.DEPLOY_BASE }}
           REPO="$BASE/repo"
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
