@@ -83,6 +83,23 @@ try {
       AND ${EXCLUDED_TABLE}
     ORDER BY c.table_name, c.column_name`)
 
+  // (2) Join-таблицы many-to-many: ЛЮБАЯ целочисленная колонка, значение которой
+  //     совпадает с media.id. Без этого блока скан даёт 315 «сирот» вместо 157:
+  //     часть файлов помечена как связанная по *_id-колонкам, а Payload держит
+  //     hasMany-связи иначе. Правило пробы (.github/scripts/media-orphans-reference.sql)
+  //     ровно такое — здесь обязаны совпадать, иначе цифры расходятся.
+  const allCols = await rowsOf(`
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public'
+      AND t.table_type = 'BASE TABLE'
+      AND c.data_type IN ('integer', 'bigint')
+      AND c.column_name <> '_parent_id'
+      AND ${EXCLUDED_TABLE}
+    ORDER BY c.table_name, c.column_name`)
+
   const jsonCols = await rowsOf(`
     SELECT c.table_name, c.column_name
     FROM information_schema.columns c
@@ -107,7 +124,17 @@ try {
     )
   }
 
-  for (const r of jsonCols) {
+  for (const r of allCols) {
+  const t = q(String(r.table_name))
+  const c = q(String(r.column_name))
+  parts.push(
+    `SELECT DISTINCT t1.${c}::bigint AS media_id FROM public.${t} t1
+     WHERE t1.${c} IS NOT NULL
+       AND EXISTS (SELECT 1 FROM media m WHERE m.id = t1.${c})`,
+  )
+}
+
+for (const r of jsonCols) {
     const t = q(String(r.table_name))
     const c = q(String(r.column_name))
     parts.push(
@@ -120,7 +147,7 @@ try {
     )
   }
 
-  log(`[attach-orphans] колонок-ссылок: ${relCols.length} + jsonb ${jsonCols.length}`)
+  log(`[attach-orphans] колонок-ссылок: *_id ${relCols.length}, все int ${allCols.length}, jsonb ${jsonCols.length}`)
   if (parts.length === 0) {
     log('[attach-orphans] НИ ОДНОЙ колонки-ссылки не найдено — скан не запускаю (иначе «сироты» = всё)')
     process.exit(1)
