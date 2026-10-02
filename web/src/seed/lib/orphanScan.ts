@@ -150,6 +150,28 @@ export async function scanOrphanMedia(payload: Payload, log: (...a: unknown[]) =
   }
 }
 
+/** Имена файлов медиа по id — нужно, чтобы отличить «наши» фото по происхождению. */
+export async function fetchMediaFilenames(
+  payload: Payload,
+  ids: number[],
+): Promise<Map<number, string>> {
+  const out = new Map<number, string>()
+  const unique = [...new Set(ids)].filter((n) => Number.isFinite(n))
+  if (unique.length === 0) return out
+
+  // Порциями по 500: список из 100+ id в один IN() — лишний риск на размере запроса.
+  for (let i = 0; i < unique.length; i += 500) {
+    const chunk = unique.slice(i, i + 500)
+    const res = (await payload.db.drizzle.execute(
+      `SELECT id, filename FROM media WHERE id IN (${chunk.join(',')})`,
+    )) as { rows?: Row[] }
+    for (const row of res.rows || []) {
+      out.set(Number(row.id), String(row.filename ?? ''))
+    }
+  }
+  return out
+}
+
 /** Номер media из блока галереи (`{ image, caption }`) или из «голого» числа. */
 export function blockMediaId(block: unknown): number | null {
   if (typeof block === 'number') return block
