@@ -139,10 +139,19 @@ try {
       .map(blockMediaId)
       .filter((n): n is number => n !== null && Number.isFinite(n)),
   )
-  const addBlocks = takeBlocks.filter((b) => {
-    const id = blockMediaId(b)
-    return id !== null && !alreadyIds.has(id)
-  })
+
+  // Блок переносим ЗАНОВО, а не копируем как есть: у блока, прочитанного из
+  // альбома, есть собственный `id` — идентификатор строки в gallery_photos.
+  // Копирование таких блоков в новый альбом упирается в первичный ключ
+  // («The following field is invalid: id»). Нас интересуют картинка и подпись.
+  const addBlocks = takeBlocks
+    .map((b) => {
+      const image = blockMediaId(b)
+      const caption = b && typeof b === 'object' ? String((b as { caption?: unknown }).caption ?? '') : ''
+      return image === null ? null : { image, caption }
+    })
+    .filter((b): b is { image: number; caption: string } => b !== null)
+    .filter((b) => !alreadyIds.has(b.image))
 
   log(
     target
@@ -160,7 +169,7 @@ try {
 
   // Обложка цели — первое переносимое фото, иначе витрина галереи покажет
   // плейсхолдер.
-  const coverCandidate = blockMediaId(addBlocks[0]) ?? blockMediaId(takeBlocks[0])
+  const coverCandidate = addBlocks[0]?.image ?? null
 
   // ── 4. Запись + приёмка: оба альбома перечитываем и сверяем ──────────────────
   let targetId: number
@@ -202,15 +211,7 @@ try {
   if (srcCount !== stayBlocks.length || dstCount !== targetBlocks.length + addBlocks.length) {
     bail(new Error(`после записи: источник ${srcCount}/${stayBlocks.length}, цель ${dstCount}/${targetBlocks.length + addBlocks.length}`))
   }
-  if (!target) {
-    // Обложку создаваемого альбома проставляем отдератьным обновлением.
-    await payload.update({
-      collection: 'gallery',
-      id: targetId,
-      data: { ...(coverCandidate ? { coverImage: coverCandidate } : {}) } as never,
-    })
-    log(`[rehome] обложка цели: media #${coverCandidate}`)
-  }
+  if (!target) log(`[rehome] обложка цели: media #${coverCandidate ?? '—'}`)
   log(`[rehome] готово: перенесено ${addBlocks.length} фото в альбом «${TO_SLUG}» (#${targetId})`)
 } catch (err) {
   bail(err)
