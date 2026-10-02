@@ -49,6 +49,12 @@
       "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
     },
     {
+      "file": ".github/workflows/attach-orphan-photos.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "Скрипт-сид на боксе читает путь env-файла сервиса, чтобы достать DATABASE_URL/PAYLOAD_SECRET — тот же приём, что в seed-*.yml и probe-*.yml. Путь исполняемый на сервере, не рекон-данные в репо."
+    },
+    {
       "file": ".github/workflows/collect-vk.yml",
       "class": "fs-etc-project",
       "count": 1,
