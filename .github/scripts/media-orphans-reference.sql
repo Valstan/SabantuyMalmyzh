@@ -200,7 +200,12 @@ BEGIN
       grp := grp || format(E'\n  %I.%I: %s файлов', r.table_name, r.column_name, hit);
     END IF;
   END LOOP;
-  RAISE NOTICE E'ВСЕГО fotostena- без кандидата: %\nИСПОЛЬЗУЕТСЯ:%%', total, grp;
+  RAISE NOTICE 'ВСЕГО fotostena- без кандидата: %', total;
+  IF grp = '' THEN
+    RAISE NOTICE 'ИСПОЛЬЗУЕТСЯ: НИ ОДНОЙ таблицей — все кандидаты на удаление';
+  ELSE
+    RAISE NOTICE 'ИСПОЛЬЗУЕТСЯ:%', grp;
+  END IF;
 END $$;
 
 \echo '--- поимённо: 20 файлов из отчёта и ГДЕ они живут ---'
