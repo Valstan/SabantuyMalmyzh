@@ -263,3 +263,70 @@ SELECT count(*) AS truly_unreferenced
 FROM fotostena_orphans o
 LEFT JOIN ref_media r ON r.media_id = o.id
 WHERE r.media_id IS NULL;
+
+-- ============================================================================
+-- ПРОИСХОЖДЕНИЕ 157 сирот: кто загрузил, из каких постов, что с кандидатами.
+-- Имена фотоVK-конвейера: fotostena--<vkId>_<postId>_<index>.<ext>
+-- ============================================================================
+\echo '=== 1. Из чего состоят 157 сирот (по имени файла) ==='
+SELECT
+  CASE
+    WHEN filename LIKE 'fotostena--%'  THEN 'fotostena--<vkId>_<postId>_<idx> (конвейер VK)'
+    WHEN filename LIKE 'seed-%'       THEN 'seed-* (наш сид)'
+    ELSE 'прочее: ' || split_part(filename, '.', 1)
+  END AS kind,
+  count(*) AS files,
+  pg_size_pretty(COALESCE(sum(filesize), 0)::bigint) AS size
+FROM media m
+LEFT JOIN ref_media r ON r.media_id = m.id
+WHERE r.media_id IS NULL
+GROUP BY 1 ORDER BY files DESC;
+
+\echo '=== 2. Кто загрузил: VK-автор из имени файла (топ-10) ==='
+SELECT
+  substring(filename from 'fotostena--(\d+)_') AS vk_id,
+  count(*) AS files,
+  pg_size_pretty(COALESCE(sum(filesize), 0)::bigint) AS size,
+  min(created_at)::date AS first_seen,
+  max(created_at)::date AS last_seen
+FROM media m
+WHERE m.filename LIKE 'fotostena--%'
+  AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
+GROUP BY 1 ORDER BY files DESC LIMIT 10;
+
+\echo '=== 3. Есть ли кандидат по этому же посту (vk_post_id) и какой у него статус ==='
+SELECT
+  c.status,
+  count(DISTINCT c.id) AS candidates,
+  count(DISTINCT substring(c.vk_post_id::text from '^(\d+)')) AS posts
+FROM vk_candidates c
+WHERE EXISTS (
+  SELECT 1 FROM media m
+  WHERE m.filename LIKE 'fotostena--' || (c.vk_user_id::text) || '_' || (c.vk_post_id::text) || '_%'
+    AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
+)
+GROUP BY c.status ORDER BY candidates DESC;
+
+\echo '=== 4. Сколько постов дали больше одного файла (альбом) ==='
+SELECT posts_with_files, count(*) AS posts
+FROM (
+  SELECT substring(filename from 'fotostena--\d+_(\d+)_') AS post_id, count(*) AS n,
+         count(*) AS posts_with_files
+  FROM media m
+  WHERE m.filename LIKE 'fotostena--%'
+    AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
+  GROUP BY 1
+) t
+GROUP BY posts_with_files ORDER BY posts_with_files;
+
+\echo '=== 5. Возможные дубли: одинаковый размер у двух сирот (кандидат на визуальный дубль) ==='
+SELECT filesize, count(*) AS copies,
+       pg_size_pretty(COALESCE(filesize, 0)::bigint) AS size_each,
+       string_agg(id::text, ', ' ORDER BY id) AS ids
+FROM media m
+WHERE NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
+  AND filesize IS NOT NULL
+GROUP BY filesize
+HAVING count(*) > 1
+ORDER BY filesize DESC
+LIMIT 15;
