@@ -197,11 +197,30 @@ for (const r of jsonCols) {
   log(`[attach-orphans] к публикации: ${toAttach.length}`)
 
   // ── 4. Альбом и текущее содержимое ───────────────────────────────────────────
+  // ВАЖНО: photos — это `type: 'array'` с блоком { image, caption }, а НЕ
+  // hasMany-связь. Список id Payload молча отбросил: альбом остался с 9 фото,
+  // а скрипт рапортовал «готово» — поймала только приёмка снаружи.
   const album = (await payload.findByID({ collection: 'gallery', id: ALBUM_ID, depth: 0, overrideAccess: true })) as unknown as {
-    photos?: (number | { id: number })[]
+    photos?: unknown[]
   }
   const existing = Array.isArray(album.photos) ? album.photos : []
-  const currentIds = new Set<number>(existing.map((m) => (typeof m === 'object' && m ? m.id : Number(m))))
+
+  const blockMediaId = (b: unknown): number | null => {
+    if (typeof b === 'number') return b
+    if (b && typeof b === 'object') {
+      const img = (b as { image?: unknown }).image
+      if (typeof img === 'number') return img
+      if (img && typeof img === 'object') {
+        const id = (img as { id?: unknown }).id
+        if (id !== undefined && id !== null) return Number(id)
+      }
+    }
+    return null
+  }
+
+  const currentIds = new Set<number>(
+    existing.map(blockMediaId).filter((n): n is number => Number.isFinite(n)),
+  )
   const fresh = toAttach.filter((o) => !currentIds.has(o.id))
   log(`[attach-orphans] в альбоме «${ALBUM_SLUG}» сейчас: ${existing.length}; добавим: ${fresh.length}`)
 
@@ -219,8 +238,22 @@ for (const r of jsonCols) {
     await payload.update({
       collection: 'gallery',
       id: ALBUM_ID,
-      data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
+      data: {
+        photos: [...existing, ...fresh.map((o) => ({ image: o.id, caption: '' }))],
+      } as never,
     })
+
+    // Приёмка внутри скрипта: перечитываем альбом и убеждаемся, что он вырос.
+    // Промах с типом поля проходит как «готово» — Payload молча выбрасывает
+    // невалидные значения, и без этой проверки промах остаётся незамеченным.
+    const after = (await payload.findByID({ collection: 'gallery', id: ALBUM_ID, depth: 0, overrideAccess: true })) as unknown as {
+      photos?: unknown[]
+    }
+    const afterCount = Array.isArray(after.photos) ? after.photos.length : 0
+    log(`[attach-orphans] приёмка: фото в альбоме после записи: ${afterCount}`)
+    if (afterCount < existing.length + fresh.length) {
+      bail(new Error(`альбом вырос на ${afterCount - existing.length} вместо ${fresh.length}`))
+    }
   } catch (err) {
     bail(err)
   }
