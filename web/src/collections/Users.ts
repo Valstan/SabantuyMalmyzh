@@ -26,7 +26,12 @@ export const Users: CollectionConfig = {
     defaultColumns: ['name', 'email', 'roles'],
     useAsTitle: 'name',
   },
-  auth: true,
+  auth: {
+    cookies: {
+      secure: true, // G339: __Host--префикс требует Secure
+      sameSite: 'Lax',
+    },
+  },
   fields: [
     {
       name: 'name',

@@ -8,7 +8,11 @@ import { createHmac, timingSafeEqual } from 'crypto'
 // Формат: base64url(JSON payload) + '.' + base64url(HMAC). На verify проверяем подпись
 // (timing-safe) и возраст (maxAge). httpOnly → недоступна JS (анти-XSS); читается только
 // сервером (роуты /api/auth/vk/*, хук штампа владельца).
-export const VISITOR_COOKIE = 'sabantuy-visitor'
+// G339/#285: `__Host-`-префикс (Secure всегда, Path=/, без Domain) — любой хост под
+// .вмалмыже.рф не может подбросить cookie с тем же именем. Старое имя читаем для
+// обратной совместимости выкатки, но никогда не пишем.
+export const VISITOR_COOKIE = '__Host-sabantuy-visitor'
+export const LEGACY_VISITOR_COOKIE = 'sabantuy-visitor'
 const MAX_AGE_SEC = 90 * 24 * 60 * 60 // 90 дней
 
 const SECRET = process.env.PAYLOAD_SECRET || 'sabantuy-visitor-dev-secret'
@@ -65,7 +69,10 @@ export function verifyVisitorSession(value: string | undefined | null): VisitorS
 export function visitorFromHeaders(headers: Headers): VisitorSession | null {
   const cookie = headers.get('cookie')
   if (!cookie) return null
-  const m = cookie.match(new RegExp(`(?:^|;\\s*)${VISITOR_COOKIE}=([^;]+)`))
+  // G339: сначала новое имя, затем legacy на переходный период.
+  const m =
+    cookie.match(new RegExp(`(?:^|;\\s*)${VISITOR_COOKIE}=([^;]+)`)) ??
+    cookie.match(new RegExp(`(?:^|;\\s*)${LEGACY_VISITOR_COOKIE}=([^;]+)`))
   if (!m) return null
   let raw = m[1]!
   try {
@@ -76,8 +83,12 @@ export function visitorFromHeaders(headers: Headers): VisitorSession | null {
   return verifyVisitorSession(raw)
 }
 
-/** Атрибуты Set-Cookie для сессии (secure только на https-проде). */
+/** Атрибуты Set-Cookie для сессии (`__Host-`: Secure всегда, Path=/, без Domain). */
 export function visitorCookieAttrs(maxAgeSec = MAX_AGE_SEC): string {
-  const secure = (process.env.NEXT_PUBLIC_SERVER_URL || '').startsWith('https') ? '; Secure' : ''
-  return `Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`
+  return `Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}; Secure`
+}
+
+/** Атрибуты для погашения cookie: те же Path/Domain/Secure, что у рабочей записи. */
+export function expiredCookieAttrs(): string {
+  return `Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure`
 }

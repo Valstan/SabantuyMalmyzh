@@ -43,6 +43,10 @@ permissions:
   # Без этого права переменные ACTIONS_ID_TOKEN_REQUEST_* в шаге не появятся.
   id-token: write
 
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
