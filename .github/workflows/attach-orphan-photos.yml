@@ -83,11 +83,11 @@ jobs:
           GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
           if [ ! -d "$REPO/.git" ]; then
-            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO"
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO" 2>&1 | sed 's/^/[clone] /'
           fi
           cd "$REPO"
-          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF"
-          git checkout -f FETCH_HEAD
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF" 2>&1 | sed 's/^/[fetch] /' || echo "[fetch] не прошёл, код $?"
+          git checkout -f FETCH_HEAD 2>&1 | sed 's/^/[checkout] /' || echo "[checkout] не прошёл, код $?"
 
           corepack prepare pnpm@10.15.0 --activate
           corepack pnpm -C web install --frozen-lockfile
