@@ -24,7 +24,8 @@ const ALBUM_ID = Number(process.env.SEED_ALBUM_ID || '1')
 
 async function main() {
   const payload = await getPayload({ config })
-  console.log(`[attach-orphans] mode=${MODE} album=${ALBUM_SLUG} (id=${ALBUM_ID})`)
+  const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
+  log(`[attach-orphans] mode=${MODE} album=${ALBUM_SLUG} (id=${ALBUM_ID})`)
 
   // 1. Сироты: те же исключения внутренних таблиц, что в probe-media-orphans.
   const sql = `
@@ -103,7 +104,7 @@ async function main() {
   `
   const res = (await payload.db.drizzle.execute(sql)) as { rows: { json_agg: unknown }[] }
   const orphans = (res.rows[0]?.json_agg || []) as { id: number; filename: string; filesize: number | null }[]
-  console.log(`[attach-orphans] сирот найдено: ${orphans.length}`)
+  log(`[attach-orphans] сирот найдено: ${orphans.length}`)
 
   // 2. Группы одинакового размера = вероятные дубли. Публикуем одну копию.
   const bySize = new Map<number, typeof orphans>()
@@ -121,8 +122,8 @@ async function main() {
     }
   }
   const toAttach = orphans.filter((o) => !dupExtras.includes(o.id))
-  console.log(`[attach-orphans] дублей (одинаковый размер): ${dupExtras.length} — не публикуем`)
-  console.log(`[attach-orphans] к публикации: ${toAttach.length}`)
+  log(`[attach-orphans] дублей (одинаковый размер): ${dupExtras.length} — не публикуем`)
+  log(`[attach-orphans] к публикации: ${toAttach.length}`)
 
   // 3. Альбом и текущее содержимое.
   const album = (await payload.findByID({ collection: 'gallery', id: ALBUM_ID, depth: 0, overrideAccess: true })) as unknown as {
@@ -134,14 +135,14 @@ async function main() {
     existing.map((m) => (typeof m === 'object' && m ? m.id : Number(m))),
   )
   const fresh = toAttach.filter((o) => !currentIds.has(o.id))
-  console.log(`[attach-orphans] в альбоме сейчас: ${current}; добавим: ${fresh.length}`)
+  log(`[attach-orphans] в альбоме сейчас: ${current}; добавим: ${fresh.length}`)
 
   if (MODE !== 'apply') {
-    console.log('[attach-orphans] plan — ничего не менялось. Для реального переноса: SEED_MODE=apply')
+    log('[attach-orphans] plan — ничего не менялось. Для реального переноса: SEED_MODE=apply')
     return
   }
   if (fresh.length === 0) {
-    console.log('[attach-orphans] нечего добавлять — все уже в альбоме')
+    log('[attach-orphans] нечего добавлять — все уже в альбоме')
     return
   }
 
@@ -150,12 +151,17 @@ async function main() {
     id: ALBUM_ID,
     data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
   })
-  console.log(`[attach-orphans] готово: добавлено ${fresh.length} фото в «${ALBUM_SLUG}»`)
+  log(`[attach-orphans] готово: добавлено ${fresh.length} фото в «${ALBUM_SLUG}»`)
 }
 
 main()
-  .then(() => process.exit(0))
+  .then(async () => {
+    // Пустая запись в stdout: её колбэк срабатывает, когда предыдущие асинхронные
+    // записи в пайп уже ушли. Иначе process.exit() обрезает отчёт (G-nu).
+    await new Promise<void>((resolve) => process.stdout.write('', () => resolve()))
+    process.exit(0)
+  })
   .catch((err) => {
-    console.error('[attach-orphans] ФАТАЛЬНО:', err)
+    process.stderr.write(`[attach-orphans] ФАТАЛЬНО: ${err?.stack || err}\n`)
     process.exit(1)
   })
