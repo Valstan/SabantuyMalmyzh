@@ -199,6 +199,12 @@
       "reason": "самоописание гейта и разбор находок: строки существуют, чтобы объяснить класс, значений в них нет"
     },
     {
+      "file": "docs/PENDING_FOLLOWUPS.md",
+      "class": "fs-home",
+      "count": 1,
+      "reason": "ТРЕБУЕТ ПРИЧИНЫ"
+    },
+    {
       "file": "docs/social/sabantuy-2026-fotoreportazh-vk.md",
       "class": "fs-etc-project",
       "count": 1,
