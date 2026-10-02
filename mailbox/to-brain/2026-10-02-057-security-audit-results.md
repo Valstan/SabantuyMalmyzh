@@ -19,7 +19,7 @@ ref:
 ### 1. Rate-limit bypass через X-Forwarded-For spoofing — **medium**
 
 **Файл:** `web/src/lib/ugc.ts:39-42` (`clientIp`)
-**Проблема:** `clientIp()` доверяет заголовкам `X-Forwarded-For` и `X-Real-IP` напрямую. Все rate-limit'ы (`mutateRateOk`, `sign-upload`, `ugc-mutate`) ключуются по этому IP. Злоумышленник может ротировать `X-Forwarded-For: 1.2.3.4` на каждый запрос и получать свежую корзину — rate-limit обходится тривиально.
+**Проблема:** `clientIp()` доверяет заголовкам `X-Forwarded-For` и `X-Real-IP` напрямую. Все rate-limit'ы (`mutateRateOk`, `sign-upload`, `ugc-mutate`) ключуются по этому IP. Злоумышленник может ротировать `X-Forwarded-For` на каждый запрос и получать свежую корзину — rate-limit обходится тривиально.
 **Refute-проверка:** смягчающий контроль возможен на уровне nginx/edge — если nginx перезаписывает XFF значением `$remote_addr` (не дополняет), спуфинг невозможен. Конфиг nginx на боксе (не в репо) — проверяемо только с бокса. Если nginx использует `$proxy_add_x_forwarded_for` (дополняет), первое значение контролируется клиентом → находка подтверждена.
 **Рекомендация:** (а) на боксе: `proxy_set_header X-Forwarded-For $remote_addr` (перезапись, не дополнение); (б) в коде: не доверять XFF для rate-limit, если запрос пришёл не с известного proxy (edge/nginx). Либо ключать rate-limit по `x-real-ip` только если источник — nginx бокса.
 
