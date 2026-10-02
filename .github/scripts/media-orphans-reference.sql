@@ -36,7 +36,10 @@ BEGIN
       -- = id самой media → каждая строка «ссылается на себя», и скан назвал бы
       -- связанными все 640 файлов (ровно то, что случилось в прогоне 15.09).
       AND c.table_name NOT LIKE '\_%'
-      AND c.table_name NOT LIKE 'payload_preferences%'
+      AND c.table_name NOT LIKE '%\_locales'
+      AND c.table_name NOT LIKE '%\_rels'
+      AND c.table_name NOT LIKE 'payload\_%'
+      AND c.column_name <> '_parent_id'
   LOOP
     BEGIN
       EXECUTE format(
@@ -69,7 +72,10 @@ BEGIN
       AND t.table_type = 'BASE TABLE'
       AND c.table_name <> 'media'
       AND c.table_name NOT LIKE '\_%'
-      AND c.table_name NOT LIKE 'payload_preferences%'
+      AND c.table_name NOT LIKE '%\_locales'
+      AND c.table_name NOT LIKE '%\_rels'
+      AND c.table_name NOT LIKE 'payload\_%'
+      AND c.column_name <> '_parent_id'
   LOOP
     BEGIN
       EXECUTE format(
@@ -100,7 +106,10 @@ BEGIN
       AND c.data_type = 'jsonb'
       AND t.table_type = 'BASE TABLE'
       AND c.table_name NOT LIKE '\_%'
-      AND c.table_name NOT LIKE 'payload_preferences%'
+      AND c.table_name NOT LIKE '%\_locales'
+      AND c.table_name NOT LIKE '%\_rels'
+      AND c.table_name NOT LIKE 'payload\_%'
+      AND c.column_name <> '_parent_id'
   LOOP
     BEGIN
       EXECUTE format(
@@ -185,7 +194,10 @@ BEGIN
       AND t.table_type = 'BASE TABLE'
       AND c.table_name <> 'media'
       AND c.table_name NOT LIKE '\_%'
-      AND c.table_name NOT LIKE 'payload_preferences%'
+      AND c.table_name NOT LIKE '%\_locales'
+      AND c.table_name NOT LIKE '%\_rels'
+      AND c.table_name NOT LIKE 'payload\_%'
+      AND c.column_name <> '_parent_id'
     ORDER BY c.table_name, c.column_name
   LOOP
     EXECUTE format(
@@ -237,7 +249,7 @@ BEGIN
         src.table_name, src.column_name
       ) INTO hit USING r.id;
       IF hit > 0 THEN
-        RAISE NOTICE '    %I.%I', src.table_name, src.column_name;
+        RAISE NOTICE '%', format('    %I.%I', src.table_name, src.column_name);
       END IF;
     END LOOP;
   END LOOP;
