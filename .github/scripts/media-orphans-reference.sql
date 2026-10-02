@@ -208,31 +208,43 @@ BEGIN
   END IF;
 END $$;
 
-\echo '--- поимённо: 20 файлов из отчёта и ГДЕ они живут ---'
-SELECT
-  o.id,
-  o.filename,
-  pg_size_pretty(COALESCE(o.filesize, 0)::bigint) AS size,
-  COALESCE(
-    (SELECT string_agg(src, ', ') FROM (
-       SELECT 'events.hero_image' AS src FROM events e WHERE e.hero_image_id = o.id
-       UNION ALL SELECT 'events.gallery' FROM gallery_photos gp WHERE gp.image_id = o.id
-       UNION ALL SELECT 'gallery.cover_image' FROM gallery g WHERE g.cover_image_id = o.id
-       UNION ALL SELECT 'gallery_photos' FROM gallery_photos gp WHERE gp.image_id = o.id
-       UNION ALL SELECT 'news.hero_image' FROM news n WHERE n.hero_image_id = o.id
-       UNION ALL SELECT 'pages.hero_image' FROM pages p WHERE p.hero_image_id = o.id
-     ) refs),
-    'НИГДЕ (кандидат на удаление)'
-  ) AS referenced_from
-FROM fotostena_orphans o
-ORDER BY o.filesize DESC NULLS LAST
-LIMIT 20;
+\echo '--- поимённо: 20 файлов из отчёта, ссылки по колонкам (динамический обход) ---'
+DO $$
+DECLARE r record; src record; hit bigint;
+BEGIN
+  FOR r IN
+    SELECT o.id, o.filename, o.filesize
+    FROM fotostena_orphans o
+    ORDER BY o.filesize DESC NULLS LAST
+    LIMIT 20
+  LOOP
+    RAISE NOTICE 'файл #% (%) — источники:', r.id, r.filename;
+    FOR src IN
+      SELECT c.table_name, c.column_name
+      FROM information_schema.columns c
+      JOIN information_schema.tables t
+        ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+      WHERE c.table_schema = 'public'
+        AND c.data_type IN ('integer', 'bigint')
+        AND c.column_name LIKE '%\_id'
+        AND t.table_type = 'BASE TABLE'
+        AND c.table_name <> 'media'
+        AND c.table_name NOT LIKE '\_%'
+        AND c.table_name NOT LIKE 'payload_preferences%'
+    LOOP
+      EXECUTE format(
+        'SELECT count(*) FROM public."%1$I" t WHERE t."%2$I" = $1',
+        src.table_name, src.column_name
+      ) INTO hit;
+      IF hit > 0 THEN
+        RAISE NOTICE '    %I.%I', src.table_name, src.column_name;
+      END IF;
+    END LOOP;
+  END LOOP;
+END $$;
 
 \echo '=== ИТОГ: из fotostena-без-кандидата удаляемые ==='
 SELECT count(*) AS truly_unreferenced
 FROM fotostena_orphans o
-WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.hero_image_id = o.id)
-  AND NOT EXISTS (SELECT 1 FROM gallery_photos gp WHERE gp.image_id = o.id)
-  AND NOT EXISTS (SELECT 1 FROM gallery g WHERE g.cover_image_id = o.id)
-  AND NOT EXISTS (SELECT 1 FROM news n WHERE n.hero_image_id = o.id)
-  AND NOT EXISTS (SELECT 1 FROM pages p WHERE p.hero_image_id = o.id);
+LEFT JOIN ref_media r ON r.media_id = o.id
+WHERE r.media_id IS NULL;
