@@ -242,7 +242,10 @@ BEGIN
         AND t.table_type = 'BASE TABLE'
         AND c.table_name <> 'media'
         AND c.table_name NOT LIKE '\_%'
-        AND c.table_name NOT LIKE 'payload_preferences%'
+        AND c.table_name NOT LIKE '%\_locales'
+        AND c.table_name NOT LIKE '%\_rels'
+        AND c.table_name NOT LIKE 'payload\_%'
+        AND c.column_name <> '_parent_id'
     LOOP
       EXECUTE format(
         'SELECT count(*) FROM public."%1$I" t WHERE t."%2$I" = $1',
