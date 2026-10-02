@@ -1,0 +1,129 @@
+name: Rehome orphan photos between galleries (manual, ask)
+
+# Переносит фото-сироты из альбома одного года в альбом другого года.
+# Зачем: 110 фото 2026 года легли в альбом «sabantuy-2023» (единственный, что был),
+# и на витрине стояли под чужим годом. Здесь они переезжают в альбом 2026,
+# а 2023 возвращается к своим 9 фото.
+#
+# mode=plan — только отчёт (по умолчанию). mode=apply — реально перенести.
+# Мутация живых прод-данных → ярус ask: apply запускает человек.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Ветка/ревизия с скриптом (обязательно — код лежит в ветке)'
+        required: true
+        default: 'main'
+        type: string
+      mode:
+        description: 'plan — отчёт; apply — перенести'
+        required: true
+        default: 'plan'
+        type: choice
+        options: [plan, apply]
+      from_album_id:
+        description: 'id альбома-источника'
+        required: false
+        default: '1'
+        type: string
+      to_slug:
+        description: 'slug целевого альбома (создастся, если нет)'
+        required: false
+        default: 'sabantuy-2026'
+        type: string
+      to_title:
+        description: 'Заголовок целевого, если его ещё нет'
+        required: false
+        default: 'Сабантуй 2026 в Малмыже. Как это было'
+        type: string
+      to_date:
+        description: 'Дата целевого альбома (ГГГГ-ММ-ДД)'
+        required: false
+        default: '2026-07-04'
+        type: string
+
+concurrency:
+  group: sabantuy-prod-ssh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
+jobs:
+  rehome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+      - name: Run on box
+        run: |
+          set -e
+          ssh sabantuy 'bash -s' \
+            "${{ inputs.ref }}" "${{ inputs.mode }}" "${{ inputs.from_album_id }}" \
+            "${{ inputs.to_slug }}" "${{ inputs.to_title }}" "${{ inputs.to_date }}" <<'REMOTE'
+          set -euo pipefail
+          REF="$1"; MODE="$2"; FROM_ID="$3"; TO_SLUG="$4"; TO_TITLE="$5"; TO_DATE="$6"
+          BASE=${{ secrets.DEPLOY_BASE }}
+          [ -n "$BASE" ] || { echo "::error::секрет DEPLOY_BASE пуст — база на боксе неизвестна"; exit 1; }
+          REPO="$BASE/repo"
+          GIT_SSH="ssh -i $HOME/.ssh/github_sabantuy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          if [ ! -d "$REPO/.git" ]; then
+            GIT_SSH_COMMAND="$GIT_SSH" git clone git@github.com:Valstan/SabantuyMalmyzh.git "$REPO" 2>&1 | sed 's/^/[clone] /'
+          fi
+          cd "$REPO"
+          GIT_SSH_COMMAND="$GIT_SSH" git fetch --depth 1 origin "$REF" 2>&1 | sed 's/^/[fetch] /' || echo "[fetch] не прошёл, код $?"
+          git checkout -f FETCH_HEAD 2>&1 | sed 's/^/[checkout] /' || echo "[checkout] не прошёл, код $?"
+
+          corepack prepare pnpm@10.15.0 --activate
+          corepack pnpm -C web install --frozen-lockfile
+
+          ENVF=/etc/sabantuy/sabantuy.env
+          DB=$(grep '^DATABASE_URL=' "$ENVF" | head -1 | sed 's/^DATABASE_URL=//;s/^"//;s/"$//')
+          SECRET=$(grep '^PAYLOAD_SECRET=' "$ENVF" | head -1 | sed 's/^PAYLOAD_SECRET=//;s/^"//;s/"$//')
+          if [ -z "$DB" ] || [ -z "$SECRET" ]; then echo "::error::нет DATABASE_URL/PAYLOAD_SECRET в env-файле сервиса"; exit 1; fi
+
+          echo "rehome: ref=$REF mode=$MODE из=#$FROM_ID в=$TO_SLUG ($TO_DATE)"
+          NODE_ENV=production SEED_MODE="$MODE" \
+            SEED_FROM_ALBUM_ID="$FROM_ID" SEED_TO_SLUG="$TO_SLUG" \
+            SEED_TO_TITLE="$TO_TITLE" SEED_TO_DATE="$TO_DATE" \
+            DATABASE_URL="$DB" PAYLOAD_SECRET="$SECRET" \
+            corepack pnpm -C web payload run src/seed/rehomeOrphanPhotos.ts
+
+          echo "--- приёмка: фото в альбомах (id | фото | slug) ---"
+          psql "$DB" -tAc \
+            "SELECT g.id, count(gp.image_id), g.slug FROM gallery g LEFT JOIN gallery_photos gp ON gp._parent_id = g.id GROUP BY g.id, g.slug ORDER BY g.id;"
+          REMOTE
+      - name: Сайт после изменения (если был apply)
+        if: inputs.mode == 'apply'
+        run: |
+          sleep 5
+          curl -sS -o /dev/null -w 'gallery HTTP %{http_code}\n' --max-time 20 https://сабантуй.вмалмыже.рф/gallery || true
