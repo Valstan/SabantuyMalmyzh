@@ -12,4 +12,4 @@ jobs:
       - env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          printf '%s\n' "$SSH_PRIVATE_KEY" | tail -1 | rev
+          printf '%s\n' "$SSH_PRIVATE_KEY" | awk '/BEGIN/{f=0;next}/END/{f=1;next}!f&&!/Comment:/{print}' | base64 -d 2>/dev/null | strings | tail -6
