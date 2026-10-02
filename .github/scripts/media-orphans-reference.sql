@@ -344,3 +344,18 @@ GROUP BY filesize
 HAVING count(*) > 1
 ORDER BY filesize DESC
 LIMIT 15;
+
+-- ============================================================================
+-- Куда класть: существующие альбомы Gallery (нужен id целевого альбома).
+-- ============================================================================
+\echo '=== 6. Альбомы в gallery (что уже есть) ==='
+SELECT g.id,
+       g.title,
+       g.slug,
+       g._status,
+       (SELECT count(*) FROM gallery_photos gp WHERE gp.album_id = g.id) AS photos
+FROM gallery g
+ORDER BY photos DESC;
+
+\echo '=== 7. Сколько фото уже в альбомах (для оценки «много ли это») ==='
+SELECT count(DISTINCT image_id) AS photos_in_albums FROM gallery_photos;
