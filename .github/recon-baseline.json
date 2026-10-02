@@ -67,6 +67,12 @@
       "reason": "сознательно: воркфлоу объявлены местом хранения точных путей (D-038, docs/ops/prod-box.md). Кандидат на вынос в один secret DEPLOY_BASE — 18 копий литерала расходятся молча"
     },
     {
+      "file": ".github/workflows/probe-media-orphans.yml",
+      "class": "fs-etc-project",
+      "count": 1,
+      "reason": "Read-only SQL-проба: читаем путь env-файла сервиса, чтобы достать DATABASE_URL для psql. Тот же приём, что в probe-prod.yml / probe-schema.yml — скан работает на боксе под ssh, путь не выносится в репо как рекон-данные, а как исполняемый путь на сервере."
+    },
+    {
       "file": ".github/workflows/probe-prod.yml",
       "class": "fs-etc-project",
       "count": 1,
