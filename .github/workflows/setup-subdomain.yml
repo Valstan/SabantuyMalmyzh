@@ -36,6 +36,10 @@ env:
 permissions:
   contents: read
 
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
 jobs:
   run:
     runs-on: ubuntu-latest

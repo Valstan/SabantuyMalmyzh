@@ -93,6 +93,9 @@ export default buildConfig({
   },
   cors: [process.env.NEXT_PUBLIC_SERVER_URL || ''].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET || '',
+  // G339: cookie-имена начинаются с `__Host-` (нужен Secure + Path=/ + без Domain,
+  // что задано в auth.cookies коллекции Users). Стафф-cookie станет `__Host-sabantuy-token`.
+  cookiePrefix: '__Host-sabantuy',
   sharp,
   plugins: [
     // ADR-0001 (решение 2026-09-01): редакционные медиа — в том же бакете Object

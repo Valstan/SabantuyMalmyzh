@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { getPayloadClient } from '../../../../../lib/ugcOwner'
 import { exchangeToken, fetchUserInfo, isVkConfigured } from '../../../../../lib/vk'
-import { VISITOR_COOKIE, signVisitorSession } from '../../../../../lib/visitorSession'
+import { LEGACY_VISITOR_COOKIE, VISITOR_COOKIE, signVisitorSession } from '../../../../../lib/visitorSession'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -84,14 +84,15 @@ export async function GET(req: Request) {
 
     const token = signVisitorSession({ visitorId, vkId: profile.id, name: profile.name, avatarUrl: profile.avatarUrl })
     const res = NextResponse.redirect(absUrl(next, req.url))
-    const secure = (process.env.NEXT_PUBLIC_SERVER_URL || '').startsWith('https')
     res.cookies.set(VISITOR_COOKIE, token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure,
+      secure: true, // G339: `__Host-` требует Secure всегда
       path: '/',
       maxAge: 90 * 24 * 60 * 60,
     })
+    // G339: погасить legacy-имя с теми же атрибутами, чтобы не осталось две сессии.
+    res.cookies.set(LEGACY_VISITOR_COOKIE, '', { path: '/', maxAge: 0, secure: true, httpOnly: true, sameSite: 'lax' })
     clearOauthCookies(res)
     return res
   } catch {

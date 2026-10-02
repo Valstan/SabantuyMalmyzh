@@ -23,6 +23,10 @@ concurrency:
   group: gates-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
 jobs:
   gates:
     runs-on: ubuntu-latest
