@@ -30,14 +30,13 @@ concurrency:
 
 env:
   NEW_URL: https://xn--80aac7atuli.xn--80adkdyec4j.xn--p1ai   # https://сабантуй.вмалмыже.рф
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
 
 # Явные права GITHUB_TOKEN вместо дефолтных (мандат brain 2026-07-31).
 permissions:
   contents: read
-
-env:
-  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
-  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
 
 jobs:
   run:
