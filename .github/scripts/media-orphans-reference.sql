@@ -294,35 +294,32 @@ WHERE m.filename LIKE 'fotostena--%'
   AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 GROUP BY 1 ORDER BY files DESC LIMIT 10;
 
-\echo '=== 2b. Реальные колонки vk_candidates ==='
-\d vk_candidates
-
 \echo '=== 3. Есть ли кандидат по этому посту (совпадение vkKey) и какой статус ==='
 SELECT
   c.status,
   count(DISTINCT c.id) AS candidates,
-  count(DISTINCT c.vkKey) AS posts
+  count(DISTINCT c.vk_key) AS posts
 FROM vk_candidates c
 WHERE EXISTS (
   SELECT 1 FROM media m
   WHERE m.filename LIKE 'fotostena--%'
-    AND c.vkKey = substring(m.filename from 'fotostena--(\d+_\d+)_')
+    AND c.vk_key = substring(m.filename from 'fotostena--(\d+_\d+)_')
     AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 )
 GROUP BY c.status ORDER BY candidates DESC;
 
 \echo '=== 3b. Авторы постов, чьи фото остались сиротами ==='
 SELECT
-  c.authorName,
-  count(DISTINCT c.vkKey) AS posts
+  c.author_name,
+  count(DISTINCT c.vk_key) AS posts
 FROM vk_candidates c
 WHERE EXISTS (
   SELECT 1 FROM media m
   WHERE m.filename LIKE 'fotostena--%'
-    AND c.vkKey = substring(m.filename from 'fotostena--(\d+_\d+)_')
+    AND c.vk_key = substring(m.filename from 'fotostena--(\d+_\d+)_')
     AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 )
-GROUP BY c.authorName ORDER BY posts DESC LIMIT 15;
+GROUP BY c.author_name ORDER BY posts DESC LIMIT 15;
 
 \echo '=== 4. Сколько постов дали больше одного файла (альбом) ==='
 SELECT files_per_post, count(*) AS posts
