@@ -1,0 +1,64 @@
+name: Probe media orphans (read-only)
+
+# Полный скан ссылок на Media: какие файлы на никто не ссылается (кандидаты
+# на удаление). Только SELECT, ярус auto. Позитивный контроль обязателен:
+# отчёт печатает и число СВЯЗАННЫХ media (должно быть > 0), иначе «нулевые
+# сироты» ничего не значат (pool #262).
+#
+# Файл сканера: .github/scripts/media-orphans-reference.sql (psql -f).
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: sabantuy-prod-ssh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+      - name: psql — скан ссылок на media
+        run: |
+          set -euo pipefail
+          SCRIPT=$(base64 -w0 .github/scripts/media-orphans-reference.sql)
+          ssh sabantuy 'bash -s' "$SCRIPT" <<'REMOTE'
+          set -euo pipefail
+          DB_URL=$(sudo sed -n 's/^DATABASE_URL=//p' /etc/sabantuy/sabantuy.env | head -1 | tr -d '"')
+          [ -n "$DB_URL" ] || { echo "::error::DATABASE_URL не найден"; exit 1; }
+          echo "$1" | base64 -d > /tmp/media-orphans.sql
+          sudo -u postgres psql "$DB_URL" -v ON_ERROR_STOP=1 -f /tmp/media-orphans.sql 2>&1 | sed -E 's#(postgres(ql)?://[^:]+:)[^@]+@#\1***@#g'
+          rm -f /tmp/media-orphans.sql
+          REMOTE
