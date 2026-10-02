@@ -101,9 +101,9 @@ try {
     const t = q(String(r.table_name))
     const c = q(String(r.column_name))
     parts.push(
-      `SELECT DISTINCT t1."${c}"::bigint AS media_id FROM public.${t} t1
-       WHERE t1."${c}" IS NOT NULL
-         AND EXISTS (SELECT 1 FROM media m WHERE m.id = t1."${c}")`,
+      `SELECT DISTINCT t1.${c}::bigint AS media_id FROM public.${t} t1
+       WHERE t1.${c} IS NOT NULL
+         AND EXISTS (SELECT 1 FROM media m WHERE m.id = t1.${c})`,
     )
   }
 
@@ -113,7 +113,7 @@ try {
     parts.push(
       `SELECT DISTINCT q1.v::bigint AS media_id
        FROM public.${t} t1,
-         LATERAL jsonb_path_query(t1."${c}", '$[*]?(@.relationTo == "media").value') AS q1(v)
+         LATERAL jsonb_path_query(t1.${c}, '$[*]?(@.relationTo == "media").value') AS q1(v)
        WHERE jsonb_typeof(q1.v) = 'number'
          AND q1.v::text ~ '^[0-9]+$'
          AND EXISTS (SELECT 1 FROM media m WHERE m.id = q1.v::bigint)`,
