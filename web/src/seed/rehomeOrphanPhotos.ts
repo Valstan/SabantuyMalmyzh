@@ -43,12 +43,18 @@ type GalleryRow = { id: number; title?: string; photos?: unknown[]; _status?: st
 log(`[rehome] mode=${MODE} из альбома #${FROM_ID} в «${TO_SLUG}»`)
 
 try {
-  // ── 1. Кого вообще можно переносить: осиротевшие медиа минус копии-дубли ────
+  // ── 1. Кого переносим: фото-сироты, попавшие в альбом ошибочно ─────────────
+  // ВАЖНО: берём ВСЕХ осирот (`orphans`), а не «пригодных к публикации»
+  // (`toPublish`). После первой публикации 110 фото перестали быть сиротами —
+  // на них ссылается альбом, — и поиск по toPublish находил ноль: переносить
+  // было нечего. Отсекаются только копии-дубли, чтобы в новом альбоме не
+  // оказалось десяти копий одного кадра.
   const scan = await scanOrphanMedia(payload, log)
-  const movable = new Set(scan.toPublish.map((o) => o.id))
+  const orphans = new Set(scan.orphans.map((o) => o.id))
+  const dupSet = new Set(scan.dupExtras)
   log(
-    `[rehome] сирот всего: ${scan.orphans.length}, к переносу пригодных: ${movable.size} ` +
-      `(из ${scan.totalMedia} файлов в медиа; копий-дублей пропущено: ${scan.dupExtras.length})`,
+    `[rehome] сирот всего: ${scan.orphans.length}, копий-дублей: ${scan.dupExtras.length} ` +
+      `(из ${scan.totalMedia} файлов в медиа)`,
   )
   if (scan.totalMedia > 0 && scan.orphans.length === scan.totalMedia) {
     bail(new Error('«сироты» = все файлы → ссылки не собрались, скан сломан'))
@@ -65,7 +71,7 @@ try {
   const sourceBlocks = Array.isArray(source.photos) ? source.photos : []
   const takeIdx = sourceBlocks
     .map((b, i) => ({ i, id: blockMediaId(b) }))
-    .filter((x) => x.id !== null && movable.has(x.id))
+    .filter((x) => x.id !== null && orphans.has(x.id) && !dupSet.has(x.id))
   const stayBlocks = sourceBlocks.filter((_, i) => !takeIdx.some((x) => x.i === i))
   const takeBlocks = takeIdx.map((x) => sourceBlocks[x.i])
 
