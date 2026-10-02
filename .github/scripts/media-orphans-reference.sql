@@ -105,7 +105,7 @@ BEGIN
          WHERE q.v IS NOT NULL
            AND jsonb_typeof(q.v) = ''number''
            AND q.v::text ~ ''^[0-9]+$''
-         ON CONFLICT (media_id) DO NOTHING,
+         ON CONFLICT (media_id) DO NOTHING',
         r.table_name, r.column_name
       );
     EXCEPTION WHEN others THEN
