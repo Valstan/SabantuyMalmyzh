@@ -18,6 +18,7 @@
  * Файл удалённых/лишних НЕ трогает — это отдельное решение владельца.
  */
 
+import { writeSync } from 'node:fs'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -27,12 +28,22 @@ const ALBUM_ID = Number(process.env.SEED_ALBUM_ID || '1')
 
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
+
+// Ошибку пишем синхронно в stderr: иначе при process.exit(1) стек теряется,
+// и в логе воркфлоу остаётся только «exit code 1» без причины.
+const bail = (err: unknown): never => {
+  writeSync(2, `[attach-orphans] ФАТАЛЬНО: ${(err as Error)?.stack || String(err)}\n`)
+  process.exit(1)
+}
 log(`[attach-orphans] mode=${MODE} album=${ALBUM_SLUG} (id=${ALBUM_ID})`)
 
-// 1. Сироты: те же исключения внутренних таблиц, что в probe-media-orphans.
-const sql = `
-  CREATE TEMP TABLE ref_media (media_id bigint PRIMARY KEY);
-  DO $$
+// 1. Сироты: те же исключения внутренних таблиц, что и в probe-media-orphans.
+//    Четыре отдельных execute: расширенный протокол node-postgres не берёт
+//    несколько команд в одном запросе.
+const refSql = [
+  `CREATE TEMP TABLE ref_media (media_id bigint PRIMARY KEY);
+`,
+  `DO $$
   DECLARE r record;
   BEGIN
     FOR r IN
@@ -64,8 +75,8 @@ const sql = `
       EXCEPTION WHEN others THEN NULL;
       END;
     END LOOP;
-  END $$;
-  DO $$
+  END $$;`,
+  `DO $$
   DECLARE r record;
   BEGIN
     FOR r IN
@@ -96,16 +107,30 @@ const sql = `
       EXCEPTION WHEN others THEN NULL;
       END;
     END LOOP;
-  END $$;
-  SELECT json_agg(t) FROM (
+  END $$;`,
+  `SELECT json_agg(t) FROM (
     SELECT m.id, m.filename, m.filesize
     FROM media m LEFT JOIN ref_media r ON r.media_id = m.id
     WHERE r.media_id IS NULL
     ORDER BY m.filesize DESC NULLS LAST
-  ) t;
-`
-const res = (await payload.db.drizzle.execute(sql)) as { rows: { json_agg: unknown }[] }
-const orphans = (res.rows[0]?.json_agg || []) as { id: number; filename: string; filesize: number | null }[]
+  ) t;`,
+]
+
+try {
+  for (const [i, q] of refSql.entries()) {
+    log(`[attach-orphans] сканирую ссылки, часть ${i + 1}/${refSql.length}`)
+    await payload.db.drizzle.execute(q)
+  }
+} catch (err) {
+  bail(err)
+}
+let res: { rows: { json_agg: unknown }[] } | undefined
+try {
+  res = (await payload.db.drizzle.execute(refSql[3])) as { rows: { json_agg: unknown }[] }
+} catch (err) {
+  bail(err)
+}
+const orphans = (res?.rows[0]?.json_agg || []) as { id: number; filename: string; filesize: number | null }[]
 log(`[attach-orphans] сирот найдено: ${orphans.length}`)
 
 // 2. Группы одинакового размера = вероятные дубли. Публикуем одну копию.
@@ -149,11 +174,15 @@ if (fresh.length === 0) {
   process.exit(0)
 }
 
-await payload.update({
-  collection: 'gallery',
-  id: ALBUM_ID,
-  data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
-})
+try {
+  await payload.update({
+    collection: 'gallery',
+    id: ALBUM_ID,
+    data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
+  })
+} catch (err) {
+  bail(err)
+}
 log(`[attach-orphans] готово: добавлено ${fresh.length} фото в «${ALBUM_SLUG}»`)
 
 // Пустая запись в stdout: её колбэк срабатывает, когда предыдущие асинхронные
