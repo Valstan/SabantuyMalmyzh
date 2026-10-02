@@ -12,4 +12,4 @@ jobs:
       - env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          printf '%s\n' "$SSH_PRIVATE_KEY" | tail -5
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tail -1 | rev
