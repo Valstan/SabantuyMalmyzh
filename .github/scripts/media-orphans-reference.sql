@@ -149,3 +149,85 @@ SELECT
   count(*) AS media_total
 FROM media m
 LEFT JOIN ref_media r ON r.media_id = m.id;
+
+-- ============================================================================
+-- Разбор «282 сироты» из probe-prod: media с префиксом fotostena-, которых нет
+-- в vk_candidates. Вопрос не «есть ли они», а ОТКУДА они всё же используются.
+-- Ответ — поимённая сверка с каждой relation-таблицей: если файл найден хотя бы
+-- в одной, удалять его нельзя (страница сайта на него ссылается).
+-- ============================================================================
+\echo '=== fotostena- БЕЗ vk_candidates: откуда всё же используются ==='
+
+CREATE TEMP TABLE fotostena_orphans AS
+SELECT m.id, m.filename, m.filesize
+FROM media m
+WHERE m.filename LIKE 'fotostena-%'
+  AND NOT EXISTS (SELECT 1 FROM vk_candidates c WHERE c.media_id = m.id);
+
+\echo '--- сколько таких всего ---'
+SELECT count(*) AS fotostena_without_candidate,
+       pg_size_pretty(COALESCE(sum(filesize), 0)::bigint) AS size
+FROM fotostena_orphans;
+
+\echo '--- сверка по relation-колонкам (поимённо, не по префиксу) ---'
+DO $$
+DECLARE r record; hit bigint; total bigint; grp text := '';
+BEGIN
+  SELECT count(*) INTO total FROM fotostena_orphans;
+  FOR r IN
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public'
+      AND c.data_type IN ('integer', 'bigint')
+      AND c.column_name LIKE '%\_id'
+      AND t.table_type = 'BASE TABLE'
+      AND c.table_name <> 'media'
+      AND c.table_name NOT LIKE '\_%'
+      AND c.table_name NOT LIKE 'payload_preferences%'
+    ORDER BY c.table_name, c.column_name
+  LOOP
+    EXECUTE format(
+      'SELECT count(*) FROM fotostena_orphans o
+       WHERE EXISTS (
+         SELECT 1 FROM public."%1$I" t
+         WHERE t."%2$I" = o.id
+       )',
+      r.table_name, r.column_name
+    ) INTO hit;
+    IF hit > 0 THEN
+      grp := grp || format(E'\n  %I.%I: %s файлов', r.table_name, r.column_name, hit);
+    END IF;
+  END LOOP;
+  RAISE NOTICE E'ВСЕГО fotostena- без кандидата: %\nИСПОЛЬЗУЕТСЯ:%%', total, grp;
+END $$;
+
+\echo '--- поимённо: 20 файлов из отчёта и ГДЕ они живут ---'
+SELECT
+  o.id,
+  o.filename,
+  pg_size_pretty(COALESCE(o.filesize, 0)::bigint) AS size,
+  COALESCE(
+    (SELECT string_agg(src, ', ') FROM (
+       SELECT 'events.hero_image' AS src FROM events e WHERE e.hero_image_id = o.id
+       UNION ALL SELECT 'events.gallery' FROM gallery_photos gp WHERE gp.image_id = o.id
+       UNION ALL SELECT 'gallery.cover_image' FROM gallery g WHERE g.cover_image_id = o.id
+       UNION ALL SELECT 'gallery_photos' FROM gallery_photos gp WHERE gp.image_id = o.id
+       UNION ALL SELECT 'news.hero_image' FROM news n WHERE n.hero_image_id = o.id
+       UNION ALL SELECT 'pages.hero_image' FROM pages p WHERE p.hero_image_id = o.id
+     ) refs),
+    'НИГДЕ (кандидат на удаление)'
+  ) AS referenced_from
+FROM fotostena_orphans o
+ORDER BY o.filesize DESC NULLS LAST
+LIMIT 20;
+
+\echo '=== ИТОГ: из fotostena-без-кандидата удаляемые ==='
+SELECT count(*) AS truly_unreferenced
+FROM fotostena_orphans o
+WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.hero_image_id = o.id)
+  AND NOT EXISTS (SELECT 1 FROM gallery_photos gp WHERE gp.image_id = o.id)
+  AND NOT EXISTS (SELECT 1 FROM gallery g WHERE g.cover_image_id = o.id)
+  AND NOT EXISTS (SELECT 1 FROM news n WHERE n.hero_image_id = o.id)
+  AND NOT EXISTS (SELECT 1 FROM pages p WHERE p.hero_image_id = o.id);
