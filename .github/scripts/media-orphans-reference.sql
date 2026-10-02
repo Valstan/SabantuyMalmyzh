@@ -32,6 +32,11 @@ BEGIN
       AND c.column_name LIKE '%\_id'
       AND t.table_type = 'BASE TABLE'
       AND c.table_name <> 'media'
+      -- Внутренние таблицы Payload исключены СОЗНАТЕЛЬНО: `_media_v.parent_id`
+      -- = id самой media → каждая строка «ссылается на себя», и скан назвал бы
+      -- связанными все 640 файлов (ровно то, что случилось в прогоне 15.09).
+      AND c.table_name NOT LIKE '\_%'
+      AND c.table_name NOT LIKE 'payload_preferences%'
   LOOP
     BEGIN
       EXECUTE format(
@@ -63,6 +68,8 @@ BEGIN
       AND c.data_type IN ('integer', 'bigint')
       AND t.table_type = 'BASE TABLE'
       AND c.table_name <> 'media'
+      AND c.table_name NOT LIKE '\_%'
+      AND c.table_name NOT LIKE 'payload_preferences%'
   LOOP
     BEGIN
       EXECUTE format(
@@ -92,6 +99,8 @@ BEGIN
     WHERE c.table_schema = 'public'
       AND c.data_type = 'jsonb'
       AND t.table_type = 'BASE TABLE'
+      AND c.table_name NOT LIKE '\_%'
+      AND c.table_name NOT LIKE 'payload_preferences%'
   LOOP
     BEGIN
       EXECUTE format(
@@ -127,6 +136,11 @@ FROM media m
 LEFT JOIN ref_media r ON r.media_id = m.id
 WHERE r.media_id IS NULL
 ORDER BY m.filesize DESC NULLS LAST;
+
+\echo '=== КОНТРОЛЬ: media, НЕ найденная ни в одной *_id-колонке ==='
+SELECT count(*) AS not_referenced_by_columns
+FROM media m LEFT JOIN ref_media r ON r.media_id = m.id
+WHERE r.media_id IS NULL;
 
 \echo '=== ИТОГО ==='
 SELECT
