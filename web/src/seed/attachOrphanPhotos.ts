@@ -34,163 +34,175 @@ const ALBUM_ID = Number(process.env.SEED_ALBUM_ID || '1')
 const payload = await getPayload({ config })
 const log = (...a: unknown[]) => payload.logger.info(a.map(String).join(' '))
 
-// Ошибку пишем синхронно в stderr: при process.exit(1) иначе стек теряется,
-// и в логе воркфлоу остаётся только «exit code 1» без причины.
+// Причина ошибки обязана быть В ЛОГЕ. `payload run` глушит необработанное
+// отклонение верхнего уровня (тихо, код 1), а stderr дочернего pnpm-процесса в
+// логе воркфлоу не виден — поэтому пишем и в логгер, и в stderr.
+const describe = (err: unknown): string => {
+  const e = err as { name?: string; message?: string; stack?: string; cause?: unknown }
+  const cause = e?.cause ? ` | причина: ${String((e.cause as Error)?.message || e.cause)}` : ''
+  return `${e?.name || 'Error'}: ${e?.message || String(err)}${cause}\n${(e?.stack || '').slice(0, 900)}`
+}
+
 const bail = (err: unknown): never => {
-  writeSync(2, `[attach-orphans] ФАТАЛЬНО: ${(err as Error)?.stack || String(err)}\n`)
+  log(`[attach-orphans] ФАТАЛЬНО — ${describe(err)}`)
+  writeSync(2, `[attach-orphans] ФАТАЛЬНО: ${describe(err)}\n`)
   process.exit(1)
-}
-
-type Row = Record<string, unknown>
-const rowsOf = async (q: string): Promise<Row[]> => {
-  try {
-    const res = (await payload.db.drizzle.execute(q)) as { rows?: Row[] }
-    return res.rows || []
-  } catch (err) {
-    return bail(err)
-  }
-}
-
-// ── 1. Какие колонки вообще могут ссылаться на media ──────────────────────────
-// Внутренние таблицы Payload исключены: `_media_v.parent_id` и
-// `media_locales._parent_id` равны id своей же media, и без исключения скан
-// показывает ложный ноль.
-const EXCLUDED_TABLE = `t.table_name <> 'media'
-    AND t.table_name NOT LIKE '\\_%'
-    AND t.table_name NOT LIKE '%\\_locales'
-    AND t.table_name NOT LIKE '%\\_rels'
-    AND t.table_name NOT LIKE 'payload\\_%'`
-
-const relCols = await rowsOf(`
-  SELECT c.table_name, c.column_name
-  FROM information_schema.columns c
-  JOIN information_schema.tables t
-    ON t.table_name = c.table_name AND t.table_schema = c.table_schema
-  WHERE c.table_schema = 'public'
-    AND t.table_type = 'BASE TABLE'
-    AND c.data_type IN ('integer', 'bigint')
-    AND c.column_name LIKE '%\\_id'
-    AND c.column_name <> '_parent_id'
-    AND ${EXCLUDED_TABLE}
-  ORDER BY c.table_name, c.column_name`)
-
-const jsonCols = await rowsOf(`
-  SELECT c.table_name, c.column_name
-  FROM information_schema.columns c
-  JOIN information_schema.tables t
-    ON t.table_name = c.table_name AND t.table_schema = c.table_schema
-  WHERE c.table_schema = 'public'
-    AND t.table_type = 'BASE TABLE'
-    AND c.data_type = 'jsonb'
-    AND ${EXCLUDED_TABLE}
-  ORDER BY c.table_name, c.column_name`)
-
-const q = (s: string) => `"${s.replace(/"/g, '""')}"`
-const parts: string[] = []
-
-for (const r of relCols) {
-  const t = q(String(r.table_name))
-  const c = q(String(r.column_name))
-  parts.push(
-    `SELECT DISTINCT t1."${c}"::bigint AS media_id FROM public.${t} t1
-     WHERE t1."${c}" IS NOT NULL
-       AND EXISTS (SELECT 1 FROM media m WHERE m.id = t1."${c}")`,
-  )
-}
-
-for (const r of jsonCols) {
-  const t = q(String(r.table_name))
-  const c = q(String(r.column_name))
-  parts.push(
-    `SELECT DISTINCT q1.v::bigint AS media_id
-     FROM public.${t} t1,
-       LATERAL jsonb_path_query(t1."${c}", '$[*]?(@.relationTo == "media").value') AS q1(v)
-     WHERE jsonb_typeof(q1.v) = 'number'
-       AND q1.v::text ~ '^[0-9]+$'
-       AND EXISTS (SELECT 1 FROM media m WHERE m.id = q1.v::bigint)`,
-  )
-}
-
-log(`[attach-orphans] колонок-ссылок: ${relCols.length} + jsonb ${jsonCols.length}`)
-if (parts.length === 0) {
-  log('[attach-orphans] НИ ОДНОЙ колонки-ссылки не найдено — скан не запускаю (иначе «сироты» = всё)')
-  process.exit(1)
-}
-
-// ── 2. Один запрос: объединение всех ссылок + список файлов без ссылок ────────
-const scanSql = `
-WITH ref AS (
-${parts.map((p, i) => (i ? `  UNION ALL\n${p}` : `  ${p}`)).join('\n')}
-)
-SELECT json_agg(t ORDER BY t.id) AS payload FROM (
-  SELECT m.id, m.filename, m.filesize
-  FROM media m
-  LEFT JOIN ref r ON r.media_id = m.id
-  WHERE r.media_id IS NULL
-) t`
-
-const scanRows = await rowsOf(scanSql)
-const orphans = (scanRows[0]?.payload || []) as { id: number; filename: string; filesize: number | null }[]
-log(`[attach-orphans] сирот найдено: ${orphans.length}`)
-
-// Контроль: 640 = «все файлы» означает, что отсылки не собрались (см. шапку).
-const totalMedia = Number((await rowsOf(`SELECT count(*)::int AS n FROM media`))[0]?.n || 0)
-log(`[attach-orphans] всего файлов в медиа: ${totalMedia} (из них без ссылок ${orphans.length})`)
-if (totalMedia > 0 && orphans.length === totalMedia) {
-  log('[attach-orphans] СТОП: «сироты» = все файлы → ссылки не собрались, скан сломан')
-  process.exit(1)
-}
-
-// ── 3. Группы одинакового размера = вероятные дубли. Публикуем одну копию ────
-const bySize = new Map<number, typeof orphans>()
-for (const o of orphans) {
-  if (!o.filesize) continue
-  const list = bySize.get(o.filesize) || []
-  list.push(o)
-  bySize.set(o.filesize, list)
-}
-const dupExtras: number[] = []
-for (const list of bySize.values()) {
-  if (list.length > 1) {
-    list.sort((a, b) => a.id - b.id)
-    for (const extra of list.slice(1)) dupExtras.push(extra.id)
-  }
-}
-const toAttach = orphans.filter((o) => !dupExtras.includes(o.id))
-log(`[attach-orphans] дублей (одинаковый размер): ${dupExtras.length} — не публикуем`)
-log(`[attach-orphans] к публикации: ${toAttach.length}`)
-
-// ── 4. Альбом и текущее содержимое ───────────────────────────────────────────
-const album = (await payload.findByID({ collection: 'gallery', id: ALBUM_ID, depth: 0, overrideAccess: true })) as unknown as {
-  photos?: (number | { id: number })[]
-}
-const existing = Array.isArray(album.photos) ? album.photos : []
-const currentIds = new Set<number>(existing.map((m) => (typeof m === 'object' && m ? m.id : Number(m))))
-const fresh = toAttach.filter((o) => !currentIds.has(o.id))
-log(`[attach-orphans] в альбоме «${ALBUM_SLUG}» сейчас: ${existing.length}; добавим: ${fresh.length}`)
-
-if (MODE !== 'apply') {
-  log('[attach-orphans] plan — ничего не менялось. Для реального переноса: SEED_MODE=apply')
-  process.exit(0)
-}
-
-if (fresh.length === 0) {
-  log('[attach-orphans] нечего добавлять — все уже в альбоме')
-  process.exit(0)
 }
 
 try {
-  await payload.update({
-    collection: 'gallery',
-    id: ALBUM_ID,
-    data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
-  })
+  type Row = Record<string, unknown>
+  const rowsOf = async (q: string): Promise<Row[]> => {
+    try {
+      const res = (await payload.db.drizzle.execute(q)) as { rows?: Row[] }
+      return res.rows || []
+    } catch (err) {
+      return bail(err)
+    }
+  }
+
+  // ── 1. Какие колонки вообще могут ссылаться на media ──────────────────────────
+  // Внутренние таблицы Payload исключены: `_media_v.parent_id` и
+  // `media_locales._parent_id` равны id своей же media, и без исключения скан
+  // показывает ложный ноль.
+  const EXCLUDED_TABLE = `t.table_name <> 'media'
+      AND t.table_name NOT LIKE '\\_%'
+      AND t.table_name NOT LIKE '%\\_locales'
+      AND t.table_name NOT LIKE '%\\_rels'
+      AND t.table_name NOT LIKE 'payload\\_%'`
+
+  const relCols = await rowsOf(`
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public'
+      AND t.table_type = 'BASE TABLE'
+      AND c.data_type IN ('integer', 'bigint')
+      AND c.column_name LIKE '%\\_id'
+      AND c.column_name <> '_parent_id'
+      AND ${EXCLUDED_TABLE}
+    ORDER BY c.table_name, c.column_name`)
+
+  const jsonCols = await rowsOf(`
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public'
+      AND t.table_type = 'BASE TABLE'
+      AND c.data_type = 'jsonb'
+      AND ${EXCLUDED_TABLE}
+    ORDER BY c.table_name, c.column_name`)
+
+  const q = (s: string) => `"${s.replace(/"/g, '""')}"`
+  const parts: string[] = []
+
+  for (const r of relCols) {
+    const t = q(String(r.table_name))
+    const c = q(String(r.column_name))
+    parts.push(
+      `SELECT DISTINCT t1."${c}"::bigint AS media_id FROM public.${t} t1
+       WHERE t1."${c}" IS NOT NULL
+         AND EXISTS (SELECT 1 FROM media m WHERE m.id = t1."${c}")`,
+    )
+  }
+
+  for (const r of jsonCols) {
+    const t = q(String(r.table_name))
+    const c = q(String(r.column_name))
+    parts.push(
+      `SELECT DISTINCT q1.v::bigint AS media_id
+       FROM public.${t} t1,
+         LATERAL jsonb_path_query(t1."${c}", '$[*]?(@.relationTo == "media").value') AS q1(v)
+       WHERE jsonb_typeof(q1.v) = 'number'
+         AND q1.v::text ~ '^[0-9]+$'
+         AND EXISTS (SELECT 1 FROM media m WHERE m.id = q1.v::bigint)`,
+    )
+  }
+
+  log(`[attach-orphans] колонок-ссылок: ${relCols.length} + jsonb ${jsonCols.length}`)
+  if (parts.length === 0) {
+    log('[attach-orphans] НИ ОДНОЙ колонки-ссылки не найдено — скан не запускаю (иначе «сироты» = всё)')
+    process.exit(1)
+  }
+
+  // ── 2. Один запрос: объединение всех ссылок + список файлов без ссылок ────────
+  const scanSql = `
+  WITH ref AS (
+  ${parts.map((p, i) => (i ? `  UNION ALL\n${p}` : `  ${p}`)).join('\n')}
+  )
+  SELECT json_agg(t ORDER BY t.id) AS payload FROM (
+    SELECT m.id, m.filename, m.filesize
+    FROM media m
+    LEFT JOIN ref r ON r.media_id = m.id
+    WHERE r.media_id IS NULL
+  ) t`
+
+  const scanRows = await rowsOf(scanSql)
+  const orphans = (scanRows[0]?.payload || []) as { id: number; filename: string; filesize: number | null }[]
+  log(`[attach-orphans] сирот найдено: ${orphans.length}`)
+
+  // Контроль: 640 = «все файлы» означает, что отсылки не собрались (см. шапку).
+  const totalMedia = Number((await rowsOf(`SELECT count(*)::int AS n FROM media`))[0]?.n || 0)
+  log(`[attach-orphans] всего файлов в медиа: ${totalMedia} (из них без ссылок ${orphans.length})`)
+  if (totalMedia > 0 && orphans.length === totalMedia) {
+    log('[attach-orphans] СТОП: «сироты» = все файлы → ссылки не собрались, скан сломан')
+    process.exit(1)
+  }
+
+  // ── 3. Группы одинакового размера = вероятные дубли. Публикуем одну копию ────
+  const bySize = new Map<number, typeof orphans>()
+  for (const o of orphans) {
+    if (!o.filesize) continue
+    const list = bySize.get(o.filesize) || []
+    list.push(o)
+    bySize.set(o.filesize, list)
+  }
+  const dupExtras: number[] = []
+  for (const list of bySize.values()) {
+    if (list.length > 1) {
+      list.sort((a, b) => a.id - b.id)
+      for (const extra of list.slice(1)) dupExtras.push(extra.id)
+    }
+  }
+  const toAttach = orphans.filter((o) => !dupExtras.includes(o.id))
+  log(`[attach-orphans] дублей (одинаковый размер): ${dupExtras.length} — не публикуем`)
+  log(`[attach-orphans] к публикации: ${toAttach.length}`)
+
+  // ── 4. Альбом и текущее содержимое ───────────────────────────────────────────
+  const album = (await payload.findByID({ collection: 'gallery', id: ALBUM_ID, depth: 0, overrideAccess: true })) as unknown as {
+    photos?: (number | { id: number })[]
+  }
+  const existing = Array.isArray(album.photos) ? album.photos : []
+  const currentIds = new Set<number>(existing.map((m) => (typeof m === 'object' && m ? m.id : Number(m))))
+  const fresh = toAttach.filter((o) => !currentIds.has(o.id))
+  log(`[attach-orphans] в альбоме «${ALBUM_SLUG}» сейчас: ${existing.length}; добавим: ${fresh.length}`)
+
+  if (MODE !== 'apply') {
+    log('[attach-orphans] plan — ничего не менялось. Для реального переноса: SEED_MODE=apply')
+    process.exit(0)
+  }
+
+  if (fresh.length === 0) {
+    log('[attach-orphans] нечего добавлять — все уже в альбоме')
+    process.exit(0)
+  }
+
+  try {
+    await payload.update({
+      collection: 'gallery',
+      id: ALBUM_ID,
+      data: { photos: [...existing, ...fresh.map((o) => o.id)] } as never,
+    })
+  } catch (err) {
+    bail(err)
+  }
+  log(`[attach-orphans] готово: добавлено ${fresh.length} фото в «${ALBUM_SLUG}»`)
+
+  // Пустая запись в stdout: её колбэк срабатывает, когда предыдущие асинхронные
+  // записи в пайп уже ушли. Иначе process.exit() обрезает отчёт.
+  await new Promise<void>((resolve) => process.stdout.write('', () => resolve()))
+  process.exit(0)
 } catch (err) {
   bail(err)
 }
-log(`[attach-orphans] готово: добавлено ${fresh.length} фото в «${ALBUM_SLUG}»`)
-
-// Пустая запись в stdout: её колбэк срабатывает, когда предыдущие асинхронные
-// записи в пайп уже ушли. Иначе process.exit() обрезает отчёт.
-await new Promise<void>((resolve) => process.stdout.write('', () => resolve()))
-process.exit(0)
