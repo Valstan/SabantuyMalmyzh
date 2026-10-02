@@ -1,0 +1,66 @@
+name: D100 authorized_keys cleanup (manual, ask)
+
+# Мандат brain 2026-09-22 (D-100): в authorized_keys Бокса два устаревших ключа —
+# valstan@windows-qwen и sabantuy-deploy@valstan-pc. Удалить ровно эти две строки,
+# остальные четыре (PC40, Казанская CI, РМЗ, ТАКСИ CI) не трогать. Отчёт до/после к 06.10.
+# Принцип cleanup-box: plan читает, apply действует только после копии .bak.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan — показать authorized_keys (комментарии); apply — удалить две строки'
+        required: true
+        default: 'plan'
+        type: choice
+        options: [plan, apply]
+
+concurrency:
+  group: sabantuy-prod-ssh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # G315: глушим stderr ssh/scp-клиента (хост не должен уезжать в публичный лог)
+  BASH_ENV: ${{ github.workspace }}/.github/scripts/ssh-quiet.sh
+
+jobs:
+  keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519_sabantuy
+          chmod 600 ~/.ssh/id_ed25519_sabantuy
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<CFG
+          Host sabantuy
+            HostName $DEPLOY_SSH_HOST
+            Port $DEPLOY_SSH_PORT
+            User $DEPLOY_SSH_USER
+            IdentityFile ~/.ssh/id_ed25519_sabantuy
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          CFG
+          chmod 600 ~/.ssh/config
+      - name: plan/apply authorized_keys
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          ssh sabantuy 'bash -s' "$MODE" < .github/scripts/d100-authorized-keys.sh
+      - name: probe — наш deploy-ключ всё ещё пускает
+        if: inputs.mode == 'apply'
+        run: |
+          ssh sabantuy 'echo "probe ok: deploy-ключ жив после чистки"'
