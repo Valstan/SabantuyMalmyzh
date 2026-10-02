@@ -294,6 +294,9 @@ WHERE m.filename LIKE 'fotostena--%'
   AND NOT EXISTS (SELECT 1 FROM ref_media r WHERE r.media_id = m.id)
 GROUP BY 1 ORDER BY files DESC LIMIT 10;
 
+\echo '=== 2b. Реальные колонки vk_candidates ==='
+\d vk_candidates
+
 \echo '=== 3. Есть ли кандидат по этому посту (совпадение vkKey) и какой статус ==='
 SELECT
   c.status,
