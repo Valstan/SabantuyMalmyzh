@@ -35,10 +35,21 @@ export const UGC_MAX_FILES = Number(process.env.UGC_MAX_FILES) || 20
 export const OBJECT_KEY_RE =
   /^media\/[a-z0-9-]+\/\d{6}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/
 
-/** IP клиента из заголовков прокси (на проде nginx ставит X-Forwarded-For / X-Real-IP). */
+/**
+ * IP клиента из заголовков прокси (на проде nginx ставит X-Forwarded-For / X-Real-IP).
+ *
+ * #057: nginx дополняет XFF ($proxy_add_x_forwarded_for), поэтому первое значение
+ * контролируется клиентом (спуфинг). Берём ПОСЛЕДНЕЕ значение — его добавляет
+ * nginx ($remote_addr соединения к nginx), клиент его подделать не может.
+ * Если edge перед nginx ещё один прокси — последнее значение = IP edge, но для
+ * rate-limit это достаточно (клиент не контролирует последний элемент).
+ */
 export function clientIp(headers: Headers): string {
   const xff = headers.get('x-forwarded-for')
-  if (xff) return xff.split(',')[0]!.trim()
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]!
+  }
   return headers.get('x-real-ip')?.trim() || 'unknown'
 }
 

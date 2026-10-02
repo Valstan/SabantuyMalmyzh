@@ -22,9 +22,13 @@ const MAX_VIDEO_MB = Number(process.env.UGC_MAX_VIDEO_MB) || 100
 const RL_MAX = 30 // запросов на подпись
 const RL_WINDOW_MS = 10 * 60 * 1000 // за 10 минут на IP
 
+// #057: берём последнее значение XFF (его добавляет nginx, клиент не подделает).
 function clientIp(headers: Headers): string {
   const xff = headers.get('x-forwarded-for')
-  if (xff) return xff.split(',')[0]!.trim()
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]!
+  }
   return headers.get('x-real-ip')?.trim() || 'unknown'
 }
 
