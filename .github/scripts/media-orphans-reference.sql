@@ -235,7 +235,7 @@ BEGIN
       EXECUTE format(
         'SELECT count(*) FROM public."%1$I" t WHERE t."%2$I" = $1',
         src.table_name, src.column_name
-      ) INTO hit;
+      ) INTO hit USING r.id;
       IF hit > 0 THEN
         RAISE NOTICE '    %I.%I', src.table_name, src.column_name;
       END IF;
