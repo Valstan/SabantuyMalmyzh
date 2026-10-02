@@ -65,7 +65,7 @@ jobs:
           ACTION="$1"
           ENVF=/etc/sabantuy/sabantuy.env
           MEDIA=$(grep '^MEDIA_DIR=' "$ENVF" | head -1 | sed 's/^MEDIA_DIR=//;s/^"//;s/"$//')
-          SRC=/home/valstan/sabantuy/repo/web/public/media
+          SRC=${{ secrets.DEPLOY_BASE }}/repo/web/public/media
           echo "MEDIA_DIR = $MEDIA"
           echo "SRC       = $SRC"
           echo "--- fotostena-файлов в чекауте (SRC): $(ls -1 "$SRC"/fotostena-* 2>/dev/null | wc -l)"
