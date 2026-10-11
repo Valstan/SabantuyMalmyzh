@@ -6,6 +6,7 @@ import { anyone } from '../access/anyone'
 import { publicVisibleOrStaff } from '../access/publicVisibleOrStaff'
 import { notifyPushLenta } from '../hooks/notifyPush'
 import { rateLimitSubmission } from '../hooks/rateLimitSubmission'
+import { stripPrivilegedFields } from '../hooks/stripPrivilegedFields'
 import { stampSubmissionMeta } from '../hooks/stampSubmissionMeta'
 import { UGC_MAX_AUTHOR, UGC_MAX_CAPTION, UGC_MAX_FILES } from '../lib/ugc'
 
@@ -322,7 +323,7 @@ export const Submissions: CollectionConfig<'submissions'> = {
   ],
   hooks: {
     // rateLimit/санитайз/валидация первым; затем проставление ipHash/userAgent.
-    beforeValidate: [rateLimitSubmission],
+    beforeValidate: [stripPrivilegedFields, rateLimitSubmission],
     beforeChange: [stampSubmissionMeta],
     afterChange: [notifyPushLenta],
   },
