@@ -1,0 +1,71 @@
+/* Шрифты — свои файлы в репозитории, а не запрос к fonts.googleapis.com в момент сборки.
+ *
+ * Зачем: `next/font/google` скачивает CSS и .woff2 с чужого хоста **на этапе сборки**.
+ * 2026-11-01 deploy-prod упал на этом (`Cannot read properties of null (reading '1')` в
+ * google/loader.js:122), повторный прогон прошёл — то есть деплой зависел от состояния
+ * fonts.googleapis.com, а версия шрифта не была запинена: сборка разных дней отдавала
+ * разные файлы. Теперь файлы лежат здесь, версия — та, что в git.
+ *
+ * Взяты вариативные (variable) сабсеты Google Fonts: один файл на семейство-сабсет
+ * покрывает весь диапазон весов, который мы используем. Файлы:
+ *   Manrope 400..700   — body  (используются 400/500/600/700)
+ *   Playfair Display 700..900 — display (используются 700/800/900)
+ * Обе гарнитуры под OFL, самостоятельный хостинг разрешён.
+ *
+ * `unicode-range` скопирован из ответа Google CSS API: без него два файла одного
+ * семейства перекрывают друг друга и кириллица теряется на латинице (браузер не знает,
+ * какой файл для каких символов). Кириллица и латиница — разные файлы, и цифры живут
+ * в латинском: одной таблицы на всё не хватает.
+ */
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/manrope-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('/fonts/playfair-display-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('/fonts/playfair-display-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+/* Те же имена переменных, что задавал next/font на <html>: потребители в CSS
+ * (festive.css, patterns.css, globals.css) не меняются. Цепочки фолбэков — ровно те,
+ * что уже написаны в `var(--font-*, …)` на местах, поэтому первая отрисовка выглядит
+ * как раньше.
+ * Область — только фронтенд: файл импортируется из (frontend)/globals.css, админка
+ * (payload) своих шрифтов не получает.
+ */
+:root {
+  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
