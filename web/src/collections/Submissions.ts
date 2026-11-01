@@ -7,6 +7,7 @@ import { publicVisibleOrStaff } from '../access/publicVisibleOrStaff'
 import { notifyPushLenta } from '../hooks/notifyPush'
 import { rateLimitSubmission } from '../hooks/rateLimitSubmission'
 import { stampSubmissionMeta } from '../hooks/stampSubmissionMeta'
+import { stripPrivilegedFields } from '../hooks/stripPrivilegedFields'
 import { UGC_MAX_AUTHOR, UGC_MAX_CAPTION, UGC_MAX_FILES } from '../lib/ugc'
 
 // «Народная лента» (UGC): фото/видео, снятые посетителями и выложенные прямо на сайте.
@@ -321,8 +322,10 @@ export const Submissions: CollectionConfig<'submissions'> = {
     },
   ],
   hooks: {
-    // rateLimit/санитайз/валидация первым; затем проставление ipHash/userAgent.
-    beforeValidate: [rateLimitSubmission],
+    // G194 первым: вычистить присланные снаружи служебные поля ДО валидации,
+    // чтобы клиентское значение не дожило даже до ошибки валидации. Дальше —
+    // rateLimit/санитайз, затем проставление ipHash/userAgent.
+    beforeValidate: [stripPrivilegedFields, rateLimitSubmission],
     beforeChange: [stampSubmissionMeta],
     afterChange: [notifyPushLenta],
   },
