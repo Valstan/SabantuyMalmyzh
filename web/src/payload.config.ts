@@ -70,6 +70,13 @@ export default buildConfig({
     ? nodemailerAdapter({
         defaultFromAddress: process.env.SMTP_FROM_ADDRESS || 'no-reply@sabantuy-malmyzh.ru',
         defaultFromName: process.env.SMTP_FROM_NAME || 'Сабантуй в Малмыже',
+        // Каст — из-за расхождения типов апстрима, не из-за нашего объекта.
+        // Адаптер объявляет transportOptions как nodemailer'овский SMTPConnection.Options
+        // (в нём auth нет), но отдаёт объект в createTransport(), который ждёт
+        // SMTPTransport.Options (auth там есть) — то есть ровно то, что здесь написано.
+        // Проверено прогоном на живом SMTP: createTransport({…, auth}) доходит до
+        // AUTH PLAIN с нашими кредами. Снимать каст, когда Payload расширит тип
+        // (fork: d.ts адаптера, строка `transportOptions?: SMTPConnection.Options`).
         transportOptions: {
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT) || 587,
@@ -82,7 +89,7 @@ export default buildConfig({
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
           },
-        },
+        } as NonNullable<Parameters<typeof nodemailerAdapter>[0]>['transportOptions'],
       })
     : undefined,
   // Тикер push-уведомлений программы («скоро начнётся событие», lib/pushTick):
