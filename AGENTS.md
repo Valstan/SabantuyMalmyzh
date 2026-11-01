@@ -141,6 +141,11 @@ corepack pnpm -C web dev                   # http://localhost:3000  ·  /admin
 > Нужен локальный PostgreSQL с БД `sabantuy`. `push:true` накатит схему при первом старте.
 > Скрипты используют `cross-env` для `NODE_OPTIONS` → работают и на Windows без bash-shell.
 
+**PostgreSQL локальный (машина владельца), 17.5:** `postgresql://sabantuy:<пароль>@127.0.0.1:5432/sabantuy`
+— пароль в `%USERPROFILE%\pg-local-credentials.json` (вне git, в КАРМАН не кладётся), подробности —
+`brain_matrica/docs/machines/COMPUTER.md`. Логин видит **только** эту базу, слушает только localhost.
+Это **не прод** и не замена прод-БД: локальный PG нужен для `pnpm dev` и смоука.
+
 ---
 
 ## Правила, которые НЕ менять
