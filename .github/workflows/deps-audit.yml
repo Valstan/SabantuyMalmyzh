@@ -88,18 +88,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EVENT: ${{ github.event_name }}
-          WHEN: ${{ github.run_started_at }}
         run: |
           set -eu
+          # Дата берётся здесь, а не из контекста: `github.run_started_at` в момент
+          # старта job ещё пуст — заголовок остался бы без даты (поймано красным прогоном).
+          when=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          # `-R` у КАЖДОГО вызова: job без checkout, и gh иначе падает на
+          # "fatal: not a git repository" (тоже поймано красным прогоном).
           # Метка должна существовать до create: --label падает на незнакомой.
           gh label create deps-audit --force \
+            -R "${GITHUB_REPOSITORY}" \
             --color B60205 \
             --description "Красный плановый аудит зависимостей (deps-audit.yml)" >/dev/null
 
           body=$(printf '%s\n' \
             "Плановый аудит зависимостей **красный**." \
             "" \
-            "- когда: ${WHEN}" \
+            "- когда: ${when}" \
             "- чем: \`${EVENT}\`" \
             "- прогон: ${RUN_URL}" \
             "" \
@@ -117,7 +123,7 @@ jobs:
             echo "::notice::Красный аудит дописан в issue #${existing}"
           else
             gh issue create -R "${GITHUB_REPOSITORY}" \
-              --title "deps-audit красный: ${WHEN%%T*}" \
+              --title "deps-audit красный: ${when%%T*}" \
               --label deps-audit \
               --body "${body}"
           fi
