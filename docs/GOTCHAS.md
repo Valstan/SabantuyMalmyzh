@@ -269,6 +269,13 @@ Display под OFL, это разрешено); до неё — знать си�
 `S3_BUCKET=x S3_ACCESS_KEY_ID=x S3_SECRET_ACCESS_KEY=x pnpm generate:types`, диф читать как
 «в БД нужна колонка». Список условных плагинов: `grep -n 'enabled:' web/src/payload.config.ts`.
 
+**Второй вход в ту же граблю — обычный `pnpm dev`.** Payload перегенерирует `payload-types.ts`
+сам при старте, тем же локальным конфигом. 2026-11-01 после запуска dev под смоук `git status`
+показал `M web/src/payload-types.ts` с двумя удалениями — `_objectKey` из `Media` и из
+`MediaSelect`. Это **не** улучшение схемы, а тот самый выключенный S3-плагин; коммитить нельзя,
+команда — `git checkout -- web/src/payload-types.ts`. Проверять диф этого файла глазами до
+`git add`: он единственный в репозитории, который генерируется, и поэтому «изменился сам».
+
 ---
 
 ## Машина разработчика
