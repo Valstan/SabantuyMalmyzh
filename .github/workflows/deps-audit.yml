@@ -8,12 +8,22 @@
 # мержа чужого PR. Уровень high: moderate/low в транзитивных deps шумят постоянно
 # (postcss/nanoid/js-yaml под @payloadcms/next) и без обновления апстрима не лечатся.
 # Только прод-дерево (`--prod`): dev-инструменты на бокс не едут.
+#
+# 2026-11-01 — гейт был красным 17 дней ровно потому, что его падение видно только
+# тому, кто сам откроет вкладку Actions (письмо brain 22.10: «снаружи он просто
+# красный»). Теперь красный прогон по расписанию сам открывает issue, а повторный —
+# дописывает в него комментарий: сигнал остаётся в репозитории, а не в чужой памяти.
 name: Deps audit (pnpm audit --prod)
 
 on:
   schedule:
     - cron: '17 4 * * 1,4' # пн/чт 04:17 UTC = 07:17 МСК
   workflow_dispatch:
+    inputs:
+      force_fail:
+        description: 'Проверка самого сигнала: уронить аудит намеренно (гейт красный → issue)'
+        type: boolean
+        default: false
   pull_request:
     paths:
       - 'web/pnpm-lock.yaml'
@@ -53,4 +63,61 @@ jobs:
       # pnpm audit ходит в реестр по lockfile — install не нужен, node_modules тоже.
       - name: pnpm audit --prod --audit-level=high
         working-directory: web
-        run: pnpm audit --prod --audit-level=high
+        run: |
+          if [ "${{ inputs.force_fail }}" = "true" ]; then
+            echo "::warning::force_fail=true — аудит не запускался, роняем намеренно (проверка сигнала)"
+            exit 1
+          fi
+          pnpm audit --prod --audit-level=high
+
+  # Сигнал, который не теряется: красный прогон оставляет след в трекере.
+  # Один открытый issue на класс, а не по issue в неделю — повторный красный
+  # дописывается комментарием с датой прогона.
+  notify:
+    needs: audit
+    # На PR не шумим: там красный и так виден в checks, а автор PR разбирается сам.
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Открыть или дополнить issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+          WHEN: ${{ github.run_started_at }}
+        run: |
+          set -eu
+          # Метка должна существовать до create: --label падает на незнакомой.
+          gh label create deps-audit --force \
+            --color B60205 \
+            --description "Красный плановый аудит зависимостей (deps-audit.yml)" >/dev/null
+
+          body=$(printf '%s\n' \
+            "Плановый аудит зависимостей **красный**." \
+            "" \
+            "- когда: ${WHEN}" \
+            "- чем: \`${EVENT}\`" \
+            "- прогон: ${RUN_URL}" \
+            "" \
+            "Что делать: посмотреть вывод шага \`pnpm audit --prod --audit-level=high\` по ссылке." \
+            "Чинить точечно (\`overrides\` / прямые бампы), не \`npm audit fix\`." \
+            "Если в логе сетевой сбой реестра, а не уязвимости — перезапустить прогон и закрыть запись." \
+            "" \
+            "Закрыть issue, когда аудит снова зелёный.")
+
+          existing=$(gh issue list --label deps-audit --state open --limit 1 \
+            --json number --jq '.[0].number // empty' -R "${GITHUB_REPOSITORY}")
+
+          if [ -n "${existing}" ]; then
+            gh issue comment "${existing}" -R "${GITHUB_REPOSITORY}" --body "${body}"
+            echo "::notice::Красный аудит дописан в issue #${existing}"
+          else
+            gh issue create -R "${GITHUB_REPOSITORY}" \
+              --title "deps-audit красный: ${WHEN%%T*}" \
+              --label deps-audit \
+              --body "${body}"
+          fi
