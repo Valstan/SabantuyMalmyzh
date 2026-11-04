@@ -71,7 +71,7 @@ const nextConfig = {
     ]
     return [
       { source: '/:path*', headers: SECURITY },
-      ...['/afisha', '/decor', '/quiz', '/icons'].map((dir) => ({
+      ...['/afisha', '/decor', '/fonts', '/quiz', '/icons'].map((dir) => ({
         source: `${dir}/:path*`,
         headers: [{ key: 'Cache-Control', value: STATIC }],
       })),

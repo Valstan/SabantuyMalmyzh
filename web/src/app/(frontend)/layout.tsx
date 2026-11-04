@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import config from '@payload-config'
-import { Manrope, Playfair_Display } from 'next/font/google'
 import { getPayload } from 'payload'
 import React from 'react'
 
@@ -17,21 +16,11 @@ import { SiteChrome } from './components/SiteChrome'
 import { AdminModeProvider } from './components/edit/AdminMode'
 import { EditToolbar } from './components/edit/EditToolbar'
 
-// Шрифты self-hosted при сборке (кириллица). Переменные вешаем на <html> —
-// читаются в CSS как var(--font-display)/var(--font-body). Админку (payload)
-// не задевают: переменные только на фронтовом <html>.
-const display = Playfair_Display({
-  subsets: ['cyrillic', 'latin'],
-  weight: ['700', '800', '900'],
-  display: 'swap',
-  variable: '--font-display',
-})
-const body = Manrope({
-  subsets: ['cyrillic', 'latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-  variable: '--font-body',
-})
+// Шрифты — свои файлы: @font-face и переменные --font-display/--font-body объявлены
+// в fonts.css (импортируется из globals.css). Раньше здесь стоял next/font/google —
+// он ходил за шрифтами на fonts.googleapis.com **в момент сборки**, и 2026-11-01
+// deploy-prod на этом упал. Админку (payload) не задевает: fonts.css живёт только
+// во фронтовом дереве стилей.
 
 // metadataBase делает относительный /og.jpg абсолютным URL для соц-скрейперов.
 // URL/описание — единый источник lib/site.ts (боевой URL бейкается из env).
@@ -105,7 +94,26 @@ async function getChrome(): Promise<ChromeContent> {
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const chrome = await getChrome()
   return (
-    <html lang="ru" className={`${display.variable} ${body.variable}`}>
+    <html lang="ru">
+      {/* Preload шрифтов: next/font делал это сам, убрав его — делаем руками. Оба
+          сабсета нужны на каждой странице: кириллица — текст, латиница — цифры и
+          латинские названия. React поднимает <link> в <head>. */}
+      <link rel="preload" as="font" type="font/woff2" href="/fonts/manrope-cyrillic.woff2" crossOrigin="anonymous" />
+      <link rel="preload" as="font" type="font/woff2" href="/fonts/manrope-latin.woff2" crossOrigin="anonymous" />
+      <link
+        rel="preload"
+        as="font"
+        type="font/woff2"
+        href="/fonts/playfair-display-cyrillic.woff2"
+        crossOrigin="anonymous"
+      />
+      <link
+        rel="preload"
+        as="font"
+        type="font/woff2"
+        href="/fonts/playfair-display-latin.woff2"
+        crossOrigin="anonymous"
+      />
       <body>
         {/* Глобальная разметка Schema.org (сайт + организатор) — для Google и ИИ-выдачи */}
         <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
